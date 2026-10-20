@@ -12,10 +12,10 @@ const finding = (ruleId: string, line: number) => ({ ruleId, path: "package.json
 test("thresholds name every shipped detector and enforce precision of at least 0.95", async () => {
   const thresholds = JSON.parse(await readFile(resolve("benchmarks/thresholds.json"), "utf8")) as Thresholds;
   assert.equal(thresholds.schemaVersion, "evergreen.corpus-thresholds.v1");
-  assert.deepEqual(Object.keys(thresholds.detectors).sort(), ["ci-images", "container", "dotnet", "github-actions", "go", "java", "kubernetes", "nodejs", "npm", "python", "ruby", "rust"]);
+  assert.deepEqual(Object.keys(thresholds.detectors).sort(), ["android", "ci-images", "container", "cpp", "dotnet", "github-actions", "go", "java", "kubernetes", "nodejs", "npm", "php", "python", "ruby", "rust", "swift"]);
   for (const [name, threshold] of Object.entries(thresholds.detectors)) {
-    // The ci-images, container, Go, Java, Kubernetes, Ruby, and Rust detectors are experimental: they are scored and reported, but not enforced yet.
-    assert.equal(threshold.stable, !["ci-images", "container", "go", "java", "kubernetes", "ruby", "rust"].includes(name), name);
+    // The Android, ci-images, container, C and C++, Go, Java, Kubernetes, PHP, Ruby, Rust, and Swift detectors are experimental: they are scored and reported, but not enforced yet.
+    assert.equal(threshold.stable, !["android", "ci-images", "container", "cpp", "go", "java", "kubernetes", "php", "ruby", "rust", "swift"].includes(name), name);
     assert.ok(threshold.minPrecision >= 0.95);
   }
 });
@@ -56,6 +56,7 @@ import { countEvidence, earnedLevel, evidenceMinimums } from "../benchmarks/thre
 const ECOSYSTEMS: Record<string, { corpus: string[]; row: string }> = {
   "ci-images": { corpus: ["ci-images"], row: "CI runner images" },
   container: { corpus: ["container"], row: "Container base images" },
+  cpp: { corpus: [], row: "C and C++" },
   dotnet: { corpus: ["dotnet"], row: ".NET" },
   "github-actions": { corpus: ["node-actions"], row: "GitHub Actions" },
   go: { corpus: ["go"], row: "Go" },
@@ -63,9 +64,12 @@ const ECOSYSTEMS: Record<string, { corpus: string[]; row: string }> = {
   kubernetes: { corpus: ["kubernetes"], row: "Kubernetes APIs" },
   nodejs: { corpus: ["node"], row: "Node.js and npm" },
   npm: { corpus: ["node"], row: "Node.js and npm" },
+  php: { corpus: ["php"], row: "PHP" },
   python: { corpus: ["python"], row: "Python" },
   ruby: { corpus: ["ruby"], row: "Ruby" },
   rust: { corpus: ["rust"], row: "Rust" },
+  swift: { corpus: ["swift"], row: "Swift" },
+  android: { corpus: ["android"], row: "Android" },
 };
 // Detectors that held the `Supported` label before the evidence rules existed. They keep it until the corpus
 // grows (#141, #142); the test fails if one of them starts to meet its level, so the entry is removed.
@@ -126,5 +130,7 @@ test("the thresholds file records the full corpus run its levels rest on", async
   assert.ok(run.repositories >= 85);
   const detectors = Object.values(run.perDetector);
   assert.equal(detectors.reduce((sum, item) => sum + item.truePositives + item.falsePositives, 0), run.findings);
-  assert.deepEqual(Object.keys(run.perDetector).sort(), Object.keys(thresholds.detectors).sort());
+  // A detector added after the recorded run has no per-detector numbers yet; the record never names a detector that does not exist.
+  const known = Object.keys(thresholds.detectors);
+  for (const name of Object.keys(run.perDetector)) assert.ok(known.includes(name), `${name} is in lastFullRun but not in the detectors`);
 });

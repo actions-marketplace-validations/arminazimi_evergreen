@@ -51,9 +51,13 @@ Matrix version: **2026-10-15 / v1**
 | Kubernetes APIs | Experimental | The literal `apiVersion` and `kind` in YAML manifests, Helm chart templates, and kustomization patches, for API versions the Kubernetes project says are no longer served. See [Kubernetes APIs](detectors/kubernetes.md). |
 | GitHub Actions | Supported | Selected first-party Action lifecycle rules and exact workflow locations. |
 | Node.js and npm | Supported | Runtime declarations, direct dependencies, lockfiles, and supported source usages. |
+| PHP | Experimental | Pinned runtime declarations in `.php-version`, `.tool-versions`, `composer.json`, and `composer.lock`, for PHP release lines past end of support and abandoned Composer packages. See [PHP](#php-detector). |
 | Python | Supported | Runtime declarations, direct dependencies, common lockfiles, and supported source usages. |
 | Ruby | Experimental | Pinned runtime declarations in `.ruby-version`, `.tool-versions`, the Gemfile `ruby` directive, and Gemfile.lock `RUBY VERSION`, plus direct gems, for Ruby release lines past end of support and yanked gems. Gem rules can list source usages in Ruby files. |
 | Rust | Experimental | The pinned toolchain in `rust-toolchain(.toml)` and direct dependencies in `Cargo.toml` and `Cargo.lock`, for toolchains older than the newest stable release and unmaintained crates. See [Rust](detectors/rust.md). |
+| Swift | Experimental | `.swift-version` and `.xcode-version` pins, the `swift-tools-version` line and literal `from:` / `exact:` dependencies in `Package.swift`, and resolved pin versions in `Package.resolved`, for Xcode releases App Store Connect no longer accepts and Swift toolchain lines with a lifecycle rule. The iOS deployment target (`IPHONEOS_DEPLOYMENT_TARGET`) of an application target in an `.xcodeproj` `project.pbxproj`, for iOS releases App Store Connect no longer accepts. Libraries and `platforms:` minimums in `Package.swift` are not read for it. See [Swift](#swift-detector). |
+| Android | Experimental | Literal `compileSdk`, `minSdk`, `targetSdk`, and `buildToolsVersion` in `build.gradle` and `build.gradle.kts`, Android Gradle Plugin and Kotlin Android plugin versions in `settings.gradle(.kts)`, `agp` and `kotlin` keys in `libs.versions.toml`, and string-notation Maven dependencies, matched to reviewed rules. Bundled rules cover Google Play Billing Library majors 5 through 9. SDK and plugin declarations produce a finding only when a rule names them. |
+| C and C++ | Experimental | `cmake_minimum_required`, C and C++ language standards, and compiler version checks in `CMakeLists.txt`; direct requirements in `conanfile.txt` and `conanfile.py`; and direct dependencies and `builtin-baseline` in `vcpkg.json`. Bundled rules cover CMake policy versions older than 3.5 (removed) and from 3.5 up to 3.10 (deprecated). See [C and C++](#c-and-c-detector). |
 | Other language and platform ecosystems | Unsupported | Report the limitation; do not infer lifecycle status without a detector. |
 <!-- coverage-matrix:end -->
 
@@ -64,6 +68,49 @@ have the meanings and the evidence requirements in
 [decision 0013](decisions/0013-detector-maturity.md), and the level of each is
 recorded in `benchmarks/thresholds.json`. `Unsupported` means Evergreen does not currently claim the
 combination works.
+
+## PHP detector
+
+The `php` detector is **experimental**: its level is recorded as `experimental` in `benchmarks/thresholds.json`. Five public repositories in [Validation](VALIDATION.md#php-corpus) cover it. Its lifecycle rules are in `registry/php.json` and ship in the [data bundle](DATA.md).
+
+### Supported files and declarations
+
+| File | Declaration read | Notes |
+| --- | --- | --- |
+| `.php-version` | One pinned version on a line by itself, such as `7.4.33`, `7.4`, or `php-7.4.33` | Blank lines and `#` comments are ignored. A file with more than one version, or any other line, produces nothing. The `php-` prefix is stripped before matching. |
+| `.tool-versions` | A `php` line with one or more pinned versions | Every version on the line is reported. Other tools are ignored. A line with any unsupported token produces nothing. |
+| `composer.json` | `require.php`, `config.platform.php`, and direct packages in `require` / `require-dev` (`vendor/name` with a literal constraint) | Extensions (`ext-*`), floating `*`, dynamic `${…}` values, `extra.php`, and other `config.platform.*` keys are ignored. |
+| `composer.lock` | `platform.php`, and each resolved package in `packages` / `packages-dev` (`name` and `version`) | Every resolved package is checked, including transitive and `require-dev` packages. `platform-dev`, `plugin-api-version`, and non-`php` platform keys are not read. An `abandoned` flag is parsed and is not a finding by itself. |
+
+Files are found by walking the repository up to eight directories deep, to at most 500 files. Symbolic links are not followed, and `.git`, `node_modules`, `vendor`, `dist`, `build`, `target`, `.venv`, `venv`, `fixtures`, `__fixtures__`, and `testdata` are skipped. PHP, phpenv, asdf, and Composer are never run, and nothing is fetched.
+
+### What it reports
+
+- A pinned PHP release line that is past end of life, in the `.php-version`, `.tool-versions`, `composer.json` `config.platform.php`, or `composer.lock` `platform.php` line that pins it, or an exact `require.php` version that matches a rule. The bundled rules cover PHP 8.1, 8.0, and 7.4, citing the [PHP unsupported branches](https://www.php.net/eol.php) page. A requirement range such as `>=7.4` or `^8.2` is not a pin and produces no runtime finding.
+- A `composer.json` package line only when a rule covers every version of that package (`vers:composer/*`). The bundled abandoned-package rules cover `swiftmailer/swiftmailer` and `zendframework/zend-stdlib`, citing Packagist and the Symfony / Laminas announcements.
+- A resolved package in `composer.lock` when a rule's `vers` contains that version. Abandoned-package rules match any resolved version of the named package.
+
+Each finding names the file and line, and carries its rule's source, replacement, deadline, migration guidance, and verification commands. A package finding whose rule lists usage matchers also lists the `.php` files that `require` / `include` (and `_once`) that package, and the qualified calls those matchers name (`Class::method` and `new Class`). The finding's impact counts those usages, and a migration packet lists the files. A runtime finding points at the pin only.
+
+### What it intentionally does not judge
+
+- PHP releases and Composer packages with no rule in `registry/php.json`. A missing finding is not evidence that a version is current.
+- A `.php-version` or `.tool-versions` value of `system` or `latest`, a template, or a value that interpolates at runtime.
+- Composer `require.php` constraints that are not concrete versions (`>=7.4`, `^8.2`, `~8.1.0`, and similar ranges).
+- Extensions (`ext-*`), floating `*` package constraints, `git` / `path` repositories, and dynamic `${…}` values in `composer.json`.
+- An `abandoned` flag in `composer.lock` without a matching lifecycle rule. Composer may mark a package abandoned; Evergreen reports it only when a reviewed rule names that package.
+- Vulnerability advisories and license policy.
+
+### Known limits and false-positive boundaries
+
+- A runtime pin is reported whatever the project actually runs. A stale `.tool-versions` or `config.platform.php` that a project no longer uses still produces a finding.
+- `composer.lock` findings include transitive packages, because the lockfile resolves them. A package can be reported even though the project never imports it.
+- Package names are matched exactly as written in the file, and a rule matches only the versions its `vers` range names.
+- Malformed input produces no declarations from the affected unit, never a partial result, and no error is raised. For `.php-version`, `composer.json`, and `composer.lock` that unit is the whole file. For `.tool-versions` it is the one malformed line. A file over 1 MiB yields nothing, and a single line over 4,096 characters is skipped.
+- The eight-level and 500-file limits are silent. Files beyond them, and any under `vendor` or a skipped directory, are not scanned.
+- Source usage reads `.php` files. Quoted `require` / `include` (and `_once`) paths match a rule whose module is that path (a trailing `.php` is stripped). A call matches when the rule names the qualified form, such as `Swift_Mailer::newInstance` or `new Zend\Stdlib\Parameters`. Usage is not a PHP AST: it is regex-based matching, so unusual formatting can miss a call or require.
+- A `require` or `include` whose argument is not a string literal (a variable, concatenation, or a method call on the string) is listed as unclassified, with its file and line. Evergreen does not guess which package it loads. `new $class` and `$class::method()` are unclassified for the same reason.
+- Usage is not read under `vendor`, `fixtures`, `__fixtures__`, or `testdata`. Comments and ordinary strings are not usages. A single source line over 4,096 characters is skipped for usage scanning, matching the declaration parsers.
 
 ## Ruby detector
 
@@ -109,6 +156,98 @@ Each finding names the file and line, and carries its rule's source, replacement
 - A `require`, `load`, `gem`, or `autoload` whose argument is not a string literal (a variable, interpolation, concatenation, or a method call on the string) is listed as unclassified, with its file and line. Evergreen does not guess which gem it loads. `require_relative` is never unclassified: it always names a local file. A local variable or hash key named `require`/`load`/`gem`, or a bare `load` with no argument, is not a call.
 - Alias assignments are capped per file; deep or cyclic alias chains resolve to nothing. A single source line over 4,096 characters is skipped for usage scanning, matching the declaration parsers.
 - Usage is not read under `vendor`, `fixtures`, `__fixtures__`, or `testdata`. Comments, ordinary strings, percent literals, heredocs, and `=begin`/`=end` blocks are not usages. A method receiver such as `JSON.load` is a call only when a matcher names it, not a file `load`.
+
+## Swift detector
+
+The `swift` detector is **experimental**: its level is recorded as `experimental` in `benchmarks/thresholds.json`. Five public repositories in [Validation](VALIDATION.md#swift-corpus) cover it. Its lifecycle rules are in `registry/swift.json` and ship in the [data bundle](DATA.md). Until a recorded full corpus run includes those pins, the dashboard's last-run counts for `swift` stay at zero.
+
+### Supported files and declarations
+
+| File | Declaration read | Notes |
+| --- | --- | --- |
+| `.xcode-version` | One pinned Xcode release on a line by itself, such as `15.4` or `14.2.0` | Blank lines and `#` comments are ignored. A file with more than one pin, or any non-release token (`latest`, `stable`), produces nothing. |
+| `.swift-version` | One pinned Swift release on a line by itself, such as `5.9` or `5.9.2` | Same pin rules as `.xcode-version`. There are no bundled Swift toolchain lifecycle rules yet, so a pin alone produces no finding today. |
+| `Package.swift` | The `swift-tools-version` comment on line 1, and direct `.package(url:…, from:…)` / `.package(url:…, exact:…)` dependencies with a literal version string | Block and line comments and string literals are stripped before `.package` calls are read. `path:`, `branch:`, `revision:`, range / `.upToNextMajor` requirements, multi-line `.package` calls, platform minimums (`.iOS(.v13)` and friends), and interpolated or `Version(…)` values are ignored. |
+| `Package.resolved` | Each pin under `pins` with a non-empty `identity` and a `state.version` string (SwiftPM lockfile v2) | Pins with only `branch` / `revision`, the legacy v1 `object.pins` shape, and non-version pins produce nothing. |
+| `*.xcodeproj/project.pbxproj` | `IPHONEOS_DEPLOYMENT_TARGET` on build configurations of application targets (`com.apple.product-type.application`) | Frameworks, static libraries, extensions, and other product types are skipped. Project-level settings, `$(…)` references, and non-numeric values are ignored. |
+
+Files are found by walking the repository up to eight directories deep, to at most 500 files. Symbolic links are not followed, and `.git`, `node_modules`, `vendor`, `dist`, `build`, `target`, `.venv`, `venv`, `fixtures`, `__fixtures__`, and `testdata` are skipped. A `project.pbxproj` is read only when it sits inside a directory whose name ends with `.xcodeproj`. Swift, SwiftPM, and Xcode are never run, and nothing is fetched.
+
+### What it reports
+
+- An `.xcode-version` pin that App Store Connect no longer accepts. The bundled rules cover Xcode older than 15 (deadline 2024-04-29) and Xcode 15 through 25 (deadline 2026-04-28), citing [App Store upcoming requirements](https://developer.apple.com/news/upcoming-requirements/).
+- An application target whose `IPHONEOS_DEPLOYMENT_TARGET` is below iOS 13. The bundled rule cites the [iOS and iPadOS minimum system requirements](https://developer.apple.com/news/upcoming-requirements/?id=0992026a) (deadline 2026-09-09).
+- A `Package.swift` `exact:` pin or a `Package.resolved` version when a rule for that SwiftPM identity's `vers` contains the version. A `from:` requirement is reported only by a rule that covers every version of the package. There are no bundled package rules yet.
+- A `.swift-version` or `swift-tools-version` pin when a rule for `pkg:generic/swift` contains that version. There are no such bundled rules yet.
+
+Each finding names the file and line, and carries its rule's source, replacement, deadline, migration guidance, and verification commands. A package finding whose rule lists usage matchers also lists the `.swift` files that `import` that module and the qualified calls those matchers name. The finding's impact counts those usages, and a migration packet lists the files. Toolchain and App Store findings point at the pin or deployment-target line only.
+
+### What it intentionally does not judge
+
+- Xcode releases, Swift toolchain lines, iOS deployment targets, and SwiftPM packages with no rule in `registry/swift.json`. A missing finding is not evidence that a version is current.
+- A `.xcode-version` or `.swift-version` value of `latest` or `stable`, a template, or a value that interpolates at runtime.
+- Platform minimums in `Package.swift` (`platforms: [.iOS(.v12)]` and similar). Those declare a library's supported OS floor, not an App Store upload target.
+- Deployment targets on non-application Xcode targets (frameworks, libraries, extensions, tests).
+- `path:`, `branch:`, `revision:`, range, and `.upToNextMajor` / `.upToNextMinor` package requirements; multi-line `.package` calls; and dynamic version expressions.
+- The legacy `Package.resolved` v1 shape.
+- Vulnerability advisories and license policy.
+
+### Known limits and false-positive boundaries
+
+- An `.xcode-version` pin is reported whatever the project actually builds with. A stale pin that CI no longer uses still produces a finding.
+- The App Store Xcode rules apply to uploads to App Store Connect. A Swift package that never ships an app can still pin an old Xcode for local builds and be reported.
+- The iOS deployment-target rule names only application targets. A shared framework that still declares an older minimum is not reported, even when an app links it.
+- Package identity is the lowercased last path segment of the http(s) URL without `.git`. A `file://` or relative URL has no identity and never matches. A renamed repository matches only under the identity SwiftPM recorded.
+- Malformed input produces no declarations from the affected unit, never a partial result, and no error is raised. For `.xcode-version`, `.swift-version`, `Package.swift`, `Package.resolved`, and `project.pbxproj` that unit is the whole file. A toolchain or package file over 1 MiB yields nothing; a `project.pbxproj` over 16 MiB yields nothing. A single line over 4,096 characters is skipped.
+- The eight-level and 500-file limits are silent. Files beyond them, and any under `vendor` or a skipped directory, are not scanned.
+- Source usage reads `.swift` files. An `import Module` (including `@testable` and similar attributes) matches a rule whose module is that name. A call matches when the rule names the qualified form. Usage is not a Swift AST: it is regex-based matching, so unusual formatting can miss an import or call.
+- Runtime Objective-C lookup forms (`NSClassFromString`, `NSProtocolFromString`, `NSSelectorFromString`, `Selector(…)`, `objc_getClass`, `sel_registerName`, `dlsym`) are listed as unclassified, with their file and line. Evergreen does not guess which type they resolve to.
+- Usage is not read under `vendor`, `fixtures`, `__fixtures__`, or `testdata`. Comments and ordinary strings are not usages. A single source line over 4,096 characters is skipped for usage scanning, matching the declaration parsers.
+
+## C and C++ detector
+
+The `cpp` detector is **experimental**: its level is recorded as `experimental` in `benchmarks/thresholds.json`. It has no public corpus yet, so the dashboard's last-run counts for `cpp` stay empty. Its lifecycle rules are in `registry/cpp.json` and ship in the [data bundle](DATA.md).
+
+### Supported files and declarations
+
+| File | Declaration read | Notes |
+| --- | --- | --- |
+| `CMakeLists.txt` | `cmake_minimum_required(VERSION <version>)`, `set(CMAKE_C_STANDARD <integer>)`, `set(CMAKE_CXX_STANDARD <integer>)`, and an `if` that names `CMAKE_<LANG>_COMPILER_ID` with `STREQUAL` and `CMAKE_<LANG>_COMPILER_VERSION` with a `VERSION_*` comparison | Values built at configure time, the policy-range form (`3.16...3.27`), `CACHE` / `PARENT_SCOPE` / `FORCE`, and checks combined with `OR` or `NOT` are ignored. |
+| `conanfile.txt` | Each entry of the `[requires]` section, `name/version` | `@user/channel` and `#revision` are not versions. Other sections, including `[tool_requires]`, are ignored. Version ranges are ignored. |
+| `conanfile.py` | The `requires` attribute and literal `self.requires(...)` calls | The file is untrusted Python and is never executed. f-strings, variables, and calls that span lines are ignored. `tool_requires` is not a direct requirement. |
+| `vcpkg.json` | Top-level `builtin-baseline`, and each direct `dependencies` entry | A string dependency is a name. An object may also carry `version>=`. Feature-scoped dependencies, `overrides`, and the manifest's own `version` are ignored. |
+
+Files are found by walking the repository up to eight directories deep, to at most 500 files. Symbolic links are not followed, and `.git`, `node_modules`, `vendor`, `dist`, `build`, `target`, `.venv`, `venv`, `fixtures`, `__fixtures__`, and `testdata` are skipped. CMake, Conan, and vcpkg are never run, and nothing is fetched.
+
+### Package URLs
+
+`pkg:generic/cmake` is the identity the CMake policy importer writes. `conan` is the Package URL type, so a requirement is `pkg:conan/<name>` with the name as written. vcpkg has no importer yet, so a dependency is `pkg:vcpkg/<name>`. The other declarations are not packages: `pkg:generic/c-standard` and `pkg:generic/cxx-standard` for language standards, `pkg:generic/c-compiler/<id>` and `pkg:generic/cxx-compiler/<id>` for a compiler check (the compiler id is lowercased), and `pkg:generic/vcpkg-baseline` for a baseline commit.
+
+### What it reports
+
+- A `cmake_minimum_required` version that a `pkg:generic/cmake` rule contains. The bundled rules cover policy versions older than 3.5 (removed in CMake 4.0) and from 3.5 up to 3.10 (deprecated in CMake 3.31).
+- A Conan requirement, a vcpkg `version>=` floor, a language standard, or a compiler comparison when a rule for that Package URL contains the version as written. There are no bundled rules for those yet.
+- A vcpkg dependency with no `version>=`, only when a rule covers every version of that package.
+- A `builtin-baseline` commit when a rule's range contains that string. A semver range does not contain a commit. A rule that covers every version does.
+
+The first matching rule wins. A rule whose VERS is malformed, or whose comparison throws, is skipped and does not hide a later rule. Each finding names the file and line, and carries its rule's source, replacement, deadline, migration guidance, and verification commands.
+
+### What it intentionally does not judge
+
+- CMake generators and modules. The registry has rules for the Visual Studio 12 2013 generator, FindGDAL, and CMakeFindFrameworks, and the parser does not emit those declarations yet, so they produce no finding.
+- Conan and vcpkg packages, language standards, compilers, and baselines with no rule. A missing finding is not evidence that a version is current.
+- `cmake_minimum_required` written as a policy range (`VERSION 3.5...3.16`), a value read from a variable, or a generator expression.
+- Conan `[tool_requires]` and `[build_requires]`, version ranges, and dynamic Python.
+- Feature-scoped vcpkg dependencies and `overrides`.
+- Vulnerability advisories and license policy.
+
+### Known limits and false-positive boundaries
+
+- A `version>=` floor is matched as that version, not as every version the constraint allows. A floor inside a rule is reported even when a newer resolution would sit outside it.
+- A compiler check matches the compared version. `VERSION_LESS 9.3` is not read as "this project rejects compilers older than 9.3."
+- A baseline commit matches a rule that covers every version, because that range does not inspect the commit.
+- Malformed input produces no declarations from that file, never a partial result, and no error is raised. A file over 1 MiB yields nothing, and a single line over 4,096 characters is skipped.
+- The eight-level and 500-file limits are silent. Files beyond them, and any under `build`, `vendor`, or another skipped directory, are not scanned.
 
 ## Monorepos
 

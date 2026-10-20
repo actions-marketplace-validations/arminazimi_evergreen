@@ -68,8 +68,10 @@ test("the same build from the command line is identical too", async () => {
 test("the bundle lists every registry and the SHA map, and matches the published schema", async () => {
   const bundle = await build(resolve("."));
   assert.deepEqual(bundle.manifest.files.map((file) => file.path), [
+    "registry/android.json",
     "registry/ci-images.json",
     "registry/container.json",
+    "registry/cpp.json",
     "registry/dotnet.json",
     "registry/github-actions-shas.json",
     "registry/github-actions.json",
@@ -81,6 +83,7 @@ test("the bundle lists every registry and the SHA map, and matches the published
     "registry/python.json",
     "registry/ruby.json",
     "registry/rust.json",
+    "registry/swift.json",
   ]);
   assert.equal(bundle.manifest.version, "2026.10.16");
   assert.equal(bundle.manifest.minimumEvergreenVersion, "0.2.0");

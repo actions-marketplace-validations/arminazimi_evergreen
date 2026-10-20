@@ -1,9 +1,9 @@
 {
   "schemaVersion": "evergreen.dashboard-data.v1",
-  "referenceDay": "2026-10-19",
+  "referenceDay": "2026-10-20",
   "corpus": {
     "file": "benchmarks/public-repositories.json",
-    "repositories": 102
+    "repositories": 114
   },
   "sources": {
     "thresholds": "benchmarks/thresholds.json",
@@ -11,10 +11,10 @@
     "decision": "docs/decisions/0013-detector-maturity.md"
   },
   "run": {
-    "date": "2026-10-19",
-    "commit": "7c4c57c",
-    "repositories": 102,
-    "findings": 423,
+    "date": "2026-10-20",
+    "commit": "b77392c",
+    "repositories": 107,
+    "findings": 441,
     "runAgeDays": 0,
     "recordedPrecision": 1,
     "recordedRecall": 1,
@@ -25,6 +25,23 @@
     }
   },
   "detectors": [
+    {
+      "id": "android",
+      "level": "experimental",
+      "earnedLevel": "experimental",
+      "precisionFloor": {
+        "value": 0.95,
+        "enforced": false
+      },
+      "run": null,
+      "evidence": {
+        "repositoriesWithFindings": 0,
+        "expectedFindings": 0,
+        "zeroFindingRepositories": 1,
+        "repositories": 1,
+        "blindRepositories": 1
+      }
+    },
     {
       "id": "ci-images",
       "level": "experimental",
@@ -64,10 +81,27 @@
         "recall": 1
       },
       "evidence": {
-        "repositoriesWithFindings": 6,
-        "expectedFindings": 16,
+        "repositoriesWithFindings": 7,
+        "expectedFindings": 19,
         "zeroFindingRepositories": 1,
         "repositories": 5,
+        "blindRepositories": 0
+      }
+    },
+    {
+      "id": "cpp",
+      "level": "experimental",
+      "earnedLevel": "experimental",
+      "precisionFloor": {
+        "value": 0.95,
+        "enforced": false
+      },
+      "run": null,
+      "evidence": {
+        "repositoriesWithFindings": 1,
+        "expectedFindings": 3,
+        "zeroFindingRepositories": 0,
+        "repositories": 0,
         "blindRepositories": 0
       }
     },
@@ -103,15 +137,15 @@
         "enforced": true
       },
       "run": {
-        "truePositives": 211,
+        "truePositives": 225,
         "falsePositives": 0,
         "falseNegatives": 0,
         "precision": 1,
         "recall": 1
       },
       "evidence": {
-        "repositoriesWithFindings": 35,
-        "expectedFindings": 211,
+        "repositoriesWithFindings": 37,
+        "expectedFindings": 225,
         "zeroFindingRepositories": 2,
         "repositories": 11,
         "blindRepositories": 0
@@ -180,7 +214,7 @@
       },
       "evidence": {
         "repositoriesWithFindings": 4,
-        "expectedFindings": 9,
+        "expectedFindings": 29,
         "zeroFindingRepositories": 1,
         "repositories": 5,
         "blindRepositories": 0
@@ -229,6 +263,29 @@
         "expectedFindings": 22,
         "zeroFindingRepositories": 8,
         "repositories": 26,
+        "blindRepositories": 0
+      }
+    },
+    {
+      "id": "php",
+      "level": "experimental",
+      "earnedLevel": "experimental",
+      "precisionFloor": {
+        "value": 0.95,
+        "enforced": false
+      },
+      "run": {
+        "truePositives": 4,
+        "falsePositives": 0,
+        "falseNegatives": 0,
+        "precision": 1,
+        "recall": 1
+      },
+      "evidence": {
+        "repositoriesWithFindings": 4,
+        "expectedFindings": 5,
+        "zeroFindingRepositories": 1,
+        "repositories": 5,
         "blindRepositories": 0
       }
     },
@@ -298,6 +355,23 @@
         "expectedFindings": 5,
         "zeroFindingRepositories": 1,
         "repositories": 5,
+        "blindRepositories": 0
+      }
+    },
+    {
+      "id": "swift",
+      "level": "experimental",
+      "earnedLevel": "experimental",
+      "precisionFloor": {
+        "value": 0.95,
+        "enforced": false
+      },
+      "run": null,
+      "evidence": {
+        "repositoriesWithFindings": 5,
+        "expectedFindings": 10,
+        "zeroFindingRepositories": 1,
+        "repositories": 6,
         "blindRepositories": 0
       }
     }

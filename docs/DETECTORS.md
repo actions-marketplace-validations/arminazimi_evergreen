@@ -38,7 +38,7 @@ The interface guarantees:
 
 See [`examples/detectors/todo-comments.ts`](../examples/detectors/todo-comments.ts) for a complete minimal adapter.
 
-Built-in detectors with their own pages: [Container base images](detectors/container.md), [.NET](detectors/dotnet.md), [Go](detectors/go.md), [Java and Kotlin](detectors/java.md), [Kubernetes APIs](detectors/kubernetes.md), [Rust](detectors/rust.md). The Ruby detector has no separate page yet; its supported declarations and limits are in [Compatibility](COMPATIBILITY.md#ruby-detector).
+Built-in detectors with their own pages: [Container base images](detectors/container.md), [.NET](detectors/dotnet.md), [Go](detectors/go.md), [Java and Kotlin](detectors/java.md), [Kubernetes APIs](detectors/kubernetes.md), [Rust](detectors/rust.md). The C and C++, Ruby, PHP, and Swift detectors have no separate pages yet; their supported declarations and limits are in [Compatibility](COMPATIBILITY.md#c-and-c-detector), [Compatibility](COMPATIBILITY.md#ruby-detector), [Compatibility](COMPATIBILITY.md#php-detector), and [Compatibility](COMPATIBILITY.md#swift-detector).
 
 ## Ruby detector layout
 
@@ -51,6 +51,43 @@ The Ruby detector is a useful example of the layout a built-in detector follows.
 - Gem rules that declare usage matchers use `analyzeSourceUsage`, so those findings list the Ruby files that import or call the gem. A `require`, `load`, `gem`, or `autoload` whose argument is not a string literal is unclassified. `require_relative` is never unclassified. Qualified calls without parentheses (for example `JSON.parse text`) are not matched.
 
 The user-facing list of supported forms and limits for this detector is in [Compatibility](COMPATIBILITY.md#ruby-detector).
+
+## PHP detector layout
+
+The PHP detector follows the same layout. Its entry point, `src/detectors/php/index.ts`, finds the files, reads them, and matches each declaration to a rule. One pure parser per file type sits beside it (`parse-php-runtime.ts`, `parse-composer-json.ts`, and `parse-composer-lock.ts`):
+
+- A parser returns nothing, not an error, for a form it does not support, and never returns part of a malformed file or line.
+- Rules come from `registry/php.json`, loaded through the bundled data. The detector takes a rule loader so tests can supply their own rules.
+- A runtime pin uses the first rule whose `vers` range contains the version. A constraint that is not a concrete version (for example `>=7.4` or `^8.2`) is skipped, and a rule whose `vers` is malformed is skipped, so neither hides a later rule.
+- A `composer.json` package is matched only against rules that cover every version of the package, while a `composer.lock` package is matched against any rule whose `vers` contains the resolved version. An `abandoned` flag in the lockfile is recorded by the parser and is not itself a finding.
+- Package rules that declare usage matchers use `analyzeSourceUsage`, so those findings list the `.php` files that `require` or `include` that package and the qualified calls those matchers name. A `require` or `include` whose argument is not a string literal is unclassified, as is `new $class` or `$class::method()`. Runtime end-of-life rules do not name source usages.
+
+The user-facing list of supported forms and limits for this detector is in [Compatibility](COMPATIBILITY.md#php-detector).
+
+## Swift detector layout
+
+The Swift detector follows the same layout. Its entry point, `src/detectors/swift/index.ts`, finds the files, reads them, and matches each declaration to a rule. One pure parser per file type sits beside it (`parse-swift-toolchain.ts`, `parse-package-swift.ts`, `parse-package-resolved.ts`, and `parse-xcode-project.ts`):
+
+- A parser returns nothing, not an error, for a form it does not support, and never returns part of a malformed file or line.
+- Rules come from `registry/swift.json`, loaded through the bundled data. The detector takes a rule loader so tests can supply their own rules.
+- An exact pin (`.xcode-version`, `.swift-version`, `swift-tools-version`, `exact:` in `Package.swift`, a `Package.resolved` version, or an app-target `IPHONEOS_DEPLOYMENT_TARGET`) uses the first rule whose `vers` range contains the version. A rule whose `vers` is malformed is skipped, so it does not hide a later rule.
+- A `from:` requirement in `Package.swift` is matched only against rules that cover every version of that package. Package identity is the lowercased repository name without `.git`, matching what SwiftPM writes in `Package.resolved`.
+- The iOS deployment target is read only from application targets in `project.pbxproj` (`com.apple.product-type.application`), so a library or a `platforms:` minimum in `Package.swift` never produces that finding.
+- Package rules that declare usage matchers use `analyzeSourceUsage`, so those findings list the `.swift` files that `import` that module and the qualified calls those matchers name. Runtime Objective-C lookup forms (`NSClassFromString`, `Selector(…)`, and similar) are unclassified. Toolchain and App Store rules do not name source usages.
+
+The user-facing list of supported forms and limits for this detector is in [Compatibility](COMPATIBILITY.md#swift-detector).
+
+## C and C++ detector layout
+
+The C and C++ detector follows the same layout. Its entry point, `src/detectors/cpp/index.ts`, finds the files, reads them, and matches each declaration to a rule. One pure parser per manifest sits beside it (`parse-cmakelists.ts`, `parse-conan.ts`, and `parse-vcpkg.ts`):
+
+- A parser returns nothing, not an error, for a form it does not support, and never returns part of a malformed file.
+- Rules come from `registry/cpp.json`, loaded through the bundled data. The detector takes a rule loader so tests can supply their own rules.
+- A declaration with a version uses the first rule whose `vers` range contains that version. A rule whose `vers` is malformed, or whose comparison throws, is skipped, so it does not hide a later rule.
+- A vcpkg dependency with no `version>=` matches only a rule that covers every version of that package. `cmake_minimum_required` matches `pkg:generic/cmake`. A Conan requirement matches `pkg:conan/<name>`. A vcpkg dependency matches `pkg:vcpkg/<name>`. Language standards, compiler checks, and `builtin-baseline` match the generic Package URLs named in the detector.
+- Generator and module rules are not matched yet: the CMake parser does not emit those declarations. There is no source-usage pass.
+
+The user-facing list of supported forms and limits for this detector is in [Compatibility](COMPATIBILITY.md#c-and-c-detector).
 
 ## Start a new detector in this repository
 
@@ -89,7 +126,29 @@ Detectors that live outside this repository use the public SDK directly, as desc
 
 ## Maturity
 
-Every built-in detector has a level (`experimental`, `beta`, or `stable`) in `benchmarks/thresholds.json`. The level says what the detector promises and which corpus evidence it rests on; [decision 0013](decisions/0013-detector-maturity.md) defines both. A new detector starts as `experimental`, and moving it up is a pull request that changes the level and records the corpus run behind it.
+Every built-in detector has a level (`experimental`, `beta`, or `stable`) in `benchmarks/thresholds.json`. The level is what the detector promises users. [Decision 0013](decisions/0013-detector-maturity.md) defines those promises and the evidence that earns each level. The table below is that evidence, and `earnedLevel` in `benchmarks/thresholds.ts` checks the counts. A new detector starts as `experimental`.
+
+A promotion is a pull request that changes `level` and records the corpus run the claim rests on: date, commit, precision, recall, and the counts below. For `beta` and `stable`, the thresholds file sets `stable` to `true`, so the corpus run enforces the precision floor. A demotion is the same pull request in reverse. It is also required when a full run shows precision or recall below the floor for that level and the gap is still open 30 days later.
+
+### Promotion gates
+
+A detector is named by the first segment of its rule ids. Conformance is the shared harness: determinism, locations, evidence, a mandatory zero-finding fixture, and malformed input that does not throw. "Repositories with findings" counts corpus repositories with at least one expected finding for that detector. "Zero-finding repositories" counts corpus repositories of the detector's ecosystem with no expected findings. A repository is blind when a rule fixed before the scan chose it. A repository picked because it contained a finding is targeted, and the corpus entry records `selection`. Every expected finding has a `groundTruthSource` that is independent of Evergreen's own output.
+
+| Gate | Experimental → beta | Beta → stable |
+| --- | --- | --- |
+| Conformance | Passes on positive, negative, zero, and malformed fixtures | Still passes |
+| Repositories with findings | At least 8 | At least 20 |
+| Expected findings | At least 15 | At least 60 |
+| Zero-finding repositories | At least 2 | At least 4 |
+| Blind selection | At least half of the ecosystem's corpus repositories | At least two thirds |
+| Precision on the whole corpus | At least 0.95 | At least 0.95 |
+| Recall on the whole corpus | At least 0.80 | At least 0.90 |
+| Full corpus run on current main, recorded in the thresholds file | Within 30 days | Within 30 days, with no precision or recall regression left open |
+| Detector page | `docs/detectors/` states what is and is not judged | The page still matches the detector |
+
+Experimental → beta is the conformance suite plus the beta column. Beta → stable keeps precision at or above 0.95 on the larger corpus, and the recorded run stays inside 30 days (four weeks) with no regression left open. An `experimental` detector is still scored; a precision or recall miss does not fail its run.
+
+Four detectors that predate this bar (`github-actions`, `nodejs`, `npm`, and `python`) keep the level they already have until the corpus catches up. The threshold test names them. Every other detector's level has to meet the column it claims.
 
 ## Unclassified references
 
@@ -98,6 +157,32 @@ Detectors may implement the optional `analyze` operation when they need to retur
 The built-in GitHub Actions detector uses this metadata for full 40-character commit pins it cannot resolve. It classifies a covered action from a valid trailing version comment first, or from Evergreen's bundled exact SHA-to-release map when no comment is present. An unknown SHA is reported with reason `unknown-sha`; a present but unusable comment is reported with reason `invalid-version-comment`. Neither case becomes a lifecycle finding because Evergreen does not guess a release line.
 
 This resolution is fully offline. The bundled map is reviewed and regenerated by a separate maintainer tool; repository scans never query GitHub or another service.
+
+## Declaring the files a detector reads
+
+A detector may declare, in one place, which repository files its `scan` reads. The optional `inputs` field on `Detector` (added to the `evergreen.detector.v1` interface without changing anything that exists) has four parts, all relative to the scanned root with forward slashes:
+
+| Field | Meaning |
+| --- | --- |
+| `fileNames` | Exact base names at any depth, case-insensitive; `*` matches any run of characters (`requirements*.txt`, `*.Dockerfile`). |
+| `extensions` | Base-name endings, including the dot (`.csproj`). |
+| `directories` | Directories, at the root or below any directory, all of whose files may be read (`.github/workflows`). |
+| `sourceExtensions` | Source files read to map usage of a deprecated API (`.ts`, `.cs`). |
+
+```ts
+readonly inputs: DetectorInputs = {
+  fileNames: ["go.mod", "go.work"],
+  sourceExtensions: [".go"],
+};
+```
+
+Every built-in detector declares it, and a test fails if one does not. `declaredInputsCheck` (`evergreen/conformance`, from `src/conformance/checks/inputs.ts`) scans a fixture while recording every file whose contents the scan opens, and fails naming each file outside the declaration:
+
+```text
+Detector "leaky" violated the "declared inputs" guarantee for fixture "leak": read "secrets/token.txt", which its inputs do not declare
+```
+
+Listing a directory or testing that a path exists is not a read, and files outside the scanned root (the bundled rules) are ignored. A detector that omits `inputs` makes no promise and passes the check. The declaration is what a tool needs to fetch only the files a detector reads; keep it as narrow as the detector's real behavior, and widen it in the same change that makes the detector read something new.
 
 ## Registry validation
 

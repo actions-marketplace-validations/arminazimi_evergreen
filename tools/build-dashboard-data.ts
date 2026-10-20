@@ -25,8 +25,10 @@ export const OUTPUT_FILE = "docs/dashboard/data.json";
 
 /** The corpus ecosystems each detector reads, which is what its zero-finding repositories are counted over. */
 export const detectorEcosystems: Readonly<Record<string, readonly string[]>> = {
+  android: ["android"],
   "ci-images": ["ci-images"],
   container: ["container"],
+  cpp: [],
   dotnet: ["dotnet"],
   "github-actions": ["node-actions"],
   go: ["go"],
@@ -34,9 +36,11 @@ export const detectorEcosystems: Readonly<Record<string, readonly string[]>> = {
   kubernetes: ["kubernetes"],
   nodejs: ["node"],
   npm: ["node"],
+  php: ["php"],
   python: ["python"],
   ruby: ["ruby"],
   rust: ["rust"],
+  swift: ["swift"],
 };
 
 export interface CorpusRepository {

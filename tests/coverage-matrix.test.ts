@@ -26,9 +26,13 @@ const ROW_NAMES = [
   "Kubernetes APIs",
   "GitHub Actions",
   "Node.js and npm",
+  "PHP",
   "Python",
   "Ruby",
   "Rust",
+  "Swift",
+  "Android",
+  "C and C++",
   "Other language and platform ecosystems",
 ];
 
