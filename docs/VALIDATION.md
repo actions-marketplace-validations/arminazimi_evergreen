@@ -78,6 +78,24 @@ Five public repositories at pinned commits cover the `swift` detector: `seedco/F
 
 Because the corpus scans every detector, every finding in these repositories is recorded, not only the Swift ones. Each expected finding was checked by reading its line at the pinned commit, and its `groundTruthSource` is a `maintainer-review` note naming the path and line; none of these repositories has a reviewed migration entry in the mining log for the finding, so none is cited as `migration-commit`. The Xcode acceptance dates come from [App Store upcoming requirements](https://developer.apple.com/news/upcoming-requirements/), not from these repositories.
 
+## Serverless corpus
+
+Ten public repositories at pinned commits cover the `serverless` detector.
+
+Targeted: `Dwolla/webhook-receiver` (`provider.runtime` `nodejs14.x`), `haltakov/natural-language-image-search` (`provider.runtime` `python3.8`), `HUK-COBURG/innoforum-aws-serverless` (SAM and Terraform `nodejs14.x`, plus GitHub Actions pins), `BaptisteLecat/gcp_architect_certification` (Terraform Google Cloud Functions `nodejs14`), and `aws-samples/sam-python-crud-sample` (five SAM `python3.8` functions, plus GitHub Actions pins).
+
+Blind (rule below): `serverless/examples` and `AnomalyInnovations/serverless-stack-demo-api` (no findings), `Swizec/lambda-screenshot-as-a-service` (`nodejs14.x`), `skojin/send-gmail-lambda` (`ruby2.7`), and `livgust/covid-vaccine-scrapers` (seven SAM `nodejs14.x` functions, plus Node.js and GitHub Actions pins).
+
+Because the corpus scans every detector, every finding in these repositories is recorded, not only the Serverless ones. Each expected finding was checked by reading its line at the pinned commit, and its `groundTruthSource` is a `maintainer-review` note naming the path and line; none of these repositories has a reviewed migration entry in the mining log for the finding, so none is cited as `migration-commit`. The AWS Lambda and Google Cloud Functions end-of-life dates come from the [AWS Lambda runtimes](https://docs.aws.amazon.com/lambda/latest/dg/lambda-runtimes.html) table and the [Cloud Run functions runtime support](https://cloud.google.com/functions/docs/runtime-support) schedule, not from these repositories.
+
+## Serverless blind selection
+
+The five earliest Serverless corpus repositories were chosen knowing their result, so each records `selection: "targeted"`. The five below record `selection: "blind"`.
+
+The blind rule, fixed on 2026-10-21 before Evergreen ran on these additions: GitHub code search for `runtime: nodejs14.x` in `filename:serverless.yml`, plus the first results of `Runtime: nodejs14.x` / `Runtime: python3.8` in SAM `template.yaml` and of current `runtime: nodejs22.x` examples, walking public non-fork repositories in the order returned that day. Keep a repository when its default-branch tip contains `serverless.yml`, `template.yaml` / `template.yml`, or a Terraform `aws_lambda_function` / `google_cloudfunctions*_function` runtime declaration; skip archives and the repositories already pinned as targeted. Stop at five. The five, pinned at their default-branch commit on that date, are `serverless/examples`, `AnomalyInnovations/serverless-stack-demo-api`, `Swizec/lambda-screenshot-as-a-service`, `skojin/send-gmail-lambda`, and `livgust/covid-vaccine-scrapers`. The query returns different results on another day, so the pinned list above, not a re-run, is the record.
+
+Ground truth: for each repository the runtime lines (and any other detector findings on the same pin) were listed by reading the pinned files and compared with the report, independently of Evergreen's own output. Every expected finding has a `maintainer-review` note naming the path, the exact line, and the vendor date the rule rests on.
+
 ## .NET blind selection
 
 The six earliest .NET repositories were chosen knowing their result, so each records `selection: "targeted"`. The `selection` field is optional on every corpus entry; `"blind"` means the repository was chosen by a rule fixed before Evergreen ran on it ([decision 0013](decisions/0013-detector-maturity.md)), and an entry without the field counts as not blind.
