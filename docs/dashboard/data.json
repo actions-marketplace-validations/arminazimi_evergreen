@@ -306,7 +306,7 @@
       },
       "evidence": {
         "repositoriesWithFindings": 17,
-        "expectedFindings": 19,
+        "expectedFindings": 20,
         "zeroFindingRepositories": 2,
         "repositories": 17,
         "blindRepositories": 0
@@ -355,6 +355,23 @@
         "expectedFindings": 5,
         "zeroFindingRepositories": 1,
         "repositories": 5,
+        "blindRepositories": 0
+      }
+    },
+    {
+      "id": "serverless",
+      "level": "experimental",
+      "earnedLevel": "experimental",
+      "precisionFloor": {
+        "value": 0.95,
+        "enforced": false
+      },
+      "run": null,
+      "evidence": {
+        "repositoriesWithFindings": 1,
+        "expectedFindings": 1,
+        "zeroFindingRepositories": 8,
+        "repositories": 26,
         "blindRepositories": 0
       }
     },

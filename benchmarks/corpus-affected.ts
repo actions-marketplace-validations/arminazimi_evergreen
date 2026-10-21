@@ -40,6 +40,8 @@ export const DETECTOR_ECOSYSTEMS: Readonly<Record<string, readonly string[]>> = 
   python: ["python"],
   ruby: ["ruby"],
   rust: ["rust"],
+  // Serverless findings currently land in Node.js corpus entries (for example serverless.yml in JS repos).
+  serverless: ["node"],
   swift: ["swift"],
 };
 
@@ -63,6 +65,7 @@ export const REGISTRY_ECOSYSTEMS: Readonly<Record<string, readonly string[]>> = 
   "python.json": ["python"],
   "ruby.json": ["ruby"],
   "rust.json": ["rust"],
+  "serverless.json": ["node"],
   "sources.lock.json": [],
   "swift.json": ["swift"],
 };
@@ -71,7 +74,7 @@ export const REGISTRY_ECOSYSTEMS: Readonly<Record<string, readonly string[]>> = 
 export const FIXTURE_ECOSYSTEMS: Readonly<Record<string, readonly string[]>> = {
   ...Object.fromEntries(
     Object.entries(DETECTOR_ECOSYSTEMS).filter(([name]) =>
-      ["android", "ci-images", "container", "dotnet", "go", "java", "kubernetes", "php", "ruby", "rust", "swift"].includes(name),
+      ["android", "ci-images", "container", "dotnet", "go", "java", "kubernetes", "php", "ruby", "rust", "serverless", "swift"].includes(name),
     ),
   ),
 };
@@ -91,7 +94,7 @@ export const SHARED_FILE_ECOSYSTEMS: ReadonlyArray<{ pattern: RegExp; ecosystems
   { pattern: /^src\/vers\.ts$/, ecosystems: ["container", "kubernetes"], reason: "version ranges" },
   {
     pattern: /^src\/vers\//,
-    ecosystems: ["android", "container", "dotnet", "go", "java", "kubernetes", "node", "node-actions", "php", "ruby", "rust", "swift"],
+    ecosystems: ["android", "container", "dotnet", "go", "java", "kubernetes", "node", "node-actions", "php", "python", "ruby", "rust", "swift"],
     reason: "version ranges",
   },
   { pattern: /^src\/detectors\/json-lines\.ts$/, ecosystems: ["dotnet", "php", "swift"], reason: "JSON line locations" },
