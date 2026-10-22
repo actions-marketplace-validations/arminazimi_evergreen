@@ -1,6 +1,6 @@
 {
   "name": "evergreen-deprecation",
-  "version": "0.4.0",
+  "version": "0.5.0",
   "description": "Find end-of-life and deprecated runtimes, packages, and GitHub Actions at exact file locations, with sources and migration context. CLI, MCP server, GitHub Action, Agent Skill.",
   "keywords": [
     "deprecation",
@@ -85,6 +85,7 @@
     "eval:plugins": "npm run build --silent && node dist/benchmarks/plugin-host-eval.js",
     "validate:codex-plugin": "npm run build --silent && node dist/tools/validate-codex-plugin.js",
     "validate:public-repos": "npm run build --silent && node dist/benchmarks/public-repositories.js",
+    "differential:report": "npm run build --silent && node dist/benchmarks/differential/report.js",
     "differential:renovate": "npm run build --silent && node dist/benchmarks/differential/renovate.js",
     "record:corpus-run": "npm run build --silent && node dist/benchmarks/record-corpus-run.js",
     "corpus:warm": "npm run build --silent && node dist/benchmarks/public-repositories.js --warm",

@@ -2672,6 +2672,15 @@
           }
         },
         {
+          "ruleId": "database.postgresql.end-of-life-12",
+          "path": "docker-compose.yml",
+          "line": 16,
+          "groundTruthSource": {
+            "kind": "maintainer-review",
+            "note": "Reviewed at this commit: line 16 of docker-compose.yml is image: postgres:12-alpine, PostgreSQL 12, which the PostgreSQL versioning policy lists as unsupported (final release 2024-11-21). The maintainers moved it to postgres:15-alpine in https://github.com/umami-software/umami/commit/01559c4c63e805dc2416112d8deba6b2ea0d98b2."
+          }
+        },
+        {
           "ruleId": "github-actions.checkout.node20",
           "path": ".github/workflows/cd-manual.yml",
           "line": 21,
@@ -2860,6 +2869,15 @@
           "groundTruthSource": {
             "kind": "maintainer-review",
             "note": "Reviewed at this commit: line 4 of examples/next-prisma-websockets-starter/docker-compose.yaml reads `image: postgres:13`, a Docker image release line that has ended, in a file inside the repository's examples."
+          }
+        },
+        {
+          "ruleId": "database.postgresql.end-of-life-13",
+          "path": "examples/next-prisma-websockets-starter/docker-compose.yaml",
+          "line": 4,
+          "groundTruthSource": {
+            "kind": "maintainer-review",
+            "note": "Reviewed at this commit: line 4 of examples/next-prisma-websockets-starter/docker-compose.yaml reads `image: postgres:13`, PostgreSQL 13, which the PostgreSQL versioning policy lists as unsupported (final release 2025-11-13), in a file inside the repository's examples."
           }
         },
         {
@@ -4138,6 +4156,33 @@
             "kind": "maintainer-review",
             "note": "Reviewed at this commit: line 9 of src/xunit.analyzers.tests/xunit.analyzers.tests.csproj reads `<TargetFrameworks>net8.0;net472</TargetFrameworks>`; Microsoft's releases index lists .NET 8 as ending support on 2026-11-10, so Evergreen reports it as a scheduled end of life at low severity (net472 is .NET Framework and is not judged). There is no maintainer migration yet; the source is the vendor's announced date."
           }
+        },
+        {
+          "ruleId": "dotnet.runtime.end-of-support-8.0",
+          "path": ".github/workflows/ci-signed.yaml",
+          "line": 30,
+          "groundTruthSource": {
+            "kind": "maintainer-review",
+            "note": "Reviewed at this commit: line 30 of .github/workflows/ci-signed.yaml reads `8.0.x` in the `dotnet-version` input of `actions/setup-dotnet`; Microsoft's releases index lists .NET 8 as ending support on 2026-11-10, so Evergreen reports it as a scheduled end of life at low severity. There is no maintainer migration yet; the source is the vendor's announced date."
+          }
+        },
+        {
+          "ruleId": "dotnet.runtime.end-of-support-8.0",
+          "path": ".github/workflows/ci-unsigned.yaml",
+          "line": 27,
+          "groundTruthSource": {
+            "kind": "maintainer-review",
+            "note": "Reviewed at this commit: line 27 of .github/workflows/ci-unsigned.yaml reads `8.0.x` in the `dotnet-version` input of `actions/setup-dotnet`; Microsoft's releases index lists .NET 8 as ending support on 2026-11-10, so Evergreen reports it as a scheduled end of life at low severity. There is no maintainer migration yet; the source is the vendor's announced date."
+          }
+        },
+        {
+          "ruleId": "dotnet.runtime.end-of-support-8.0",
+          "path": ".github/workflows/pull-request.yaml",
+          "line": 28,
+          "groundTruthSource": {
+            "kind": "maintainer-review",
+            "note": "Reviewed at this commit: line 28 of .github/workflows/pull-request.yaml reads `8.0.x` in the `dotnet-version` input of `actions/setup-dotnet`; Microsoft's releases index lists .NET 8 as ending support on 2026-11-10, so Evergreen reports it as a scheduled end of life at low severity. There is no maintainer migration yet; the source is the vendor's announced date."
+          }
         }
       ]
     },
@@ -4766,6 +4811,15 @@
             "kind": "maintainer-review",
             "note": "Reviewed at this commit: line 5 of ChromeDllInjectorBuildZipper/ChromeDllInjectorBuildZipper.csproj reads `<TargetFramework>net6.0-windows10.0.17763.0</TargetFramework>`; the 6.0 line is a release line whose support ended on 2024-11-12 according to Microsoft's releases index."
           }
+        },
+        {
+          "ruleId": "dotnet.runtime.end-of-support-6.0",
+          "path": ".github/workflows/buildandrelease.yml",
+          "line": 44,
+          "groundTruthSource": {
+            "kind": "maintainer-review",
+            "note": "Reviewed at this commit: line 44 of .github/workflows/buildandrelease.yml reads `dotnet-version: '6.0.x'` for `actions/setup-dotnet`; the 6.0 line is a release line whose support ended on 2024-11-12 according to Microsoft's releases index."
+          }
         }
       ]
     },
@@ -4862,6 +4916,33 @@
           "groundTruthSource": {
             "kind": "maintainer-review",
             "note": "Reviewed at this commit: line 3 of global.json reads `\"version\": \"5.0\",`; the 5.0 line is an SDK pin on a release line whose support ended on 2022-05-10 according to Microsoft's releases index."
+          }
+        },
+        {
+          "ruleId": "dotnet.runtime.end-of-support-6.0",
+          "path": ".github/workflows/sharpsocks-server.yml",
+          "line": 19,
+          "groundTruthSource": {
+            "kind": "maintainer-review",
+            "note": "Reviewed at this commit: line 19 of .github/workflows/sharpsocks-server.yml reads `dotnet-version: 6.0.x` for `actions/setup-dotnet`; the 6.0 line is a release line whose support ended on 2024-11-12 according to Microsoft's releases index."
+          }
+        },
+        {
+          "ruleId": "dotnet.runtime.end-of-support-5.0",
+          "path": "SharpSocksServer/Dockerfile",
+          "line": 1,
+          "groundTruthSource": {
+            "kind": "maintainer-review",
+            "note": "Reviewed at this commit: line 1 of SharpSocksServer/Dockerfile reads `FROM mcr.microsoft.com/dotnet/runtime:5.0 AS base`; the 5.0 tag names the .NET 5 release line, whose support ended on 2022-05-10 according to Microsoft's releases index."
+          }
+        },
+        {
+          "ruleId": "dotnet.runtime.end-of-support-5.0",
+          "path": "SharpSocksServer/Dockerfile",
+          "line": 4,
+          "groundTruthSource": {
+            "kind": "maintainer-review",
+            "note": "Reviewed at this commit: line 4 of SharpSocksServer/Dockerfile reads `FROM mcr.microsoft.com/dotnet/sdk:5.0 AS build`; the 5.0 tag names the .NET 5 release line, whose support ended on 2022-05-10 according to Microsoft's releases index."
           }
         }
       ]
@@ -6256,6 +6337,1150 @@
           }
         }
       ]
+    },
+    {
+      "repository": "oatpp/oatpp",
+      "commit": "f83d648fd82dc222ef88aabbafb68efbd7d7bf50",
+      "ecosystem": "ci-images",
+      "selection": "targeted",
+      "expected": [
+        {
+          "ruleId": "ci-images.azure-pipelines.ubuntu-20.04",
+          "path": "azure-pipelines.yml",
+          "line": 11,
+          "groundTruthSource": {
+            "kind": "maintainer-review",
+            "url": "https://devblogs.microsoft.com/devops/upcoming-updates-for-azure-pipelines-agents-images/",
+            "note": "Reviewed at this commit: line 11 of azure-pipelines.yml sets pool.vmImage to ubuntu-20.04. The Azure DevOps blog's deprecation plan sets full removal of that image for 2025-04-30 (https://devblogs.microsoft.com/devops/upcoming-updates-for-azure-pipelines-agents-images/)."
+          }
+        },
+        {
+          "ruleId": "ci-images.azure-pipelines.ubuntu-22.04",
+          "path": "azure-pipelines.yml",
+          "line": 32,
+          "groundTruthSource": {
+            "kind": "maintainer-review",
+            "url": "https://learn.microsoft.com/azure/devops/pipelines/agents/hosted-deprecation-schedule",
+            "note": "Reviewed at this commit: line 32 of azure-pipelines.yml sets pool.vmImage to ubuntu-22.04. Microsoft's hosted image deprecation schedule sets removal of that image for 2027-04-17 (https://learn.microsoft.com/azure/devops/pipelines/agents/hosted-deprecation-schedule)."
+          }
+        }
+      ]
+    },
+    {
+      "repository": "Chinachu/Mirakurun",
+      "commit": "563a9e703061866c38847f4e5395447afa51ca72",
+      "ecosystem": "ci-images",
+      "selection": "targeted",
+      "expected": [
+        {
+          "ruleId": "ci-images.azure-pipelines.ubuntu-22.04",
+          "path": "azure-pipelines.yml",
+          "line": 36,
+          "groundTruthSource": {
+            "kind": "maintainer-review",
+            "url": "https://learn.microsoft.com/azure/devops/pipelines/agents/hosted-deprecation-schedule",
+            "note": "Reviewed at this commit: line 36 of azure-pipelines.yml sets pool.vmImage to ubuntu-22.04. Microsoft's hosted image deprecation schedule sets removal of that image for 2027-04-17 (https://learn.microsoft.com/azure/devops/pipelines/agents/hosted-deprecation-schedule)."
+          }
+        },
+        {
+          "ruleId": "ci-images.azure-pipelines.ubuntu-22.04",
+          "path": "azure-pipelines.yml",
+          "line": 70,
+          "groundTruthSource": {
+            "kind": "maintainer-review",
+            "url": "https://learn.microsoft.com/azure/devops/pipelines/agents/hosted-deprecation-schedule",
+            "note": "Reviewed at this commit: line 70 of azure-pipelines.yml sets pool.vmImage to ubuntu-22.04. Microsoft's hosted image deprecation schedule sets removal of that image for 2027-04-17 (https://learn.microsoft.com/azure/devops/pipelines/agents/hosted-deprecation-schedule)."
+          }
+        },
+        {
+          "ruleId": "ci-images.azure-pipelines.ubuntu-22.04",
+          "path": "azure-pipelines.yml",
+          "line": 107,
+          "groundTruthSource": {
+            "kind": "maintainer-review",
+            "url": "https://learn.microsoft.com/azure/devops/pipelines/agents/hosted-deprecation-schedule",
+            "note": "Reviewed at this commit: line 107 of azure-pipelines.yml sets pool.vmImage to ubuntu-22.04. Microsoft's hosted image deprecation schedule sets removal of that image for 2027-04-17 (https://learn.microsoft.com/azure/devops/pipelines/agents/hosted-deprecation-schedule)."
+          }
+        },
+        {
+          "ruleId": "ci-images.azure-pipelines.ubuntu-22.04",
+          "path": "azure-pipelines.yml",
+          "line": 137,
+          "groundTruthSource": {
+            "kind": "maintainer-review",
+            "url": "https://learn.microsoft.com/azure/devops/pipelines/agents/hosted-deprecation-schedule",
+            "note": "Reviewed at this commit: line 137 of azure-pipelines.yml sets pool.vmImage to ubuntu-22.04. Microsoft's hosted image deprecation schedule sets removal of that image for 2027-04-17 (https://learn.microsoft.com/azure/devops/pipelines/agents/hosted-deprecation-schedule)."
+          }
+        },
+        {
+          "ruleId": "npm.package.tslint.deprecated",
+          "path": "package.json",
+          "line": 116,
+          "groundTruthSource": {
+            "kind": "maintainer-review",
+            "url": "https://www.npmjs.com/package/tslint",
+            "note": "Reviewed at this commit: line 116 of package.json depends on tslint ^6.1.3. npm marks tslint deprecated in favor of ESLint (https://www.npmjs.com/package/tslint)."
+          }
+        }
+      ]
+    },
+    {
+      "repository": "microsoft/Sysmon-Linux",
+      "commit": "b2f11cc07ac9392813fdd3c7aea79a66f41268db",
+      "ecosystem": "ci-images",
+      "selection": "targeted",
+      "expected": [
+        {
+          "ruleId": "ci-images.azure-pipelines.ubuntu-22.04",
+          "path": "azure-pipelines.yml",
+          "line": 32,
+          "groundTruthSource": {
+            "kind": "maintainer-review",
+            "url": "https://learn.microsoft.com/azure/devops/pipelines/agents/hosted-deprecation-schedule",
+            "note": "Reviewed at this commit: line 32 of azure-pipelines.yml sets pool.vmImage to ubuntu-22.04. Microsoft's hosted image deprecation schedule sets removal of that image for 2027-04-17 (https://learn.microsoft.com/azure/devops/pipelines/agents/hosted-deprecation-schedule)."
+          }
+        },
+        {
+          "ruleId": "github-actions.checkout.node20",
+          "path": ".github/workflows/scorecard.yml",
+          "line": 35,
+          "groundTruthSource": {
+            "kind": "maintainer-review",
+            "url": "https://github.blog/changelog/2026-09-23-node-20-is-no-longer-available-in-github-actions/",
+            "note": "Reviewed at this commit: line 35 of .github/workflows/scorecard.yml uses actions/checkout@b4ffde65f46336ab88eb53be808477a3936bae11 # v4.1.1, a release older than v5. GitHub's changelog says Node.js 20 is no longer available on Actions runners (https://github.blog/changelog/2026-09-23-node-20-is-no-longer-available-in-github-actions/)."
+          }
+        }
+      ]
+    },
+    {
+      "repository": "aliostad/CacheCow",
+      "commit": "eb59252c704b99e6f69358b1da15bd71ad383c4b",
+      "ecosystem": "ci-images",
+      "selection": "targeted",
+      "expected": [
+        {
+          "ruleId": "ci-images.azure-pipelines.ubuntu-22.04",
+          "path": "azure-pipelines.yml",
+          "line": 17,
+          "groundTruthSource": {
+            "kind": "maintainer-review",
+            "url": "https://learn.microsoft.com/azure/devops/pipelines/agents/hosted-deprecation-schedule",
+            "note": "Reviewed at this commit: line 17 of azure-pipelines.yml sets pool.vmImage to ubuntu-22.04. Microsoft's hosted image deprecation schedule sets removal of that image for 2027-04-17 (https://learn.microsoft.com/azure/devops/pipelines/agents/hosted-deprecation-schedule)."
+          }
+        },
+        {
+          "ruleId": "dotnet.runtime.end-of-support-2.0",
+          "path": "samples/CacheCow.Samples.Carter/CacheCow.Samples.Carter.csproj",
+          "line": 5,
+          "groundTruthSource": {
+            "kind": "maintainer-review",
+            "url": "https://dotnet.microsoft.com/platform/support/policy/dotnet-core",
+            "note": "Reviewed at this commit: line 5 of samples/CacheCow.Samples.Carter/CacheCow.Samples.Carter.csproj sets `<TargetFramework>netcoreapp2.0</TargetFramework>`. Microsoft's .NET support policy gives that release line an end-of-support date (https://dotnet.microsoft.com/platform/support/policy/dotnet-core)."
+          }
+        },
+        {
+          "ruleId": "dotnet.runtime.end-of-support-3.0",
+          "path": "samples/CacheCow.Samples.MvcCore/CacheCow.Samples.MvcCore.csproj",
+          "line": 5,
+          "groundTruthSource": {
+            "kind": "maintainer-review",
+            "url": "https://dotnet.microsoft.com/platform/support/policy/dotnet-core",
+            "note": "Reviewed at this commit: line 5 of samples/CacheCow.Samples.MvcCore/CacheCow.Samples.MvcCore.csproj sets `<TargetFramework>netcoreapp3.0</TargetFramework>`. Microsoft's .NET support policy gives that release line an end-of-support date (https://dotnet.microsoft.com/platform/support/policy/dotnet-core)."
+          }
+        },
+        {
+          "ruleId": "dotnet.runtime.end-of-support-8.0",
+          "path": "src/CacheCow.Client.FileCacheStore/CacheCow.Client.FileCacheStore.csproj",
+          "line": 3,
+          "groundTruthSource": {
+            "kind": "maintainer-review",
+            "url": "https://dotnet.microsoft.com/platform/support/policy/dotnet-core",
+            "note": "Reviewed at this commit: line 3 of src/CacheCow.Client.FileCacheStore/CacheCow.Client.FileCacheStore.csproj sets `<TargetFrameworks>netstandard2.0;net462;net8.0</TargetFrameworks>`. Microsoft's .NET support policy gives that release line an end-of-support date (https://dotnet.microsoft.com/platform/support/policy/dotnet-core)."
+          }
+        },
+        {
+          "ruleId": "dotnet.runtime.end-of-support-8.0",
+          "path": "src/CacheCow.Client.NatsKeyValueCacheStore/CacheCow.Client.NatsKeyValueCacheStore.csproj",
+          "line": 4,
+          "groundTruthSource": {
+            "kind": "maintainer-review",
+            "url": "https://dotnet.microsoft.com/platform/support/policy/dotnet-core",
+            "note": "Reviewed at this commit: line 4 of src/CacheCow.Client.NatsKeyValueCacheStore/CacheCow.Client.NatsKeyValueCacheStore.csproj sets `<TargetFrameworks>netstandard2.0;net8.0</TargetFrameworks>`. Microsoft's .NET support policy gives that release line an end-of-support date (https://dotnet.microsoft.com/platform/support/policy/dotnet-core)."
+          }
+        },
+        {
+          "ruleId": "dotnet.runtime.end-of-support-8.0",
+          "path": "src/CacheCow.Client.RedisCacheStore/CacheCow.Client.RedisCacheStore.csproj",
+          "line": 3,
+          "groundTruthSource": {
+            "kind": "maintainer-review",
+            "url": "https://dotnet.microsoft.com/platform/support/policy/dotnet-core",
+            "note": "Reviewed at this commit: line 3 of src/CacheCow.Client.RedisCacheStore/CacheCow.Client.RedisCacheStore.csproj sets `<TargetFrameworks>netstandard2.0;net462;net8.0</TargetFrameworks>`. Microsoft's .NET support policy gives that release line an end-of-support date (https://dotnet.microsoft.com/platform/support/policy/dotnet-core)."
+          }
+        },
+        {
+          "ruleId": "dotnet.runtime.end-of-support-8.0",
+          "path": "src/CacheCow.Client/CacheCow.Client.csproj",
+          "line": 3,
+          "groundTruthSource": {
+            "kind": "maintainer-review",
+            "url": "https://dotnet.microsoft.com/platform/support/policy/dotnet-core",
+            "note": "Reviewed at this commit: line 3 of src/CacheCow.Client/CacheCow.Client.csproj sets `<TargetFrameworks>netstandard2.0;net462;net8.0</TargetFrameworks>`. Microsoft's .NET support policy gives that release line an end-of-support date (https://dotnet.microsoft.com/platform/support/policy/dotnet-core)."
+          }
+        },
+        {
+          "ruleId": "dotnet.runtime.end-of-support-8.0",
+          "path": "src/CacheCow.Common/CacheCow.Common.csproj",
+          "line": 3,
+          "groundTruthSource": {
+            "kind": "maintainer-review",
+            "url": "https://dotnet.microsoft.com/platform/support/policy/dotnet-core",
+            "note": "Reviewed at this commit: line 3 of src/CacheCow.Common/CacheCow.Common.csproj sets `<TargetFrameworks>netstandard2.0;net462;net8.0</TargetFrameworks>`. Microsoft's .NET support policy gives that release line an end-of-support date (https://dotnet.microsoft.com/platform/support/policy/dotnet-core)."
+          }
+        },
+        {
+          "ruleId": "dotnet.runtime.end-of-support-8.0",
+          "path": "src/CacheCow.Server.Core.Mvc/CacheCow.Server.Core.Mvc.csproj",
+          "line": 4,
+          "groundTruthSource": {
+            "kind": "maintainer-review",
+            "url": "https://dotnet.microsoft.com/platform/support/policy/dotnet-core",
+            "note": "Reviewed at this commit: line 4 of src/CacheCow.Server.Core.Mvc/CacheCow.Server.Core.Mvc.csproj sets `<TargetFrameworks>netstandard2.0;net8.0</TargetFrameworks>`. Microsoft's .NET support policy gives that release line an end-of-support date (https://dotnet.microsoft.com/platform/support/policy/dotnet-core)."
+          }
+        },
+        {
+          "ruleId": "dotnet.runtime.end-of-support-8.0",
+          "path": "src/CacheCow.Server/CacheCow.Server.csproj",
+          "line": 4,
+          "groundTruthSource": {
+            "kind": "maintainer-review",
+            "url": "https://dotnet.microsoft.com/platform/support/policy/dotnet-core",
+            "note": "Reviewed at this commit: line 4 of src/CacheCow.Server/CacheCow.Server.csproj sets `<TargetFrameworks>netstandard2.0;net462;net8.0</TargetFrameworks>`. Microsoft's .NET support policy gives that release line an end-of-support date (https://dotnet.microsoft.com/platform/support/policy/dotnet-core)."
+          }
+        },
+        {
+          "ruleId": "dotnet.runtime.end-of-support-2.0",
+          "path": "test/CacheCow.Client.FileCacheStore.Tests/CacheCow.Client.FileCacheStore.Tests.csproj",
+          "line": 3,
+          "groundTruthSource": {
+            "kind": "maintainer-review",
+            "url": "https://dotnet.microsoft.com/platform/support/policy/dotnet-core",
+            "note": "Reviewed at this commit: line 3 of test/CacheCow.Client.FileCacheStore.Tests/CacheCow.Client.FileCacheStore.Tests.csproj sets `<TargetFrameworks>netcoreapp2.0;netcoreapp3.0</TargetFrameworks>`. Microsoft's .NET support policy gives that release line an end-of-support date (https://dotnet.microsoft.com/platform/support/policy/dotnet-core)."
+          }
+        },
+        {
+          "ruleId": "dotnet.runtime.end-of-support-3.0",
+          "path": "test/CacheCow.Client.FileCacheStore.Tests/CacheCow.Client.FileCacheStore.Tests.csproj",
+          "line": 3,
+          "groundTruthSource": {
+            "kind": "maintainer-review",
+            "url": "https://dotnet.microsoft.com/platform/support/policy/dotnet-core",
+            "note": "Reviewed at this commit: line 3 of test/CacheCow.Client.FileCacheStore.Tests/CacheCow.Client.FileCacheStore.Tests.csproj sets `<TargetFrameworks>netcoreapp2.0;netcoreapp3.0</TargetFrameworks>`. Microsoft's .NET support policy gives that release line an end-of-support date (https://dotnet.microsoft.com/platform/support/policy/dotnet-core)."
+          }
+        },
+        {
+          "ruleId": "dotnet.runtime.end-of-support-3.1",
+          "path": "test/CacheCow.Client.NatsKeyValueCacheStore.Tests/CacheCow.Client.NatsKeyValueCacheStore.Tests.csproj",
+          "line": 4,
+          "groundTruthSource": {
+            "kind": "maintainer-review",
+            "url": "https://dotnet.microsoft.com/platform/support/policy/dotnet-core",
+            "note": "Reviewed at this commit: line 4 of test/CacheCow.Client.NatsKeyValueCacheStore.Tests/CacheCow.Client.NatsKeyValueCacheStore.Tests.csproj sets `<TargetFrameworks>netcoreapp3.1;net8.0</TargetFrameworks>`. Microsoft's .NET support policy gives that release line an end-of-support date (https://dotnet.microsoft.com/platform/support/policy/dotnet-core)."
+          }
+        },
+        {
+          "ruleId": "dotnet.runtime.end-of-support-8.0",
+          "path": "test/CacheCow.Client.NatsKeyValueCacheStore.Tests/CacheCow.Client.NatsKeyValueCacheStore.Tests.csproj",
+          "line": 4,
+          "groundTruthSource": {
+            "kind": "maintainer-review",
+            "url": "https://dotnet.microsoft.com/platform/support/policy/dotnet-core",
+            "note": "Reviewed at this commit: line 4 of test/CacheCow.Client.NatsKeyValueCacheStore.Tests/CacheCow.Client.NatsKeyValueCacheStore.Tests.csproj sets `<TargetFrameworks>netcoreapp3.1;net8.0</TargetFrameworks>`. Microsoft's .NET support policy gives that release line an end-of-support date (https://dotnet.microsoft.com/platform/support/policy/dotnet-core)."
+          }
+        },
+        {
+          "ruleId": "dotnet.runtime.end-of-support-3.1",
+          "path": "test/CacheCow.Client.RedisCacheStore.Tests/CacheCow.Client.RedisCacheStore.Tests.csproj",
+          "line": 3,
+          "groundTruthSource": {
+            "kind": "maintainer-review",
+            "url": "https://dotnet.microsoft.com/platform/support/policy/dotnet-core",
+            "note": "Reviewed at this commit: line 3 of test/CacheCow.Client.RedisCacheStore.Tests/CacheCow.Client.RedisCacheStore.Tests.csproj sets `<TargetFrameworks>net462;netcoreapp3.1;net8.0</TargetFrameworks>`. Microsoft's .NET support policy gives that release line an end-of-support date (https://dotnet.microsoft.com/platform/support/policy/dotnet-core)."
+          }
+        },
+        {
+          "ruleId": "dotnet.runtime.end-of-support-8.0",
+          "path": "test/CacheCow.Client.RedisCacheStore.Tests/CacheCow.Client.RedisCacheStore.Tests.csproj",
+          "line": 3,
+          "groundTruthSource": {
+            "kind": "maintainer-review",
+            "url": "https://dotnet.microsoft.com/platform/support/policy/dotnet-core",
+            "note": "Reviewed at this commit: line 3 of test/CacheCow.Client.RedisCacheStore.Tests/CacheCow.Client.RedisCacheStore.Tests.csproj sets `<TargetFrameworks>net462;netcoreapp3.1;net8.0</TargetFrameworks>`. Microsoft's .NET support policy gives that release line an end-of-support date (https://dotnet.microsoft.com/platform/support/policy/dotnet-core)."
+          }
+        },
+        {
+          "ruleId": "dotnet.runtime.end-of-support-3.1",
+          "path": "test/CacheCow.Client.Tests/CacheCow.Client.Tests.csproj",
+          "line": 3,
+          "groundTruthSource": {
+            "kind": "maintainer-review",
+            "url": "https://dotnet.microsoft.com/platform/support/policy/dotnet-core",
+            "note": "Reviewed at this commit: line 3 of test/CacheCow.Client.Tests/CacheCow.Client.Tests.csproj sets `<TargetFrameworks>net462;netcoreapp3.1;net8.0</TargetFrameworks>`. Microsoft's .NET support policy gives that release line an end-of-support date (https://dotnet.microsoft.com/platform/support/policy/dotnet-core)."
+          }
+        },
+        {
+          "ruleId": "dotnet.runtime.end-of-support-8.0",
+          "path": "test/CacheCow.Client.Tests/CacheCow.Client.Tests.csproj",
+          "line": 3,
+          "groundTruthSource": {
+            "kind": "maintainer-review",
+            "url": "https://dotnet.microsoft.com/platform/support/policy/dotnet-core",
+            "note": "Reviewed at this commit: line 3 of test/CacheCow.Client.Tests/CacheCow.Client.Tests.csproj sets `<TargetFrameworks>net462;netcoreapp3.1;net8.0</TargetFrameworks>`. Microsoft's .NET support policy gives that release line an end-of-support date (https://dotnet.microsoft.com/platform/support/policy/dotnet-core)."
+          }
+        },
+        {
+          "ruleId": "dotnet.runtime.end-of-support-3.1",
+          "path": "test/CacheCow.Server.Core.Mvc.Tests/CacheCow.Server.Core.Mvc.Tests.csproj",
+          "line": 4,
+          "groundTruthSource": {
+            "kind": "maintainer-review",
+            "url": "https://dotnet.microsoft.com/platform/support/policy/dotnet-core",
+            "note": "Reviewed at this commit: line 4 of test/CacheCow.Server.Core.Mvc.Tests/CacheCow.Server.Core.Mvc.Tests.csproj sets `<TargetFrameworks>netcoreapp3.1;net8.0</TargetFrameworks>`. Microsoft's .NET support policy gives that release line an end-of-support date (https://dotnet.microsoft.com/platform/support/policy/dotnet-core)."
+          }
+        },
+        {
+          "ruleId": "dotnet.runtime.end-of-support-8.0",
+          "path": "test/CacheCow.Server.Core.Mvc.Tests/CacheCow.Server.Core.Mvc.Tests.csproj",
+          "line": 4,
+          "groundTruthSource": {
+            "kind": "maintainer-review",
+            "url": "https://dotnet.microsoft.com/platform/support/policy/dotnet-core",
+            "note": "Reviewed at this commit: line 4 of test/CacheCow.Server.Core.Mvc.Tests/CacheCow.Server.Core.Mvc.Tests.csproj sets `<TargetFrameworks>netcoreapp3.1;net8.0</TargetFrameworks>`. Microsoft's .NET support policy gives that release line an end-of-support date (https://dotnet.microsoft.com/platform/support/policy/dotnet-core)."
+          }
+        },
+        {
+          "ruleId": "dotnet.runtime.end-of-support-3.1",
+          "path": "test/CacheCow.Tests/CacheCow.Tests.csproj",
+          "line": 3,
+          "groundTruthSource": {
+            "kind": "maintainer-review",
+            "url": "https://dotnet.microsoft.com/platform/support/policy/dotnet-core",
+            "note": "Reviewed at this commit: line 3 of test/CacheCow.Tests/CacheCow.Tests.csproj sets `<TargetFrameworks>net7.0;netcoreapp3.1;net462</TargetFrameworks>`. Microsoft's .NET support policy gives that release line an end-of-support date (https://dotnet.microsoft.com/platform/support/policy/dotnet-core)."
+          }
+        },
+        {
+          "ruleId": "dotnet.runtime.end-of-support-7.0",
+          "path": "test/CacheCow.Tests/CacheCow.Tests.csproj",
+          "line": 3,
+          "groundTruthSource": {
+            "kind": "maintainer-review",
+            "url": "https://dotnet.microsoft.com/platform/support/policy/dotnet-core",
+            "note": "Reviewed at this commit: line 3 of test/CacheCow.Tests/CacheCow.Tests.csproj sets `<TargetFrameworks>net7.0;netcoreapp3.1;net462</TargetFrameworks>`. Microsoft's .NET support policy gives that release line an end-of-support date (https://dotnet.microsoft.com/platform/support/policy/dotnet-core)."
+          }
+        }
+      ]
+    },
+    {
+      "repository": "Windos/PoshNotify",
+      "commit": "039de20fe5099a97c2a1e3b04c1885a84bc2ac98",
+      "ecosystem": "ci-images",
+      "selection": "targeted",
+      "expected": []
+    },
+    {
+      "repository": "KaitoJD/btchess",
+      "commit": "82955bba0451935d34aba92d56fc045ea3076597",
+      "ecosystem": "dart",
+      "selection": "targeted",
+      "expected": [
+        {
+          "ruleId": "github-actions.github-script.node20",
+          "path": ".github/workflows/pr_check.yml",
+          "line": 35,
+          "groundTruthSource": {
+            "kind": "maintainer-review",
+            "note": "Reviewed at this commit: line 35 of .github/workflows/pr_check.yml reads uses: actions/github-script@v6, a release below the supported major."
+          }
+        },
+        {
+          "ruleId": "dart.sdk.end-of-support-3.8",
+          "path": "pubspec.lock",
+          "line": 1220,
+          "groundTruthSource": {
+            "kind": "maintainer-review",
+            "note": "Reviewed at this commit: line 1220 of pubspec.lock reads `dart: \"3.8.1\"`, an exact Dart 3.8.1 pin. Dart 3.8 stopped receiving security updates when Dart 3.9 shipped on 2025-08-13 (https://dart.dev/changelog; Dart security policy, https://dart.dev/security)."
+          }
+        },
+        {
+          "ruleId": "dart.sdk.end-of-support-3.8",
+          "path": "pubspec.yaml",
+          "line": 8,
+          "groundTruthSource": {
+            "kind": "maintainer-review",
+            "note": "Reviewed at this commit: line 8 of pubspec.yaml reads `sdk: 3.8.1`, an exact Dart 3.8.1 pin. Dart 3.8 stopped receiving security updates when Dart 3.9 shipped on 2025-08-13 (https://dart.dev/changelog; Dart security policy, https://dart.dev/security)."
+          }
+        }
+      ]
+    },
+    {
+      "repository": "rainbeek/isekai",
+      "commit": "840bfbef8efac0b49dba839dc80a3369caa02a3f",
+      "ecosystem": "dart",
+      "selection": "targeted",
+      "expected": [
+        {
+          "ruleId": "github-actions.checkout.node20",
+          "path": ".github/workflows/cd_dev.yml",
+          "line": 20,
+          "groundTruthSource": {
+            "kind": "maintainer-review",
+            "note": "Reviewed at this commit: line 20 of .github/workflows/cd_dev.yml reads uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4, a full-SHA pin whose trailing comment names v4, a release below the supported major."
+          }
+        },
+        {
+          "ruleId": "github-actions.checkout.node20",
+          "path": ".github/workflows/cd_dev.yml",
+          "line": 66,
+          "groundTruthSource": {
+            "kind": "maintainer-review",
+            "note": "Reviewed at this commit: line 66 of .github/workflows/cd_dev.yml reads uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4, a full-SHA pin whose trailing comment names v4, a release below the supported major."
+          }
+        },
+        {
+          "ruleId": "github-actions.checkout.node20",
+          "path": ".github/workflows/cd_regular-beta-release.yml",
+          "line": 23,
+          "groundTruthSource": {
+            "kind": "maintainer-review",
+            "note": "Reviewed at this commit: line 23 of .github/workflows/cd_regular-beta-release.yml reads uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4, a full-SHA pin whose trailing comment names v4, a release below the supported major."
+          }
+        },
+        {
+          "ruleId": "github-actions.checkout.node20",
+          "path": ".github/workflows/ci_code.yml",
+          "line": 20,
+          "groundTruthSource": {
+            "kind": "maintainer-review",
+            "note": "Reviewed at this commit: line 20 of .github/workflows/ci_code.yml reads uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4, a full-SHA pin whose trailing comment names v4, a release below the supported major."
+          }
+        },
+        {
+          "ruleId": "github-actions.checkout.node20",
+          "path": ".github/workflows/ci_code.yml",
+          "line": 42,
+          "groundTruthSource": {
+            "kind": "maintainer-review",
+            "note": "Reviewed at this commit: line 42 of .github/workflows/ci_code.yml reads uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4, a full-SHA pin whose trailing comment names v4, a release below the supported major."
+          }
+        },
+        {
+          "ruleId": "github-actions.checkout.node20",
+          "path": ".github/workflows/ci_code.yml",
+          "line": 78,
+          "groundTruthSource": {
+            "kind": "maintainer-review",
+            "note": "Reviewed at this commit: line 78 of .github/workflows/ci_code.yml reads uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4, a full-SHA pin whose trailing comment names v4, a release below the supported major."
+          }
+        },
+        {
+          "ruleId": "github-actions.checkout.node20",
+          "path": ".github/workflows/ci_code.yml",
+          "line": 107,
+          "groundTruthSource": {
+            "kind": "maintainer-review",
+            "note": "Reviewed at this commit: line 107 of .github/workflows/ci_code.yml reads uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4, a full-SHA pin whose trailing comment names v4, a release below the supported major."
+          }
+        },
+        {
+          "ruleId": "github-actions.checkout.node20",
+          "path": ".github/workflows/ci_code.yml",
+          "line": 142,
+          "groundTruthSource": {
+            "kind": "maintainer-review",
+            "note": "Reviewed at this commit: line 142 of .github/workflows/ci_code.yml reads uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4, a full-SHA pin whose trailing comment names v4, a release below the supported major."
+          }
+        },
+        {
+          "ruleId": "github-actions.checkout.node20",
+          "path": ".github/workflows/ci_dependabot.yml",
+          "line": 28,
+          "groundTruthSource": {
+            "kind": "maintainer-review",
+            "note": "Reviewed at this commit: line 28 of .github/workflows/ci_dependabot.yml reads uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4, a full-SHA pin whose trailing comment names v4, a release below the supported major."
+          }
+        },
+        {
+          "ruleId": "github-actions.checkout.node20",
+          "path": ".github/workflows/ci_pr.yml",
+          "line": 27,
+          "groundTruthSource": {
+            "kind": "maintainer-review",
+            "note": "Reviewed at this commit: line 27 of .github/workflows/ci_pr.yml reads uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4, a full-SHA pin whose trailing comment names v4, a release below the supported major."
+          }
+        },
+        {
+          "ruleId": "swift.xcode.app-store-15-through-25",
+          "path": ".xcode-version",
+          "line": 1,
+          "groundTruthSource": {
+            "kind": "maintainer-review",
+            "note": "Reviewed at this commit: line 1 of .xcode-version reads `16.3.0`, an Xcode 16 pin. Apple's App Store upcoming requirements require apps uploaded to App Store Connect to be built with Xcode 26 or later since April 28, 2026 (https://developer.apple.com/news/upcoming-requirements/?id=04282026a)."
+          }
+        },
+        {
+          "ruleId": "dart.sdk.end-of-support-3.8",
+          "path": "pubspec.lock",
+          "line": 1158,
+          "groundTruthSource": {
+            "kind": "maintainer-review",
+            "note": "Reviewed at this commit: line 1158 of pubspec.lock reads `dart: \"3.8.1\"`, an exact Dart 3.8.1 pin. Dart 3.8 stopped receiving security updates when Dart 3.9 shipped on 2025-08-13 (https://dart.dev/changelog; Dart security policy, https://dart.dev/security)."
+          }
+        },
+        {
+          "ruleId": "dart.sdk.end-of-support-3.8",
+          "path": "pubspec.yaml",
+          "line": 7,
+          "groundTruthSource": {
+            "kind": "maintainer-review",
+            "note": "Reviewed at this commit: line 7 of pubspec.yaml reads `sdk: 3.8.1`, an exact Dart 3.8.1 pin. Dart 3.8 stopped receiving security updates when Dart 3.9 shipped on 2025-08-13 (https://dart.dev/changelog; Dart security policy, https://dart.dev/security)."
+          }
+        }
+      ]
+    },
+    {
+      "repository": "kumokumo1653/ideamaker",
+      "commit": "8c2ba048a009bf82db0a80c7030e4652e1c7703a",
+      "ecosystem": "dart",
+      "selection": "targeted",
+      "expected": [
+        {
+          "ruleId": "github-actions.checkout.node20",
+          "path": ".github/workflows/deploy-develop-preview.yml",
+          "line": 15,
+          "groundTruthSource": {
+            "kind": "maintainer-review",
+            "note": "Reviewed at this commit: line 15 of .github/workflows/deploy-develop-preview.yml reads uses: actions/checkout@v4, a release below the supported major."
+          }
+        },
+        {
+          "ruleId": "dart.sdk.end-of-support-3.8",
+          "path": "pubspec.lock",
+          "line": 1206,
+          "groundTruthSource": {
+            "kind": "maintainer-review",
+            "note": "Reviewed at this commit: line 1206 of pubspec.lock reads `dart: \"3.8.1\"`, an exact Dart 3.8.1 pin. Dart 3.8 stopped receiving security updates when Dart 3.9 shipped on 2025-08-13 (https://dart.dev/changelog; Dart security policy, https://dart.dev/security)."
+          }
+        },
+        {
+          "ruleId": "dart.sdk.end-of-support-3.8",
+          "path": "pubspec.yaml",
+          "line": 7,
+          "groundTruthSource": {
+            "kind": "maintainer-review",
+            "note": "Reviewed at this commit: line 7 of pubspec.yaml reads `sdk: 3.8.1`, an exact Dart 3.8.1 pin. Dart 3.8 stopped receiving security updates when Dart 3.9 shipped on 2025-08-13 (https://dart.dev/changelog; Dart security policy, https://dart.dev/security)."
+          }
+        }
+      ]
+    },
+    {
+      "repository": "Salah-Essam/InstaFood",
+      "commit": "89da20e9aa24a96adedc681ae17c5a941cf408ca",
+      "ecosystem": "dart",
+      "selection": "targeted",
+      "expected": [
+        {
+          "ruleId": "dart.sdk.end-of-support-3.8",
+          "path": "pubspec.lock",
+          "line": 1497,
+          "groundTruthSource": {
+            "kind": "maintainer-review",
+            "note": "Reviewed at this commit: line 1497 of pubspec.lock reads `dart: \"3.8.1\"`, an exact Dart 3.8.1 pin. Dart 3.8 stopped receiving security updates when Dart 3.9 shipped on 2025-08-13 (https://dart.dev/changelog; Dart security policy, https://dart.dev/security)."
+          }
+        },
+        {
+          "ruleId": "dart.sdk.end-of-support-3.8",
+          "path": "pubspec.yaml",
+          "line": 9,
+          "groundTruthSource": {
+            "kind": "maintainer-review",
+            "note": "Reviewed at this commit: line 9 of pubspec.yaml reads `sdk: 3.8.1`, an exact Dart 3.8.1 pin. Dart 3.8 stopped receiving security updates when Dart 3.9 shipped on 2025-08-13 (https://dart.dev/changelog; Dart security policy, https://dart.dev/security)."
+          }
+        }
+      ]
+    },
+    {
+      "repository": "jonasbark/flutter_in_app_update",
+      "commit": "c85a20f5dc017c62cac0026fc762219832e4900b",
+      "ecosystem": "dart",
+      "selection": "targeted",
+      "expected": []
+    },
+    {
+      "repository": "blackbird-cloud/terraform-aws-cloudformation-stackset",
+      "commit": "1fc62541393334ec655f93058b2ff54aa1c47be0",
+      "ecosystem": "terraform",
+      "selection": "targeted",
+      "expected": [
+        {
+          "ruleId": "github-actions.checkout.node20",
+          "path": ".github/workflows/format.yml",
+          "line": 15,
+          "groundTruthSource": {
+            "kind": "maintainer-review",
+            "note": "Reviewed at this commit: line 15 of .github/workflows/format.yml reads `uses: actions/checkout@v4`. actions/checkout v5 is the first release on Node.js 24, and GitHub no longer provides Node.js 20 on Actions runners (https://github.blog/changelog/2026-09-23-node-20-is-no-longer-available-in-github-actions/)."
+          }
+        },
+        {
+          "ruleId": "github-actions.checkout.node20",
+          "path": ".github/workflows/readme.yml",
+          "line": 17,
+          "groundTruthSource": {
+            "kind": "maintainer-review",
+            "note": "Reviewed at this commit: line 17 of .github/workflows/readme.yml reads `- uses: actions/checkout@v4`. actions/checkout v5 is the first release on Node.js 24, and GitHub no longer provides Node.js 20 on Actions runners (https://github.blog/changelog/2026-09-23-node-20-is-no-longer-available-in-github-actions/)."
+          }
+        },
+        {
+          "ruleId": "github-actions.checkout.node20",
+          "path": ".github/workflows/test.yml",
+          "line": 15,
+          "groundTruthSource": {
+            "kind": "maintainer-review",
+            "note": "Reviewed at this commit: line 15 of .github/workflows/test.yml reads `uses: actions/checkout@v4`. actions/checkout v5 is the first release on Node.js 24, and GitHub no longer provides Node.js 20 on Actions runners (https://github.blog/changelog/2026-09-23-node-20-is-no-longer-available-in-github-actions/)."
+          }
+        },
+        {
+          "ruleId": "github-actions.create-github-app-token.node20",
+          "path": ".github/workflows/readme.yml",
+          "line": 12,
+          "groundTruthSource": {
+            "kind": "maintainer-review",
+            "note": "Reviewed at this commit: line 12 of .github/workflows/readme.yml reads `- uses: actions/create-github-app-token@v1`, a release below the supported major."
+          }
+        },
+        {
+          "ruleId": "terraform.cli.end-of-support-1.13",
+          "path": ".terraform-version",
+          "line": 1,
+          "groundTruthSource": {
+            "kind": "maintainer-review",
+            "note": "Reviewed at this commit: line 1 of .terraform-version reads `1.13.5`, an exact Terraform 1.13.5 pin. Terraform 1.13 stopped being one of the two most recent release lines when Terraform 1.15.0 shipped on 2026-04-29 (https://github.com/hashicorp/terraform/releases/tag/v1.15.0; HashiCorp Terraform support policy, https://support.hashicorp.com/hc/en-us/articles/360021185113)."
+          }
+        }
+      ]
+    },
+    {
+      "repository": "leek/terraform-aws-laravel",
+      "commit": "dbb7caf04535e8442c9b31653bb1b767c3b06afe",
+      "ecosystem": "terraform",
+      "selection": "targeted",
+      "expected": [
+        {
+          "ruleId": "terraform.cli.end-of-support-1.13",
+          "path": "terraform/.terraform-version",
+          "line": 1,
+          "groundTruthSource": {
+            "kind": "maintainer-review",
+            "note": "Reviewed at this commit: line 1 of terraform/.terraform-version reads `1.13.5`, an exact Terraform 1.13.5 pin. Terraform 1.13 stopped being one of the two most recent release lines when Terraform 1.15.0 shipped on 2026-04-29 (https://github.com/hashicorp/terraform/releases/tag/v1.15.0; HashiCorp Terraform support policy, https://support.hashicorp.com/hc/en-us/articles/360021185113)."
+          }
+        }
+      ]
+    },
+    {
+      "repository": "govuk-one-login/di-account-management-frontend",
+      "commit": "d9a4e9ec01e6b6a2f061d45b5d411b9b6c9df9ad",
+      "ecosystem": "terraform",
+      "selection": "targeted",
+      "expected": [
+        {
+          "ruleId": "terraform.cli.end-of-support-1.12",
+          "path": ".terraform-version",
+          "line": 1,
+          "groundTruthSource": {
+            "kind": "maintainer-review",
+            "note": "Reviewed at this commit: line 1 of .terraform-version reads `1.12.2`, an exact Terraform 1.12.2 pin. Terraform 1.12 stopped being one of the two most recent release lines when Terraform 1.14.0 shipped on 2025-11-19 (https://github.com/hashicorp/terraform/releases/tag/v1.14.0; HashiCorp Terraform support policy, https://support.hashicorp.com/hc/en-us/articles/360021185113)."
+          }
+        },
+        {
+          "ruleId": "terraform.cli.end-of-support-1.12",
+          "path": "deploy/site.tf",
+          "line": 2,
+          "groundTruthSource": {
+            "kind": "maintainer-review",
+            "note": "Reviewed at this commit: line 2 of deploy/site.tf reads `required_version = \"~> 1.12.0\"`, which admits only Terraform 1.12.x patch releases. Terraform 1.12 stopped being one of the two most recent release lines when Terraform 1.14.0 shipped on 2025-11-19 (https://github.com/hashicorp/terraform/releases/tag/v1.14.0; HashiCorp Terraform support policy, https://support.hashicorp.com/hc/en-us/articles/360021185113)."
+          }
+        }
+      ]
+    },
+    {
+      "repository": "govuk-forms/forms-admin",
+      "commit": "435fec7f942a8563398389262f383012b8e0822b",
+      "ecosystem": "terraform",
+      "selection": "targeted",
+      "expected": [
+        {
+          "ruleId": "terraform.cli.end-of-support-1.13",
+          "path": ".review_apps/.terraform-version",
+          "line": 1,
+          "groundTruthSource": {
+            "kind": "maintainer-review",
+            "note": "Reviewed at this commit: line 1 of .review_apps/.terraform-version reads `1.13.5`, an exact Terraform 1.13.5 pin. Terraform 1.13 stopped being one of the two most recent release lines when Terraform 1.15.0 shipped on 2026-04-29 (https://github.com/hashicorp/terraform/releases/tag/v1.15.0; HashiCorp Terraform support policy, https://support.hashicorp.com/hc/en-us/articles/360021185113)."
+          }
+        },
+        {
+          "ruleId": "terraform.cli.end-of-support-1.13",
+          "path": ".review_apps/site.tf",
+          "line": 2,
+          "groundTruthSource": {
+            "kind": "maintainer-review",
+            "note": "Reviewed at this commit: line 2 of .review_apps/site.tf reads `required_version = \"~> 1.13.5\"`, which admits only Terraform 1.13.x patch releases. Terraform 1.13 stopped being one of the two most recent release lines when Terraform 1.15.0 shipped on 2026-04-29 (https://github.com/hashicorp/terraform/releases/tag/v1.15.0; HashiCorp Terraform support policy, https://support.hashicorp.com/hc/en-us/articles/360021185113)."
+          }
+        }
+      ]
+    },
+    {
+      "repository": "v2d27/github-runner-provisioner",
+      "commit": "902bffe9155c6c67cb4ab06d98db80d12777621a",
+      "ecosystem": "terraform",
+      "selection": "targeted",
+      "expected": []
+    },
+    {
+      "repository": "infracost/example-terraform",
+      "commit": "7b5a96ddc1d1b570afc6ffbd36fb6ec150a80c18",
+      "ecosystem": "database",
+      "selection": "targeted",
+      "expected": [
+        {
+          "ruleId": "database.mysql.end-of-life-5.7",
+          "path": "more_examples/main.tf",
+          "line": 32,
+          "groundTruthSource": {
+            "kind": "maintainer-review",
+            "note": "Reviewed at this commit: line 32 of more_examples/main.tf reads `engine_version      = \"5.7.44\"`, MySQL 5.7, which reached end of life on 2023-10-31 (MySQL lifecycle, https://www.mysql.com/support/supportedplatforms/database.html; https://endoflife.date/mysql)."
+          }
+        }
+      ]
+    },
+    {
+      "repository": "CodeForPoznan/infrastructure",
+      "commit": "24b0a2069eec679db21f099d265cbc3e7c5ecb17",
+      "ecosystem": "database",
+      "selection": "targeted",
+      "expected": [
+        {
+          "ruleId": "database.postgresql.end-of-life-13",
+          "path": "db.tf",
+          "line": 19,
+          "groundTruthSource": {
+            "kind": "maintainer-review",
+            "note": "Reviewed at this commit: line 19 of db.tf reads `engine_version = \"13.20\"`, PostgreSQL 13, which the PostgreSQL versioning policy lists as unsupported (final release 2025-11-13; https://www.postgresql.org/support/versioning/)."
+          }
+        },
+        {
+          "ruleId": "github-actions.checkout.node20",
+          "path": ".github/workflows/lint.yml",
+          "line": 11,
+          "groundTruthSource": {
+            "kind": "maintainer-review",
+            "note": "Reviewed at this commit: line 11 of .github/workflows/lint.yml reads `- uses: actions/checkout@v3`, which github-actions.checkout.node20 reports."
+          }
+        },
+        {
+          "ruleId": "terraform.cli.end-of-support-1.12",
+          "path": "providers.tf",
+          "line": 2,
+          "groundTruthSource": {
+            "kind": "maintainer-review",
+            "note": "Reviewed at this commit: line 2 of providers.tf reads `required_version = \"~> 1.12.0\"`, a constraint that admits only Terraform 1.12 patch releases. Terraform 1.12 stopped being one of the two most recent release lines when Terraform 1.14.0 shipped on 2025-11-19 (https://github.com/hashicorp/terraform/releases/tag/v1.14.0; HashiCorp Terraform support policy, https://support.hashicorp.com/hc/en-us/articles/360021185113)."
+          }
+        }
+      ]
+    },
+    {
+      "repository": "SJD16/devops-recipe-app-api",
+      "commit": "58bfbd28ade524aa896618b9f2a148f017404397",
+      "ecosystem": "database",
+      "selection": "targeted",
+      "expected": [
+        {
+          "ruleId": "container.postgres.eol-13-and-older",
+          "path": "docker-compose.yml",
+          "line": 29,
+          "groundTruthSource": {
+            "kind": "maintainer-review",
+            "note": "Reviewed at this commit: line 29 of docker-compose.yml is `image: postgres:13-alpine`, an image release line the vendor has ended (PostgreSQL versioning policy, https://www.postgresql.org/support/versioning/)."
+          }
+        },
+        {
+          "ruleId": "container.python.eol-3.10-and-older",
+          "path": "Dockerfile",
+          "line": 1,
+          "groundTruthSource": {
+            "kind": "maintainer-review",
+            "note": "Reviewed at this commit: line 1 of Dockerfile is `FROM python:3.9-alpine3.13`, an image release line the vendor has ended (https://devguide.python.org/versions/)."
+          }
+        },
+        {
+          "ruleId": "database.postgresql.end-of-life-12",
+          "path": "infra/deploy/database.tf",
+          "line": 43,
+          "groundTruthSource": {
+            "kind": "maintainer-review",
+            "note": "Reviewed at this commit: line 43 of infra/deploy/database.tf reads `engine_version             = \"12.22\"`, PostgreSQL 12, which the PostgreSQL versioning policy lists as unsupported (final release 2024-11-21; https://www.postgresql.org/support/versioning/)."
+          }
+        },
+        {
+          "ruleId": "database.postgresql.end-of-life-13",
+          "path": "docker-compose.yml",
+          "line": 29,
+          "groundTruthSource": {
+            "kind": "maintainer-review",
+            "note": "Reviewed at this commit: line 29 of docker-compose.yml reads `image: postgres:13-alpine`, PostgreSQL 13, which the PostgreSQL versioning policy lists as unsupported (final release 2025-11-13; https://www.postgresql.org/support/versioning/)."
+          }
+        },
+        {
+          "ruleId": "github-actions.checkout.node20",
+          "path": ".github/workflows/deploy.yml",
+          "line": 23,
+          "groundTruthSource": {
+            "kind": "maintainer-review",
+            "note": "Reviewed at this commit: line 23 of .github/workflows/deploy.yml reads `uses: actions/checkout@v4`, which github-actions.checkout.node20 reports."
+          }
+        },
+        {
+          "ruleId": "github-actions.checkout.node20",
+          "path": ".github/workflows/destroy.yml",
+          "line": 19,
+          "groundTruthSource": {
+            "kind": "maintainer-review",
+            "note": "Reviewed at this commit: line 19 of .github/workflows/destroy.yml reads `uses: actions/checkout@v4`, which github-actions.checkout.node20 reports."
+          }
+        },
+        {
+          "ruleId": "github-actions.checkout.node20",
+          "path": ".github/workflows/test-and-lint.yml",
+          "line": 24,
+          "groundTruthSource": {
+            "kind": "maintainer-review",
+            "note": "Reviewed at this commit: line 24 of .github/workflows/test-and-lint.yml reads `uses: actions/checkout@v4`, which github-actions.checkout.node20 reports."
+          }
+        },
+        {
+          "ruleId": "github-actions.checkout.node20",
+          "path": ".github/workflows/test-and-lint.yml",
+          "line": 40,
+          "groundTruthSource": {
+            "kind": "maintainer-review",
+            "note": "Reviewed at this commit: line 40 of .github/workflows/test-and-lint.yml reads `uses: actions/checkout@v4`, which github-actions.checkout.node20 reports."
+          }
+        },
+        {
+          "ruleId": "github-actions.login-action.node20",
+          "path": ".github/workflows/test-and-lint.yml",
+          "line": 19,
+          "groundTruthSource": {
+            "kind": "maintainer-review",
+            "note": "Reviewed at this commit: line 19 of .github/workflows/test-and-lint.yml reads `uses: docker/login-action@v3`, which github-actions.login-action.node20 reports."
+          }
+        },
+        {
+          "ruleId": "github-actions.login-action.node20",
+          "path": ".github/workflows/test-and-lint.yml",
+          "line": 35,
+          "groundTruthSource": {
+            "kind": "maintainer-review",
+            "note": "Reviewed at this commit: line 35 of .github/workflows/test-and-lint.yml reads `uses: docker/login-action@v3`, which github-actions.login-action.node20 reports."
+          }
+        }
+      ]
+    },
+    {
+      "repository": "nestjsx/crud",
+      "commit": "d6d3c4ebd844d543ab71b494d424660c448a9d42",
+      "ecosystem": "database",
+      "selection": "targeted",
+      "expected": [
+        {
+          "ruleId": "container.mysql.eol-8.0-and-older",
+          "path": "docker-compose.yml",
+          "line": 21,
+          "groundTruthSource": {
+            "kind": "maintainer-review",
+            "note": "Reviewed at this commit: line 21 of docker-compose.yml is `image: mysql:5.7`, an image release line the vendor has ended (https://endoflife.date/mysql)."
+          }
+        },
+        {
+          "ruleId": "container.postgres.eol-13-and-older",
+          "path": "docker-compose.yml",
+          "line": 9,
+          "groundTruthSource": {
+            "kind": "maintainer-review",
+            "note": "Reviewed at this commit: line 9 of docker-compose.yml is `image: postgres:11.5`, an image release line the vendor has ended (PostgreSQL versioning policy, https://www.postgresql.org/support/versioning/)."
+          }
+        },
+        {
+          "ruleId": "database.mysql.end-of-life-5.7",
+          "path": "docker-compose.yml",
+          "line": 21,
+          "groundTruthSource": {
+            "kind": "maintainer-review",
+            "note": "Reviewed at this commit: line 21 of docker-compose.yml reads `image: mysql:5.7`, MySQL 5.7, which reached end of life on 2023-10-31 (MySQL lifecycle, https://www.mysql.com/support/supportedplatforms/database.html; https://endoflife.date/mysql)."
+          }
+        },
+        {
+          "ruleId": "database.postgresql.end-of-life-11",
+          "path": "docker-compose.yml",
+          "line": 9,
+          "groundTruthSource": {
+            "kind": "maintainer-review",
+            "note": "Reviewed at this commit: line 9 of docker-compose.yml reads `image: postgres:11.5`, PostgreSQL 11, which the PostgreSQL versioning policy lists as unsupported (final release 2023-11-09; https://www.postgresql.org/support/versioning/)."
+          }
+        },
+        {
+          "ruleId": "github-actions.checkout.node20",
+          "path": ".github/workflows/release.yml",
+          "line": 14,
+          "groundTruthSource": {
+            "kind": "maintainer-review",
+            "note": "Reviewed at this commit: line 14 of .github/workflows/release.yml reads `uses: actions/checkout@v2`, which github-actions.checkout.node20 reports."
+          }
+        },
+        {
+          "ruleId": "github-actions.checkout.node20",
+          "path": ".github/workflows/tests.yml",
+          "line": 18,
+          "groundTruthSource": {
+            "kind": "maintainer-review",
+            "note": "Reviewed at this commit: line 18 of .github/workflows/tests.yml reads `- uses: actions/checkout@v2`, which github-actions.checkout.node20 reports."
+          }
+        },
+        {
+          "ruleId": "github-actions.github-script.node20",
+          "path": ".github/workflows/release.yml",
+          "line": 112,
+          "groundTruthSource": {
+            "kind": "maintainer-review",
+            "note": "Reviewed at this commit: line 112 of .github/workflows/release.yml reads `uses: actions/github-script@0.8.0`, which github-actions.github-script.node20 reports."
+          }
+        },
+        {
+          "ruleId": "github-actions.setup-node.node20",
+          "path": ".github/workflows/release.yml",
+          "line": 19,
+          "groundTruthSource": {
+            "kind": "maintainer-review",
+            "note": "Reviewed at this commit: line 19 of .github/workflows/release.yml reads `uses: actions/setup-node@v2`, which github-actions.setup-node.node20 reports."
+          }
+        }
+      ]
+    },
+    {
+      "repository": "pacman82/odbc2parquet",
+      "commit": "e1b93b538ac875404d5fe7f7be9a3fb0dfb73a73",
+      "ecosystem": "database",
+      "selection": "blind",
+      "expected": []
+    },
+    {
+      "repository": "ayamir/nvimdots",
+      "commit": "5e2eb61fe95788a82fece844a18097f7be91bdb2",
+      "ecosystem": "shell",
+      "selection": "targeted",
+      "expected": [
+        {
+          "ruleId": "shell.powershell.end-of-life-7.1",
+          "path": "scripts/install.ps1",
+          "line": 1,
+          "groundTruthSource": {
+            "kind": "maintainer-review",
+            "note": "Reviewed at this commit: line 1 of scripts/install.ps1 reads `#Requires -Version 7.1`, which requires PowerShell 7.1 or later. Microsoft's PowerShell support lifecycle lists PowerShell 7.1 as retired, with support ended on 2022-05-08 (https://learn.microsoft.com/powershell/scripting/install/powershell-support-lifecycle)."
+          }
+        }
+      ]
+    },
+    {
+      "repository": "FFXIVAPP/sharlayan",
+      "commit": "80617fb948a560daeb15ba93d959f013b31a76a0",
+      "ecosystem": "shell",
+      "selection": "targeted",
+      "expected": [
+        {
+          "ruleId": "shell.powershell.end-of-life-7.0",
+          "path": "build.ps1",
+          "line": 1,
+          "groundTruthSource": {
+            "kind": "maintainer-review",
+            "note": "Reviewed at this commit: line 1 of build.ps1 reads `#Requires -Version 7.0`, which requires PowerShell 7.0 or later. Microsoft's PowerShell support lifecycle lists PowerShell 7.0 as retired, with support ended on 2022-12-03 (https://learn.microsoft.com/powershell/scripting/install/powershell-support-lifecycle)."
+          }
+        },
+        {
+          "ruleId": "shell.powershell.end-of-life-7.0",
+          "path": "harness.ps1",
+          "line": 1,
+          "groundTruthSource": {
+            "kind": "maintainer-review",
+            "note": "Reviewed at this commit: line 1 of harness.ps1 reads `#Requires -Version 7.0`, which requires PowerShell 7.0 or later. Microsoft's PowerShell support lifecycle lists PowerShell 7.0 as retired, with support ended on 2022-12-03 (https://learn.microsoft.com/powershell/scripting/install/powershell-support-lifecycle)."
+          }
+        },
+        {
+          "ruleId": "shell.powershell.end-of-life-7.0",
+          "path": "test.ps1",
+          "line": 1,
+          "groundTruthSource": {
+            "kind": "maintainer-review",
+            "note": "Reviewed at this commit: line 1 of test.ps1 reads `#Requires -Version 7.0`, which requires PowerShell 7.0 or later. Microsoft's PowerShell support lifecycle lists PowerShell 7.0 as retired, with support ended on 2022-12-03 (https://learn.microsoft.com/powershell/scripting/install/powershell-support-lifecycle)."
+          }
+        }
+      ]
+    },
+    {
+      "repository": "stuncloud/UWSCR",
+      "commit": "a06db5f9da291892d2fb056b30a3c88e6ea8a682",
+      "ecosystem": "shell",
+      "selection": "targeted",
+      "expected": [
+        {
+          "ruleId": "shell.powershell.end-of-life-7.0",
+          "path": "CmakeOpencv.ps1",
+          "line": 1,
+          "groundTruthSource": {
+            "kind": "maintainer-review",
+            "note": "Reviewed at this commit: line 1 of CmakeOpencv.ps1 reads `#requires -Version 7.0`, which requires PowerShell 7.0 or later. Microsoft's PowerShell support lifecycle lists PowerShell 7.0 as retired, with support ended on 2022-12-03 (https://learn.microsoft.com/powershell/scripting/install/powershell-support-lifecycle)."
+          }
+        }
+      ]
+    },
+    {
+      "repository": "godot-jolt/godot-jolt",
+      "commit": "7f225894706bb923e9ab9e9c73152b71880c5a83",
+      "ecosystem": "shell",
+      "selection": "targeted",
+      "expected": [
+        {
+          "ruleId": "github-actions.upload-artifact.retired",
+          "path": ".github/workflows/package.yml",
+          "line": 64,
+          "groundTruthSource": {
+            "kind": "maintainer-review",
+            "note": "Reviewed at this commit: line 64 of .github/workflows/package.yml reads `uses: actions/upload-artifact@v6`, a release of actions/upload-artifact older than v7, which the GitHub changelog lists as running on a retired artifact service or Node.js runtime (https://github.blog/changelog/2026-09-23-node-20-is-no-longer-available-in-github-actions/)."
+          }
+        },
+        {
+          "ruleId": "github-actions.upload-artifact.retired",
+          "path": ".github/workflows/package.yml",
+          "line": 123,
+          "groundTruthSource": {
+            "kind": "maintainer-review",
+            "note": "Reviewed at this commit: line 123 of .github/workflows/package.yml reads `uses: actions/upload-artifact@v6`, a release of actions/upload-artifact older than v7, which the GitHub changelog lists as running on a retired artifact service or Node.js runtime (https://github.blog/changelog/2026-09-23-node-20-is-no-longer-available-in-github-actions/)."
+          }
+        },
+        {
+          "ruleId": "github-actions.upload-artifact.retired",
+          "path": ".github/workflows/package.yml",
+          "line": 195,
+          "groundTruthSource": {
+            "kind": "maintainer-review",
+            "note": "Reviewed at this commit: line 195 of .github/workflows/package.yml reads `uses: actions/upload-artifact@v6`, a release of actions/upload-artifact older than v7, which the GitHub changelog lists as running on a retired artifact service or Node.js runtime (https://github.blog/changelog/2026-09-23-node-20-is-no-longer-available-in-github-actions/)."
+          }
+        },
+        {
+          "ruleId": "github-actions.upload-artifact.retired",
+          "path": ".github/workflows/package.yml",
+          "line": 245,
+          "groundTruthSource": {
+            "kind": "maintainer-review",
+            "note": "Reviewed at this commit: line 245 of .github/workflows/package.yml reads `uses: actions/upload-artifact@v6`, a release of actions/upload-artifact older than v7, which the GitHub changelog lists as running on a retired artifact service or Node.js runtime (https://github.blog/changelog/2026-09-23-node-20-is-no-longer-available-in-github-actions/)."
+          }
+        },
+        {
+          "ruleId": "github-actions.upload-artifact.retired",
+          "path": ".github/workflows/package.yml",
+          "line": 299,
+          "groundTruthSource": {
+            "kind": "maintainer-review",
+            "note": "Reviewed at this commit: line 299 of .github/workflows/package.yml reads `uses: actions/upload-artifact@v6`, a release of actions/upload-artifact older than v7, which the GitHub changelog lists as running on a retired artifact service or Node.js runtime (https://github.blog/changelog/2026-09-23-node-20-is-no-longer-available-in-github-actions/)."
+          }
+        },
+        {
+          "ruleId": "github-actions.upload-artifact.retired",
+          "path": ".github/workflows/package.yml",
+          "line": 409,
+          "groundTruthSource": {
+            "kind": "maintainer-review",
+            "note": "Reviewed at this commit: line 409 of .github/workflows/package.yml reads `uses: actions/upload-artifact@v6`, a release of actions/upload-artifact older than v7, which the GitHub changelog lists as running on a retired artifact service or Node.js runtime (https://github.blog/changelog/2026-09-23-node-20-is-no-longer-available-in-github-actions/)."
+          }
+        },
+        {
+          "ruleId": "github-actions.upload-artifact.retired",
+          "path": ".github/workflows/package.yml",
+          "line": 416,
+          "groundTruthSource": {
+            "kind": "maintainer-review",
+            "note": "Reviewed at this commit: line 416 of .github/workflows/package.yml reads `uses: actions/upload-artifact@v6`, a release of actions/upload-artifact older than v7, which the GitHub changelog lists as running on a retired artifact service or Node.js runtime (https://github.blog/changelog/2026-09-23-node-20-is-no-longer-available-in-github-actions/)."
+          }
+        },
+        {
+          "ruleId": "shell.powershell.end-of-life-7.2",
+          "path": "scripts/ci_setup_linux.ps1",
+          "line": 4,
+          "groundTruthSource": {
+            "kind": "maintainer-review",
+            "note": "Reviewed at this commit: line 4 of scripts/ci_setup_linux.ps1 reads `#Requires -Version 7.2`, which requires PowerShell 7.2 or later. Microsoft's PowerShell support lifecycle lists PowerShell 7.2 as retired, with support ended on 2024-11-08 (https://learn.microsoft.com/powershell/scripting/install/powershell-support-lifecycle)."
+          }
+        },
+        {
+          "ruleId": "shell.powershell.end-of-life-7.2",
+          "path": "scripts/ci_setup_macos.ps1",
+          "line": 4,
+          "groundTruthSource": {
+            "kind": "maintainer-review",
+            "note": "Reviewed at this commit: line 4 of scripts/ci_setup_macos.ps1 reads `#Requires -Version 7.2`, which requires PowerShell 7.2 or later. Microsoft's PowerShell support lifecycle lists PowerShell 7.2 as retired, with support ended on 2024-11-08 (https://learn.microsoft.com/powershell/scripting/install/powershell-support-lifecycle)."
+          }
+        },
+        {
+          "ruleId": "shell.powershell.end-of-life-7.2",
+          "path": "scripts/ci_setup_windows.ps1",
+          "line": 4,
+          "groundTruthSource": {
+            "kind": "maintainer-review",
+            "note": "Reviewed at this commit: line 4 of scripts/ci_setup_windows.ps1 reads `#Requires -Version 7.2`, which requires PowerShell 7.2 or later. Microsoft's PowerShell support lifecycle lists PowerShell 7.2 as retired, with support ended on 2024-11-08 (https://learn.microsoft.com/powershell/scripting/install/powershell-support-lifecycle)."
+          }
+        },
+        {
+          "ruleId": "shell.powershell.end-of-life-7.2",
+          "path": "scripts/ci_sign_macos.ps1",
+          "line": 4,
+          "groundTruthSource": {
+            "kind": "maintainer-review",
+            "note": "Reviewed at this commit: line 4 of scripts/ci_sign_macos.ps1 reads `#Requires -Version 7.2`, which requires PowerShell 7.2 or later. Microsoft's PowerShell support lifecycle lists PowerShell 7.2 as retired, with support ended on 2024-11-08 (https://learn.microsoft.com/powershell/scripting/install/powershell-support-lifecycle)."
+          }
+        },
+        {
+          "ruleId": "shell.powershell.end-of-life-7.2",
+          "path": "scripts/run_clang_format.ps1",
+          "line": 4,
+          "groundTruthSource": {
+            "kind": "maintainer-review",
+            "note": "Reviewed at this commit: line 4 of scripts/run_clang_format.ps1 reads `#Requires -Version 7.2`, which requires PowerShell 7.2 or later. Microsoft's PowerShell support lifecycle lists PowerShell 7.2 as retired, with support ended on 2024-11-08 (https://learn.microsoft.com/powershell/scripting/install/powershell-support-lifecycle)."
+          }
+        },
+        {
+          "ruleId": "shell.powershell.end-of-life-7.2",
+          "path": "scripts/run_clang_tidy.ps1",
+          "line": 4,
+          "groundTruthSource": {
+            "kind": "maintainer-review",
+            "note": "Reviewed at this commit: line 4 of scripts/run_clang_tidy.ps1 reads `#Requires -Version 7.2`, which requires PowerShell 7.2 or later. Microsoft's PowerShell support lifecycle lists PowerShell 7.2 as retired, with support ended on 2024-11-08 (https://learn.microsoft.com/powershell/scripting/install/powershell-support-lifecycle)."
+          }
+        }
+      ]
+    },
+    {
+      "repository": "yegors/deGDID",
+      "commit": "3a5d5a90f1c90e2a99900d1fc9bd6884ee1f17fe",
+      "ecosystem": "shell",
+      "selection": "blind",
+      "expected": []
     }
   ]
 }

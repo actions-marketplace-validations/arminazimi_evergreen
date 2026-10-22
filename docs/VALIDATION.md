@@ -116,6 +116,12 @@ The blind rule, run on 2026-10-19: GitHub repository search for `language:C#`, 1
 
 Ground truth: for each repository the target frameworks, SDK pins, and package references were listed by `grep` over the pinned files and compared with the report, independently of Evergreen's own output. Every expected finding has a `maintainer-review` note naming the path, the exact line, and the vendor date the rule rests on. Ceras was the one miss: it targets `netcoreapp2.1` and `netcoreapp2.2`, which had no rule, so the registry gained the 1.x, 2.x, and 3.0 lines in the same change.
 
+## CI runner images corpus
+
+Five public repositories at pinned commits cover the `ci-images` detector: `oatpp/oatpp` (`ubuntu-20.04` and `ubuntu-22.04` hosted images), `Chinachu/Mirakurun` (four `ubuntu-22.04` pools, plus a deprecated `tslint` dependency), `microsoft/Sysmon-Linux` (`ubuntu-22.04`, plus `actions/checkout` v4.1.1), `aliostad/CacheCow` (`ubuntu-22.04`, plus .NET target frameworks past or scheduled for end of support), and `Windos/PoshNotify` (Azure Pipelines pools that use only `*-latest` images, no findings).
+
+Because the corpus scans every detector, every finding in these repositories is recorded, not only the CI image ones. Each expected finding was checked by reading its line at the pinned commit, and its `groundTruthSource` is a `maintainer-review` note naming the path and line. The Azure dates come from the [hosted image deprecation schedule](https://learn.microsoft.com/azure/devops/pipelines/agents/hosted-deprecation-schedule) and the [Azure DevOps blog deprecation plan](https://devblogs.microsoft.com/devops/upcoming-updates-for-azure-pipelines-agents-images/), not from these repositories. All five were chosen knowing their image labels, so each records `selection: "targeted"`.
+
 ## Precision thresholds
 
 [`benchmarks/thresholds.json`](../benchmarks/thresholds.json) sets a precision floor per detector (`github-actions`, `nodejs`, `npm`, `python`, `dotnet`, `serverless`, and `swift` enforce it; a detector is named by the first segment of its rule ids). The harness scores each detector, prints the figures under `detectors` in its JSON, and reports `thresholdViolations`. A stable detector below its `minPrecision` (0.95 today) fails the run with a line such as:
@@ -226,7 +232,7 @@ npm run validate:public-repos -- --json > corpus-result.json   # JSON on stdout;
 npm run record:corpus-run
 ```
 
-One command replaces the hand edits. It runs the whole corpus in verify mode and, only when that passes, writes the run into `lastFullRun` in `benchmarks/thresholds.json` (date, the current `HEAD` commit, repository and finding counts, precision, recall, and true positives, false positives, and false negatives for every detector, zero for one that reported nothing), then regenerates `docs/dashboard/data.json` (`npm run build:dashboard`) and `docs/llms-full.txt`. It leaves the changes uncommitted so you can review the diff.
+One command replaces the hand edits. It runs the whole corpus in verify mode and, only when that passes, writes the run into `lastFullRun` in `benchmarks/thresholds.json` (date, the current `HEAD` commit, repository and finding counts, precision, recall, and true positives, false positives, and false negatives for every detector, zero for one that reported nothing), then regenerates `docs/dashboard/data.json` (`npm run build:dashboard`), the accuracy table below (`npm run build:coverage`), and `docs/llms-full.txt`. It leaves the changes uncommitted so you can review the diff.
 
 It refuses, and changes nothing, when:
 
@@ -239,6 +245,8 @@ Other harness flags such as `--concurrency` and `--offline` are passed through. 
 ## Pull request check
 
 Pull request CI (`ci.yml`) stays offline, so a detector or rule change that adds false positives would only be found in the weekly run. [`.github/workflows/corpus-pr.yml`](../.github/workflows/corpus-pr.yml) closes that gap in a separate workflow: when a pull request touches `src/`, `registry/`, `tests/fixtures/`, or `benchmarks/`, it maps the changed files to corpus ecosystems with the same `--changed` logic described above and runs only those, using the weekly run's checkout cache (restore only).
+
+Before it fetches anything, the workflow also runs `node dist/benchmarks/corpus-snapshot.js`, and the same comparison runs in `npm test` for every pull request. [`benchmarks/corpus-snapshot.json`](../benchmarks/corpus-snapshot.json) records how many findings, in how many repositories, the corpus expects for each detector. A change that removes or weakens an expectation, so that a known finding would no longer be required, fails with a `SNAPSHOT` line until the snapshot is updated on purpose with `node dist/benchmarks/corpus-snapshot.js --write`; that edit is a reviewable diff. Adding expectations never fails; run `--write` to ratchet the snapshot up.
 
 The job summary lists the chosen ecosystems and every `UNEXPECTED` and `MISSING` line; the full report is attached as the `corpus-pr-result-<run id>` artifact. If nothing maps, it says so and fetches nothing. The workflow is **not a required check**: keep it out of branch protection, because it needs the network and GitHub's availability. It has `contents: read` only, no secrets, and no `pull_request_target`, and the base branch reaches the shell through an environment variable, never an inline expression. Treat a red run as a finding to explain in the pull request, using the rules in "Weekly run and refreshing pins" above.
 
@@ -274,6 +282,8 @@ The two tools answer different questions. Renovate says a newer version exists a
 
 Outcomes: `agree`, `evergreen-only`, `renovate-only`, and `inconclusive` (Renovate skipped the lookup, for example `github-token-required` for Actions when run without a GitHub token, so it says nothing either way). Runtime findings (`nodejs.runtime.*`, `python.runtime.*`) have no Renovate counterpart and are listed as not comparable. Matching is by file and dependency name because Renovate gives no line numbers.
 
+The committed reports are combined into one reviewable page, [differential-report.md](differential-report.md) (and [differential-report.json](differential-report.json)), which lists every disagreement with links to the declaration at the pinned commit and to each tool's evidence. Regenerate it with `npm run differential:report` after adding or refreshing a report; a test fails when it drifts from the reports.
+
 Results for the five container corpus repositories, with Renovate 44.164 run without a GitHub token on 2026-10-16 (reports in [`benchmarks/differential/reports/`](../benchmarks/differential/reports/), trimmed Renovate output in `tests/fixtures/differential/`):
 
 | Repository | Agree | Evergreen-only | Renovate-only | Inconclusive |
@@ -290,6 +300,38 @@ What it shows:
 - **Renovate-only** are npm deprecations Evergreen has no rule for (for example `@types/*` stubs, `babel-eslint`, `koa-router`, `socket.io-redis`, `react-beautiful-dnd`, `rollup-plugin-terser`, `@nuxt/types`). This is the real gap: the `npm-deprecated` importer only checks a candidate list, so these names are candidates to add. Each is a Renovate observation, not evidence; the importer still requires the registry's own deprecation notice.
 - **Evergreen-only** is empty here; every Evergreen finding that Renovate could look up, it also had an update for.
 - Most GitHub Action findings are `inconclusive` because Renovate cannot look up Actions without a token. Re-run with `RENOVATE_TOKEN` to turn them into comparisons.
+
+## Accuracy by detector
+
+Precision is true positives over true positives plus false positives; recall is true positives over true positives plus false negatives. Both come from the last full corpus run recorded in [`benchmarks/thresholds.json`](../benchmarks/thresholds.json), so a reader can regenerate every number: run `npm run record:corpus-run`, then `npm run build:coverage`. The table below is generated; a test fails when it drifts from the recorded run. `nodejs` is the Node.js runtime rules served by the npm detector. A dash means the last full run did not score that detector.
+
+<!-- accuracy-tables:start -->
+Measured on 145 pinned repositories at commit `122d612` on 2026-10-21. Regenerate with `npm run build:coverage` after `npm run record:corpus-run`.
+
+| Detector | Maturity | True positives | False positives | False negatives | Precision | Recall |
+| --- | --- | --- | --- | --- | --- | --- |
+| android | Experimental | 4 | 0 | 0 | 1.000 | 1.000 |
+| ci-images | Experimental | 8 | 0 | 0 | 1.000 | 1.000 |
+| container | Experimental | 19 | 0 | 0 | 1.000 | 1.000 |
+| cpp | Experimental | 11 | 0 | 0 | 1.000 | 1.000 |
+| dart | Experimental | — | — | — | — | — |
+| database | Experimental | — | — | — | — | — |
+| dotnet | Beta | 105 | 0 | 0 | 1.000 | 1.000 |
+| github-actions | Supported | 261 | 0 | 0 | 1.000 | 1.000 |
+| go | Experimental | 8 | 0 | 0 | 1.000 | 1.000 |
+| java | Experimental | 6 | 0 | 0 | 1.000 | 1.000 |
+| kubernetes | Experimental | 29 | 0 | 0 | 1.000 | 1.000 |
+| nodejs | Supported | 44 | 0 | 0 | 1.000 | 1.000 |
+| npm | Supported | 49 | 0 | 0 | 1.000 | 1.000 |
+| php | Experimental | 5 | 0 | 0 | 1.000 | 1.000 |
+| python | Supported | 20 | 0 | 0 | 1.000 | 1.000 |
+| ruby | Experimental | 7 | 0 | 0 | 1.000 | 1.000 |
+| rust | Experimental | 5 | 0 | 0 | 1.000 | 1.000 |
+| serverless | Beta | 20 | 0 | 0 | 1.000 | 1.000 |
+| shell | Experimental | — | — | — | — | — |
+| swift | Beta | 15 | 0 | 0 | 1.000 | 1.000 |
+| terraform | Experimental | — | — | — | — | — |
+<!-- accuracy-tables:end -->
 
 ## Interpretation and limits
 

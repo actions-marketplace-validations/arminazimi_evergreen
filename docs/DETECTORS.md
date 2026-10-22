@@ -38,7 +38,7 @@ The interface guarantees:
 
 See [`examples/detectors/todo-comments.ts`](../examples/detectors/todo-comments.ts) for a complete minimal adapter.
 
-Built-in detectors with their own pages: [Container base images](detectors/container.md), [.NET](detectors/dotnet.md), [Go](detectors/go.md), [Java and Kotlin](detectors/java.md), [Kubernetes APIs](detectors/kubernetes.md), [Rust](detectors/rust.md), [Serverless runtimes](detectors/serverless.md), [Swift](detectors/swift.md). The C and C++, Ruby, PHP, and Android detectors have no separate pages yet; their supported declarations and limits are in [Compatibility](COMPATIBILITY.md#c-and-c-detector), [Compatibility](COMPATIBILITY.md#ruby-detector), [Compatibility](COMPATIBILITY.md#php-detector), and [Compatibility](COMPATIBILITY.md#android-detector).
+Built-in detectors with their own pages: [Container base images](detectors/container.md), [Dart and Flutter](detectors/dart.md), [Database runtimes](detectors/database.md), [.NET](detectors/dotnet.md), [Go](detectors/go.md), [Java and Kotlin](detectors/java.md), [Kubernetes APIs](detectors/kubernetes.md), [Rust](detectors/rust.md), [Serverless runtimes](detectors/serverless.md), [Shell and PowerShell](detectors/shell.md), [Swift](detectors/swift.md), [Terraform](detectors/terraform.md). The C and C++, Ruby, PHP, Android, and CI runner images detectors have no separate pages yet; their supported declarations and limits are in [Compatibility](COMPATIBILITY.md#c-and-c-detector), [Compatibility](COMPATIBILITY.md#ruby-detector), [Compatibility](COMPATIBILITY.md#php-detector), [Compatibility](COMPATIBILITY.md#android-detector), and [Compatibility](COMPATIBILITY.md#ci-runner-images-detector).
 
 ## Ruby detector layout
 
@@ -77,6 +77,61 @@ The Android detector follows the same layout. Its entry point, `src/detectors/an
 
 The user-facing list of supported forms and limits for this detector is in [Compatibility](COMPATIBILITY.md#android-detector).
 
+## CI runner images detector layout
+
+The CI runner images detector follows the same layout. Its entry point, `src/detectors/ci-images/index.ts`, finds the files, reads them, and matches Azure hosted-image labels to a rule. One pure parser per file type sits beside it (`parse-gitlab-ci.ts`, `parse-circleci.ts`, and `parse-azure-pipelines.ts`):
+
+- A parser returns nothing, not an error, for a form it does not support, and never returns part of a malformed file.
+- Rules come from `registry/ci-images.json`, loaded through the bundled data. The detector takes a rule loader so tests can supply their own rules.
+- An Azure `pool.vmImage` label of the form `ubuntu-<version>`, `macos-<version>`, or `windows-<version>` matches `pkg:generic/azure-pipelines/<family>-image` with an `intdot` version. Every rule whose `vers` range contains that version is reported. A label with an architecture suffix, or any other shape, is not matched.
+- GitLab `image` and `services` values are always unclassified. CircleCI returns orbs, dynamic values, and floating aliases as unclassified; a literal CircleCI image is not matched, because this version has no CircleCI Package URL mapping.
+- `latest`, `*-latest`, variables, and template expressions produce no finding. There is no source-usage pass.
+
+The user-facing list of supported forms and limits for this detector is in [Compatibility](COMPATIBILITY.md#ci-runner-images-detector).
+
+## Dart detector layout
+
+The Dart detector follows the same layout. Its entry point, `src/detectors/dart/index.ts`, finds the files, reads them, and matches each declaration to a rule. One pure parser per file type sits beside it (`parse-pubspec.ts`, `parse-pubspec-lock.ts`, and `parse-fvm.ts`):
+
+- Rules come from `registry/dart.json`, loaded through the bundled data. The detector takes a rule loader so tests can supply their own rules.
+- An exact version (a `pubspec.lock` package, an FVM pin, or a constraint without an operator) uses the first rule whose `vers` range contains it. A constraint with an operator is matched only against rules that cover every version of that package. A rule whose `vers` is malformed is skipped, so it does not hide a later rule.
+- Rules that declare usage matchers use `analyzeSourceUsage`, so those findings list the `.dart` files that import the package and the calls those matchers name. `Function.apply` and `dart:mirrors` reflection are unclassified.
+
+The user-facing list of supported forms and limits for this detector is in [Dart and Flutter](detectors/dart.md).
+
+## Database runtimes detector layout
+
+The database detector reuses what the container and Terraform detectors already parse. Its entry point, `src/detectors/database/index.ts`, finds Compose and `*.tf` files, reads them, and matches each declaration to a rule. Two pure parsers sit beside it: `parse-compose.ts` filters the shared Compose image parser to database images, and `parse-terraform.ts` reads `engine` and `engine_version` with the shared HCL scanner:
+
+- A parser returns nothing, not an error, for a form it does not support, and never returns part of a malformed file.
+- Rules come from `registry/database.json`, loaded through the bundled data. The detector takes a rule loader so tests can supply their own rules.
+- A full version uses the first rule whose `vers` range contains it. A partial version (`12`, `5.7`) matches a rule only when the rule contains both ends of what the partial version could mean. A rule whose `vers` is malformed is skipped, so it does not hide a later rule.
+- Each product maps to one Package URL (`pkg:generic/postgresql`, `mysql`, `mariadb`, `redis`, `mongodb`). There is no source-usage pass.
+
+The user-facing list of supported forms and limits for this detector is in [Database runtimes](detectors/database.md).
+
+## Shell and PowerShell detector layout
+
+The shell detector reads PowerShell declarations and the PowerShell image tags in workflow files. Its entry point, `src/detectors/shell/index.ts`, finds `*.ps1`, `*.psm1`, `*.psd1`, and `.github/workflows` files, reads them, and matches each declaration to a rule. Two pure parsers sit beside it: `parse-powershell.ts` is a bounded lexical reader for `#Requires -Version` and `PowerShellVersion`, and `parse-workflow.ts` reads `shell:` values and pinned PowerShell or Bash images from workflow YAML.
+
+- A parser returns nothing, not an error, for a form it does not support, and never returns part of a malformed file.
+- Rules come from `registry/shell.json`, loaded through the bundled data. The detector takes a rule loader so tests can supply their own rules.
+- Matching works as in the database detector: a full version uses the first rule whose `vers` range contains it, and a partial version matches only when the rule contains both ends of what it could mean.
+- All rules use one Package URL, `pkg:generic/powershell`. Shell names and Bash images are parsed but produce no findings. There is no source-usage pass.
+
+The user-facing list of supported forms and limits for this detector is in [Shell and PowerShell](detectors/shell.md).
+
+## Terraform detector layout
+
+The Terraform detector follows the same layout. Its entry point, `src/detectors/terraform/index.ts`, finds the files, reads them, and matches each declaration to a rule. One pure parser per file type sits beside it (`parse-terraform.ts`, `parse-lock.ts`, and `parse-version-files.ts`), on top of the shared bounded scanner in `hcl.ts`:
+
+- A parser returns nothing, not an error, for a form it does not support, and never returns part of a malformed file.
+- Rules come from `registry/terraform.json`, loaded through the bundled data. The detector takes a rule loader so tests can supply their own rules.
+- An exact version (a version file, a lock entry, or a constraint without an operator) uses the first rule whose `vers` range contains it. A `~> X.Y.Z` constraint matches a rule that contains both ends of that minor line. Any other constraint is matched only against rules that cover every version. A rule whose `vers` is malformed is skipped, so it does not hide a later rule.
+- The Terraform CLI is `pkg:generic/terraform` and a provider is `pkg:generic/terraform-provider/<namespace>/<name>`. There is no source-usage pass.
+
+The user-facing list of supported forms and limits for this detector is in [Terraform](detectors/terraform.md).
+
 ## Swift detector layout
 
 The Swift detector follows the same layout. Its entry point, `src/detectors/swift/index.ts`, finds the files, reads them, and matches each declaration to a rule. One pure parser per file type sits beside it (`parse-swift-toolchain.ts`, `parse-package-swift.ts`, `parse-package-resolved.ts`, and `parse-xcode-project.ts`):
@@ -100,7 +155,7 @@ The C and C++ detector follows the same layout. Its entry point, `src/detectors/
 - A vcpkg dependency with no `version>=` matches only a rule that covers every version of that package. `cmake_minimum_required` matches `pkg:generic/cmake`. A Conan requirement matches `pkg:conan/<name>`. A vcpkg dependency matches `pkg:vcpkg/<name>`. Language standards, compiler checks, and `builtin-baseline` match the generic Package URLs named in the detector.
 - Generator and module rules are not matched yet: the CMake parser does not emit those declarations. There is no source-usage pass.
 
-The user-facing list of supported forms and limits for this detector is in [Compatibility](COMPATIBILITY.md#c-and-c-detector).
+The detector is experimental. Its five-repository public corpus includes a zero-finding case and independent ground-truth sources. The user-facing list of supported forms, lifecycle data sources, and limits is in [Compatibility](COMPATIBILITY.md#c-and-c-detector).
 
 ## Serverless runtimes detector layout
 
@@ -182,6 +237,15 @@ Detectors may implement the optional `analyze` operation when they need to retur
 The built-in GitHub Actions detector uses this metadata for full 40-character commit pins it cannot resolve. It classifies a covered action from a valid trailing version comment first, or from Evergreen's bundled exact SHA-to-release map when no comment is present. An unknown SHA is reported with reason `unknown-sha`; a present but unusable comment is reported with reason `invalid-version-comment`. Neither case becomes a lifecycle finding because Evergreen does not guess a release line.
 
 This resolution is fully offline. The bundled map is reviewed and regenerated by a separate maintainer tool; repository scans never query GitHub or another service.
+
+### The runtime a `setup-*` action installs
+
+Besides the action reference itself, the GitHub Actions detector reads one runtime input: the `dotnet-version` of `actions/setup-dotnet` (decided in [#845](https://github.com/arminazimi/evergreen/issues/845)). It judges each version with the `dotnet` runtime rules (`dotnet.runtime.end-of-support-*`, with Microsoft's support policy as the source), so a lifecycle change is made in one place. The workflow is parsed as YAML, never evaluated.
+
+- A literal version names a release line: `6.0.x`, `6.0`, `6.0.100`, and the SDK band `6.0.4xx` are all .NET 6.
+- A multi-line value (`dotnet-version: |`) is judged per entry, and each finding points at that entry's line.
+- An expression such as `${{ matrix.dotnet }}`, a floating major (`6.x`, `6`), a pre-release (`7.0.100-preview.1`), or any other form is unclassified with its file and line, never guessed.
+- The `global-json-file` input, `dotnet-quality`, and the other `setup-*` actions (`setup-node`, `setup-python`, and so on) are not read. Each needs its own mapping to a lifecycle rule set; they are follow-up work, not part of this decision.
 
 ## Declaring the files a detector reads
 

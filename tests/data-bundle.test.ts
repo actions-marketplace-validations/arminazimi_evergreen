@@ -72,6 +72,8 @@ test("the bundle lists every registry and the SHA map, and matches the published
     "registry/ci-images.json",
     "registry/container.json",
     "registry/cpp.json",
+    "registry/dart.json",
+    "registry/database.json",
     "registry/dotnet.json",
     "registry/github-actions-shas.json",
     "registry/github-actions.json",
@@ -84,7 +86,9 @@ test("the bundle lists every registry and the SHA map, and matches the published
     "registry/ruby.json",
     "registry/rust.json",
     "registry/serverless.json",
+    "registry/shell.json",
     "registry/swift.json",
+    "registry/terraform.json",
   ]);
   assert.equal(bundle.manifest.version, "2026.10.16");
   assert.equal(bundle.manifest.minimumEvergreenVersion, "0.2.0");

@@ -19,7 +19,7 @@ import {
   isDeprecationRule,
   isUsageMatcher,
 } from "../sdk.js";
-import { loadRegistryRules } from "../registry.js";
+import { loadRegistryRules, withoutSymbolRules } from "../registry.js";
 import type {
   Detector,
   DetectorContext,
@@ -83,7 +83,7 @@ async function loadRegistry<Rule>(
   path: string,
   definition: RegistryDefinition<Rule>,
 ): Promise<readonly Rule[]> {
-  const data = await loadDataFile(path);
+  const data = withoutSymbolRules(await loadDataFile(path));
   const loaded = loadRegistryRules(data, definition).rules;
   if (path !== "registry/npm.json" || typeof data !== "object" || data === null || !("rules" in data)) return loaded;
   const versions = new Map((data.rules as Array<{ id: string; vers?: string }>).map((rule) => [rule.id, rule.vers]));
@@ -286,6 +286,7 @@ function declarationFinding(
     title: rule.title,
     summary: `${declaration.kind} ${declaration.value} includes Node.js ${detectedMajor}. ${rule.summary}`,
     severity,
+    confidence: declaration.kind === "compatibility range" ? "range" : "exact",
     location: { path: relativePosix(root, declaration.path), line: declaration.line },
     ...(rule.replacement ? { replacement: rule.replacement } : {}),
     ...(rule.deadline ? { deadline: rule.deadline } : {}),
@@ -450,6 +451,7 @@ export class NpmDetector implements Detector {
         title: rule.title,
         summary: `${rule.package} is declared in ${section} as ${range}; resolved: ${resolvedText}. ${rule.summary}`,
         severity: rule.severity,
+        confidence: resolved.length > 0 ? "inferred-from-lock" : "range",
         location: { path, line },
         ...(rule.replacement ? { replacement: rule.replacement } : {}),
         ...(rule.deadline ? { deadline: rule.deadline } : {}),

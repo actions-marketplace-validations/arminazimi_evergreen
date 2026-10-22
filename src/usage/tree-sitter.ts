@@ -7,7 +7,7 @@ import type { Language, Parser, Query, Tree } from "@vscode/tree-sitter-wasm";
 import type { SourceLanguage } from "../domain.js";
 
 // Grammars ship inside @vscode/tree-sitter-wasm: prebuilt WebAssembly, no native build, no network.
-const require = createRequire(import.meta.url);
+const nodeRequire = createRequire(import.meta.url);
 
 type TreeSitter = typeof import("@vscode/tree-sitter-wasm");
 
@@ -25,9 +25,9 @@ const parsers = new Map<TreeSitterGrammar, Parser>();
 
 function loadRuntime(): Promise<{ module: TreeSitter; directory: string }> {
   runtime ??= (async () => {
-    const entry = require.resolve("@vscode/tree-sitter-wasm");
+    const entry = nodeRequire.resolve("@vscode/tree-sitter-wasm");
     const directory = dirname(entry);
-    const module = require("@vscode/tree-sitter-wasm") as TreeSitter;
+    const module = nodeRequire("@vscode/tree-sitter-wasm") as TreeSitter;
     await module.Parser.init({ locateFile: (file) => join(directory, file) });
     return { module, directory };
   })();
@@ -101,4 +101,20 @@ export async function parseSource(
   } finally {
     parser.reset();
   }
+}
+
+/** Maps a node's start offset to a one-based line and column, for a source text parsed once. */
+export function lineLocator(source: string): (offset: number) => { line: number; column: number } {
+  const starts = [0];
+  for (const match of source.matchAll(/\r?\n/g)) starts.push(match.index + match[0].length);
+  return (offset) => {
+    let low = 0;
+    let high = starts.length - 1;
+    while (low < high) {
+      const middle = Math.ceil((low + high) / 2);
+      if (starts[middle]! <= offset) low = middle;
+      else high = middle - 1;
+    }
+    return { line: low + 1, column: offset - starts[low]! + 1 };
+  };
 }

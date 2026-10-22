@@ -33,6 +33,9 @@ jobs:
           - { importer: ci-images-1, ecosystem: ci-images }
           - { importer: container-official-images, ecosystem: container }
           - { importer: cpp-1, ecosystem: cpp }
+          - { importer: dart-1, ecosystem: dart }
+          - { importer: database-1, ecosystem: database }
+          - { importer: database-2, ecosystem: database }
           - { importer: dotnet-1, ecosystem: dotnet }
           - { importer: dotnet-2, ecosystem: dotnet }
           - { importer: endoflife-date, ecosystem: container }
@@ -52,10 +55,12 @@ jobs:
           - { importer: rust-1, ecosystem: rust }
           - { importer: serverless-1, ecosystem: serverless }
           - { importer: serverless-2, ecosystem: serverless }
+          - { importer: shell-1, ecosystem: shell }
           - { importer: swift-1, ecosystem: swift }
+          - { importer: terraform-1, ecosystem: terraform }
     steps:
-      - uses: actions/checkout@v7
-      - uses: actions/setup-node@v7
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7
         with:
           node-version: 22
           cache: npm
@@ -82,7 +87,7 @@ jobs:
         run: node dist/tools/importers/pr-body.js drafts.json "registry/${{ matrix.ecosystem }}.json" --out body.md
       - name: Keep the drafts
         if: steps.diff.outputs.changed == 'true'
-        uses: actions/upload-artifact@v7
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7
         with:
           name: drafts-${{ matrix.importer }}
           path: |
@@ -105,6 +110,9 @@ jobs:
           - ci-images-1
           - container-official-images
           - cpp-1
+          - dart-1
+          - database-1
+          - database-2
           - dotnet-1
           - dotnet-2
           - endoflife-date
@@ -124,12 +132,14 @@ jobs:
           - rust-1
           - serverless-1
           - serverless-2
+          - shell-1
           - swift-1
+          - terraform-1
     steps:
-      - uses: actions/checkout@v7
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
       - name: Fetch the drafts, if this importer found a difference
         id: fetch
-        uses: actions/download-artifact@v7
+        uses: actions/download-artifact@37930b1c2abaa49bbe596cd826c3c89aef350131 # v7
         continue-on-error: true
         with:
           name: drafts-${{ matrix.importer }}

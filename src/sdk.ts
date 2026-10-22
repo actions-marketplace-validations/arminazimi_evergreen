@@ -14,7 +14,8 @@ export interface DetectorContext {
   readonly root: string;
 }
 
-export type DetectorFinding = Omit<Finding, "detector">;
+/** A detector may state `confidence`; when it does not, the engine derives it from where the finding was read. */
+export type DetectorFinding = Omit<Finding, "detector" | "confidence"> & { confidence?: Finding["confidence"] };
 export type DetectorUnclassifiedReference = Omit<UnclassifiedReference, "detector">;
 
 export interface DetectorAnalysis {
@@ -155,13 +156,13 @@ export function isUsageMatcher(value: unknown): value is UsageMatcher {
   if (!isRecord(value) || !sourceLanguageValues.includes(value.language as never)) return false;
   if (value.kind === "import") {
     return (
-      ["javascript", "typescript", "python", "go", "java", "kotlin", "rust", "csharp", "ruby", "php", "swift"].includes(value.language as string) &&
+      ["javascript", "typescript", "python", "go", "java", "kotlin", "rust", "csharp", "ruby", "php", "swift", "dart"].includes(value.language as string) &&
       isNonEmptyString(value.module)
     );
   }
   if (value.kind === "call") {
     return (
-      ["javascript", "typescript", "python", "go", "rust", "csharp", "ruby", "php", "swift"].includes(value.language as string) &&
+      ["javascript", "typescript", "python", "go", "rust", "csharp", "ruby", "php", "swift", "dart"].includes(value.language as string) &&
       isNonEmptyString(value.module) &&
       Array.isArray(value.targets) &&
       value.targets.length > 0 &&

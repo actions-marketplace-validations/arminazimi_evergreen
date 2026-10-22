@@ -12,6 +12,8 @@ import type {
   SourceUsageContract,
 } from "./domain.js";
 import { relativePosix } from "./paths.js";
+import { analyzeJavaScriptFile } from "./usage/javascript.js";
+import { analyzePythonFile } from "./usage/python.js";
 
 const ignoredDirectories = new Set([
   ".git",
@@ -67,6 +69,7 @@ function languageFor(path: string): SourceLanguage | undefined {
   if (extension === ".rb" || extension === ".rake" || extension === ".ru") return "ruby";
   if (extension === ".php") return "php";
   if (extension === ".swift") return "swift";
+  if (extension === ".dart") return "dart";
   if (extension === ".json") return "json";
   if ([".yaml", ".yml"].includes(extension)) return "yaml";
   if (extension === ".toml") return "toml";
@@ -245,6 +248,41 @@ function swiftImports(lines: readonly string[], maskedLines: readonly string[]):
       column: lines[index]!.indexOf(match[1]) + 1,
       bindings: [{ module: match[1], local: match[1], imported: "*" }],
     });
+  }
+  return references;
+}
+
+/**
+ * Dart `import` directives. The module is the package name of a `package:` URI or the `dart:` library, so
+ * relative and `file:` imports name nothing. `as prefix` binds the whole library under the prefix and
+ * `show A, B` binds exactly those names; a bare import brings unknown names into scope and binds nothing.
+ */
+function dartImports(lines: readonly string[], maskedLines: readonly string[]): ImportReference[] {
+  const references: ImportReference[] = [];
+  const entry = /^\s*import\s*(['"])((?:package|dart):[^'"]+)\1([^;]*);/;
+  for (const [index, masked] of maskedLines.entries()) {
+    if (!/^\s*import\b/.test(masked)) continue;
+    // A directive may continue on the lines that follow, up to its semicolon.
+    let directive = lines[index]!;
+    for (let next = index + 1; !directive.includes(";") && next < lines.length && next < index + 8; next += 1) directive += ` ${lines[next]!.trim()}`;
+    const match = entry.exec(directive);
+    if (!match?.[2]) continue;
+    const uri = match[2];
+    const module = uri.startsWith("dart:") ? uri : uri.slice("package:".length).split("/")[0]!;
+    if (module === "") continue;
+    const clauses = (match[3] ?? "").replace(/\/\/.*$/gm, "");
+    const bindings: Binding[] = [];
+    const prefix = /\b(?:deferred\s+)?as\s+([A-Za-z_]\w*)/.exec(clauses);
+    if (prefix?.[1]) {
+      bindings.push({ module, local: prefix[1], imported: "*" });
+    } else {
+      const shown = /\bshow\s+([^;]*?)(?:\bhide\b|$)/.exec(clauses);
+      for (const name of shown?.[1]?.split(",") ?? []) {
+        const trimmed = name.trim();
+        if (/^[A-Za-z_]\w*$/.test(trimmed)) bindings.push({ module, local: trimmed, imported: trimmed });
+      }
+    }
+    references.push({ module, line: index + 1, column: lines[index]!.indexOf("import") + 1, bindings });
   }
   return references;
 }
@@ -1472,9 +1510,31 @@ export function impactFor(usages: readonly SourceUsage[]): MigrationImpact {
   };
 }
 
+async function parsedUsages(
+  file: SourceFile,
+  contents: string,
+  contracts: readonly SourceUsageContract[],
+): Promise<Map<string, SourceUsage[]> | undefined> {
+  try {
+    if (file.language === "python") return await analyzePythonFile({ path: file.path, language: "python", source: contents }, contracts);
+    if (file.language === "javascript" || file.language === "typescript") {
+      return await analyzeJavaScriptFile({ path: file.path, language: file.language, source: contents }, contracts);
+    }
+  } catch {
+    // The parser could not run; the regex scanner covers the file.
+  }
+  return undefined;
+}
+
+export interface SourceUsageOptions {
+  /** Set to false to use the regex scanner for every language, as the parity tests and benchmark do. Defaults to true. */
+  parser?: boolean;
+}
+
 export async function analyzeSourceUsage(
   root: string,
   contracts: readonly SourceUsageContract[],
+  options: SourceUsageOptions = {},
 ): Promise<SourceUsageAnalysis[]> {
   const resolvedRoot = resolve(root);
   const relevantLanguages = new Set(
@@ -1494,6 +1554,13 @@ export async function analyzeSourceUsage(
     if (!relevantLanguages.has(file.language)) continue;
     if ((file.language === "ruby" || file.language === "php") && checkoutSourceIgnored(file.path)) continue;
     const contents = await readFile(file.absolutePath, "utf8");
+    // JavaScript, TypeScript, and Python import and call usages come from the parser when it can read the file;
+    // otherwise (too large, over budget, or the runtime cannot load) the regex scanner below handles them.
+    const parsed = options.parser === false ? undefined : await parsedUsages(file, contents, contracts);
+    if (parsed) {
+      for (const [contractId, usages] of parsed) for (const usage of usages) push(contractId, usage);
+      if (!contracts.some((contract) => contract.matchers.some((matcher) => matcher.kind === "config-key" && matcher.language === file.language))) continue;
+    }
     const lines = contents.split(/\r?\n/);
     const maskedLines: string[] = [];
     const maskState = { blockComment: false };
@@ -1501,7 +1568,7 @@ export async function analyzeSourceUsage(
     const phpFile = file.language === "php" ? phpUses(lines, maskedLines) : undefined;
     const imports = file.language === "php"
       ? [...phpImportsFromRequires(lines, maskedLines), ...phpFile!.imports.map((hit) => ({ module: hit.module, line: hit.line, column: hit.column, bindings: [] }))]
-      : file.language === "ruby" ? rubyImports(lines, maskedLines) : file.language === "go" ? goImports(lines, maskedLines) : file.language === "rust" ? rustImports(lines, maskedLines) : file.language === "csharp" ? csharpImports(lines, maskedLines) : file.language === "java" || file.language === "kotlin" ? jvmImports(lines, maskedLines) : file.language === "swift" ? swiftImports(lines, maskedLines) : lines.flatMap((line, index) => {
+      : file.language === "ruby" ? rubyImports(lines, maskedLines) : file.language === "go" ? goImports(lines, maskedLines) : file.language === "rust" ? rustImports(lines, maskedLines) : file.language === "csharp" ? csharpImports(lines, maskedLines) : file.language === "java" || file.language === "kotlin" ? jvmImports(lines, maskedLines) : file.language === "swift" ? swiftImports(lines, maskedLines) : file.language === "dart" ? dartImports(lines, maskedLines) : lines.flatMap((line, index) => {
       const maskedLine = maskedLines[index]!;
       if (file.language === "python") {
         return /\b(?:from|import)\b/.test(maskedLine) ? pythonImports(line, index + 1) : [];
@@ -1524,6 +1591,7 @@ export async function analyzeSourceUsage(
     for (const contract of contracts) {
       const matchers = contract.matchers.filter((matcher) => matcher.language === file.language);
       for (const matcher of matchers) {
+        if (parsed && matcher.kind !== "config-key") continue;
         if (matcher.kind === "import") {
           for (const reference of imports.filter((candidate) =>
             moduleMatches(candidate.module, matcher.module, file.language),
@@ -1821,6 +1889,41 @@ export async function findPhpDynamicReferences(root: string): Promise<PhpDynamic
     if (!unique.has(key)) unique.set(key, hit);
   }
   return [...unique.values()].sort((left, right) => left.path.localeCompare(right.path) || left.line - right.line || left.column - right.column || left.reference.localeCompare(right.reference));
+}
+
+export interface DartDynamicReference {
+  path: string;
+  line: number;
+  column: number;
+  reference: string;
+  reason: string;
+}
+
+const DART_DYNAMIC_REASON = "the runtime lookup cannot be attributed statically to a Dart package or API";
+const DART_DYNAMIC_LOOKUP = /\bFunction\s*\.\s*apply\s*\(/g;
+const DART_MIRROR_LOOKUP = /\b(?:reflect|reflectClass|reflectType|currentMirrorSystem)\s*\(/g;
+
+/** Runtime lookup forms in Dart source that cannot be assigned to a package safely: `Function.apply`, and `dart:mirrors` reflection. */
+export async function findDartDynamicReferences(root: string): Promise<DartDynamicReference[]> {
+  const found: DartDynamicReference[] = [];
+  for (const file of await sourceFiles(resolve(root))) {
+    if (file.language !== "dart" || checkoutSourceIgnored(file.path)) continue;
+    const lines = (await readFile(file.absolutePath, "utf8")).split(/\r?\n/);
+    const maskedLines: string[] = [];
+    const maskState: MaskState = { blockComment: false };
+    for (const line of lines) maskedLines.push(maskCodeLine(line, "dart", maskState));
+    const mirrors = lines.some((line, index) => /^\s*import\b/.test(maskedLines[index]!) && /^\s*import\s*['"]dart:mirrors['"]/.test(line));
+    for (const [index, masked] of maskedLines.entries()) {
+      for (const pattern of mirrors ? [DART_DYNAMIC_LOOKUP, DART_MIRROR_LOOKUP] : [DART_DYNAMIC_LOOKUP]) {
+        pattern.lastIndex = 0;
+        for (const match of masked.matchAll(pattern)) {
+          if (match.index === undefined) continue;
+          found.push({ path: file.path, line: index + 1, column: match.index + 1, reference: lines[index]!.trim(), reason: DART_DYNAMIC_REASON });
+        }
+      }
+    }
+  }
+  return found.sort((left, right) => left.path.localeCompare(right.path) || left.line - right.line || left.column - right.column);
 }
 
 export interface SwiftDynamicReference {

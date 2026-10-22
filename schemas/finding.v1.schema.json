@@ -40,6 +40,13 @@
         "critical"
       ]
     },
+    "confidence": {
+      "enum": [
+        "exact",
+        "range",
+        "inferred-from-lock"
+      ]
+    },
     "location": {
       "type": "object",
       "required": [
@@ -109,7 +116,8 @@
             "enum": [
               "import",
               "call",
-              "config-key"
+              "config-key",
+              "symbol"
             ]
           },
           "language": {
@@ -123,7 +131,8 @@
               "toml",
               "ini",
               "php",
-              "swift"
+              "swift",
+              "dart"
             ]
           },
           "symbol": {

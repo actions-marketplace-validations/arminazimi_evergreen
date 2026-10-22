@@ -43,7 +43,7 @@ Matrix version: **2026-10-15 / v1**
 <!-- coverage-matrix:start -->
 | Detector ecosystem | Status | Coverage |
 | --- | --- | --- |
-| CI runner images | Experimental | `pool.vmImage` in Azure Pipelines is matched against retirement rules; GitLab `image`/`services` and CircleCI images are listed as unclassified references, not judged. |
+| CI runner images | Experimental | `pool.vmImage` in `azure-pipelines.yml` is matched against reviewed Azure hosted-image rules. GitLab `image` and `services` values are unclassified. CircleCI orbs, dynamic values, and floating aliases are unclassified; other CircleCI images are not judged. See [CI runner images](#ci-runner-images-detector). |
 | Container base images | Experimental | `FROM` lines in Dockerfiles and Containerfiles and `services.*.image` in Compose files, for Docker Hub official images with a vendor lifecycle. See [Container base images](detectors/container.md). |
 | .NET | Beta | `global.json`, project files, `Directory.Build.props`, `Directory.Packages.props`, and `packages.lock.json`, for .NET release lines past end of support and deprecated NuGet packages. See [.NET](detectors/dotnet.md). |
 | Go | Experimental | `go` and `toolchain` directives in `go.mod` and `go.work`, and direct `require` entries, for Go release lines past end of support. See [Go](detectors/go.md). |
@@ -58,6 +58,10 @@ Matrix version: **2026-10-15 / v1**
 | Swift | Beta | `.swift-version` and `.xcode-version` pins, the `swift-tools-version` line and literal `from:` / `exact:` dependencies in `Package.swift`, and resolved pin versions in `Package.resolved`, for Xcode releases App Store Connect no longer accepts and Swift toolchain lines with a lifecycle rule. The iOS deployment target (`IPHONEOS_DEPLOYMENT_TARGET`) of an application target in an `.xcodeproj` `project.pbxproj`, for iOS releases App Store Connect no longer accepts. Libraries and `platforms:` minimums in `Package.swift` are not read for it. See [Swift](detectors/swift.md). |
 | Android | Experimental | Literal `compileSdk`, `minSdk`, `targetSdk`, and `buildToolsVersion` in `build.gradle` and `build.gradle.kts`, Android Gradle Plugin and Kotlin Android plugin versions in `settings.gradle(.kts)`, `agp` and `kotlin` keys in `libs.versions.toml`, and string-notation Maven dependencies, matched to reviewed rules. Bundled rules cover Google Play Billing Library majors 5 through 9. SDK and plugin declarations produce a finding only when a rule names them. See [Android](#android-detector). |
 | C and C++ | Experimental | `cmake_minimum_required`, C and C++ language standards, and compiler version checks in `CMakeLists.txt`; direct requirements in `conanfile.txt` and `conanfile.py`; and direct dependencies and `builtin-baseline` in `vcpkg.json`. Bundled rules cover CMake policy versions older than 3.5 (removed) and from 3.5 up to 3.10 (deprecated). See [C and C++](#c-and-c-detector). |
+| Dart and Flutter | Experimental | Resolved packages and SDK constraints in `pubspec.lock`, direct dependencies and `environment` constraints in `pubspec.yaml`, and the Flutter version pinned in `.fvmrc` and `.fvm/fvm_config.json`, for Dart SDK releases past end of support and discontinued pub packages. See [Dart and Flutter](detectors/dart.md). |
+| Database runtimes | Experimental | Image tags of `postgres`, `mysql`, `mariadb`, `redis`, and `mongo` services in Compose files, and literal `engine_version` of `postgres`, `mysql`, `mariadb`, and `redis` engines on AWS managed database resources in `*.tf`, for major and minor lines past end of life. Bundled rules cover PostgreSQL 11 through 13 and MySQL 5.7 and 8.0. See [Database runtimes](detectors/database.md). |
+| Shell and PowerShell | Experimental | Literal `#Requires -Version` directives in `*.ps1` and `*.psm1`, `PowerShellVersion` in `*.psd1` manifests, and pinned `mcr.microsoft.com/powershell` image tags in `.github/workflows` files, for PowerShell releases past end of support. Bundled rules cover PowerShell 6.x and 7.0 through 7.3. Shell names such as `shell: pwsh` and Bash images carry no version and are not matched. See [Shell and PowerShell](detectors/shell.md). |
+| Terraform | Experimental | `required_version` and `required_providers` constraints in `*.tf`, locked provider versions in `.terraform.lock.hcl`, and the Terraform CLI version pinned in `.terraform-version` and `.tool-versions`, for Terraform CLI release lines past end of support. Bundled rules cover CLI lines 1.10 through 1.14; provider rules are not bundled yet. See [Terraform](detectors/terraform.md). |
 | Serverless runtimes | Beta | `Runtime` on AWS SAM and CloudFormation functions and `Globals`, `provider.runtime` and per-function `runtime` in `serverless.yml`, and Terraform `runtime` on `aws_lambda_function` plus Google Cloud Functions runtimes and Azure function-app `application_stack` version pins. Bundled rules cover selected AWS Lambda and Google Cloud Functions identifiers that the vendors list as end-of-life. See [Serverless runtimes](detectors/serverless.md). |
 | Other language and platform ecosystems | Unsupported | Report the limitation; do not infer lifecycle status without a detector. |
 <!-- coverage-matrix:end -->
@@ -162,9 +166,25 @@ Each finding names the file and line, and carries its rule's source, replacement
 
 The `swift` detector is **beta**: its level is recorded as `beta` in `benchmarks/thresholds.json`, and the precision floor is enforced. Thirteen public repositories in [Validation](VALIDATION.md#swift-corpus) cover it (six targeted, seven blind). Supported forms, limits, and data sources are documented in [Swift](detectors/swift.md). Its lifecycle rules are in `registry/swift.json` and ship in the [data bundle](DATA.md).
 
+## Dart and Flutter detector
+
+The `dart` detector is **experimental**: its level is recorded as `experimental` in `benchmarks/thresholds.json`. Supported files, declaration forms, matching rules, and limits are documented in [Dart and Flutter](detectors/dart.md). Its lifecycle rules are in `registry/dart.json` and ship in the [data bundle](DATA.md).
+
+## Database runtimes detector
+
+The `database` detector is **experimental**: its level is recorded as `experimental` in `benchmarks/thresholds.json`. Five public repositories are pinned in `benchmarks/public-repositories.json`: four targeted cases and one blind, zero-finding repository, with ground truth from the vendors' lifecycle sources. Supported files, declaration forms, matching rules, and limits are documented in [Database runtimes](detectors/database.md). Its lifecycle rules are in `registry/database.json` and ship in the [data bundle](DATA.md).
+
+## Shell and PowerShell detector
+
+The `shell` detector is **experimental**: its level is recorded as `experimental` in `benchmarks/thresholds.json`. Five public repositories are pinned in `benchmarks/public-repositories.json`: four targeted cases and one blind, zero-finding repository. Each expected finding was checked by reading its line at the pinned commit against Microsoft's PowerShell support lifecycle, independently of Evergreen output. Supported files, declaration forms, matching rules, and limits are documented in [Shell and PowerShell](detectors/shell.md). Its lifecycle rules are in `registry/shell.json` and ship in the [data bundle](DATA.md).
+
+## Terraform detector
+
+The `terraform` detector is **experimental**: its level is recorded as `experimental` in `benchmarks/thresholds.json`. Supported files, declaration forms, matching rules, and limits are documented in [Terraform](detectors/terraform.md). Its lifecycle rules are in `registry/terraform.json` and ship in the [data bundle](DATA.md).
+
 ## C and C++ detector
 
-The `cpp` detector is **experimental**: its level is recorded as `experimental` in `benchmarks/thresholds.json`. It has no public corpus yet, so the dashboard's last-run counts for `cpp` stay empty. Its lifecycle rules are in `registry/cpp.json` and ship in the [data bundle](DATA.md).
+The `cpp` detector is **experimental**: its level is recorded as `experimental` in `benchmarks/thresholds.json`. Five public repositories are pinned in `benchmarks/public-repositories.json`: four targeted migration cases and one blind, zero-finding repository. Their ground truth cites maintainer migration commits or upstream release notes, independently of Evergreen output. Precision on this corpus does not establish coverage of unsupported declaration forms. Its lifecycle rules are in `registry/cpp.json` and ship in the [data bundle](DATA.md).
 
 ### Supported files and declarations
 
@@ -259,6 +279,44 @@ The first matching rule wins. A rule whose VERS is malformed, or whose compariso
 - Malformed input produces no declarations from the affected file, never a partial result, and no error is raised. A file over 1 MiB yields nothing, and a single line over 4,096 characters is skipped. Each parser keeps at most 5,000 declarations from one file.
 - The eight-level and 2,000-file limits are silent. Files beyond them, and any under `build`, `.gradle`, or another skipped directory, are not scanned.
 - A plugin or catalog value that is not a literal version is omitted. A string-notation coordinate is kept and compared as the version text written in the file. The analysis reports no unclassified references.
+
+## CI runner images detector
+
+The `ci-images` detector is **experimental**: its level is recorded as `experimental` in `benchmarks/thresholds.json`. Five targeted public repositories are pinned for it (see [VALIDATION.md](VALIDATION.md) "CI runner images corpus"); precision is not enforced, and its blind share is zero. Its lifecycle rules are in `registry/ci-images.json` and ship in the [data bundle](DATA.md). Bundled rules include the scheduled removals of the macOS 14 Sonoma and Ubuntu 22.04 hosted images, citing the [Microsoft-hosted image deprecation schedule](https://learn.microsoft.com/azure/devops/pipelines/agents/hosted-deprecation-schedule). A label is a finding only when a reviewed rule covers it. Scans read that bundled registry only.
+
+### Supported files and declarations
+
+| File | Declaration read | Notes |
+| --- | --- | --- |
+| `azure-pipelines.yml` | Literal `pool.vmImage` on the pipeline, a stage, or a job | The label is matched when it is `ubuntu-<version>`, `macos-<version>`, or `windows-<version>`, compared case-insensitively. |
+| `.gitlab-ci.yml` | Root and job `image` values, including an image object's `name`, and image values in `services` | Every located value is unclassified. None become findings. |
+| `.circleci/config.yml` | `docker.image` and `machine.image` under `jobs` and `executors`, and string values under `orbs` | Orbs, dynamic values, and floating aliases are unclassified. A literal image is parsed and not judged. |
+
+Only a file named `.gitlab-ci.yml`, `azure-pipelines.yml`, or `config.yml` directly inside a `.circleci` directory is read. Files are found by walking the repository up to eight directories deep, to at most 500 files. Symbolic links are not followed, and `.git`, `node_modules`, `vendor`, `dist`, `build`, `bin`, `obj`, `target`, `.venv`, `venv`, `fixtures`, `__fixtures__`, and `testdata` are skipped. GitLab CI, CircleCI, and Azure Pipelines are never run, and nothing is fetched.
+
+### What it reports
+
+- An Azure `pool.vmImage` whose family and numeric version a rule's Package URL and `vers` range contain. The finding is the value's line. It carries the rule's source, replacement, deadline, and migration guidance when the rule has it. Every matching rule is reported.
+- Nothing for a GitLab image or service, a CircleCI image or orb, or an Azure label no rule covers. An unclassified reference is not a finding.
+
+### What it intentionally does not judge
+
+- GitLab CI images and services. Decision 0014 records no authoritative GitLab lifecycle source, so a literal image is not evidence that GitLab retired it.
+- CircleCI `docker.image` and `machine.image` values, including ones that look old. This version has no CircleCI Package URL mapping, so a literal image is not matched against a rule. Orb references are not image lifecycle claims, and their remote contents are not read.
+- `latest`, `ubuntu-latest`, `macos-latest`, `windows-latest`, and other `*-latest` or `:latest` aliases. `cimg/<name>:current` is floating too.
+- Dynamic values: `$IMAGE`, `${IMAGE}`, `$(vmImage)`, `<< parameters.image >>`, `<< pipeline.parameters.image >>`, and any value that contains `$` or `<<`.
+- Azure labels outside `ubuntu-`, `macos-`, and `windows-` plus a numeric version, including `ubuntu-22.04-arm64` and `windows-2025-vs2026`.
+- A pool written as a string, a pool `name` without `vmImage`, containers, resources, and `strategy.matrix` `vmImage` entries.
+- CircleCI workflow executor references, `resource_class`, descriptions, and a job that only names an orb executor.
+- Comments, unrelated keys, unresolved YAML aliases, merge keys, non-string values, and malformed YAML.
+- Vulnerability advisories. A newer image existing is not a lifecycle finding.
+
+### Known limits and false-positive boundaries
+
+- An Azure label is reported when a rule matches the text, including a pipeline the project no longer runs, and including a self-hosted agent that reuses a hosted label string. Evergreen does not ask Azure DevOps which pipeline is active.
+- GitLab and CircleCI references that are unclassified name the file and line. A literal CircleCI image is omitted from both findings and unclassified references.
+- Malformed YAML produces no declarations from that file, never a partial result, and no error is raised. A file over 1 MiB yields nothing, and a single value over 4,096 characters is skipped.
+- The eight-level and 500-file limits are silent. Files beyond them, and any under a skipped directory, are not scanned.
 
 ## Monorepos
 

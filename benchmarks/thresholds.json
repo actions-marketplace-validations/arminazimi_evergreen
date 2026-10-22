@@ -25,6 +25,16 @@
       "stable": false,
       "minPrecision": 0.95
     },
+    "dart": {
+      "level": "experimental",
+      "stable": false,
+      "minPrecision": 0.95
+    },
+    "database": {
+      "level": "experimental",
+      "stable": false,
+      "minPrecision": 0.95
+    },
     "dotnet": {
       "level": "beta",
       "stable": true,
@@ -85,17 +95,27 @@
       "stable": true,
       "minPrecision": 0.95
     },
+    "shell": {
+      "level": "experimental",
+      "stable": false,
+      "minPrecision": 0.95
+    },
     "swift": {
       "level": "beta",
       "stable": true,
+      "minPrecision": 0.95
+    },
+    "terraform": {
+      "level": "experimental",
+      "stable": false,
       "minPrecision": 0.95
     }
   },
   "lastFullRun": {
     "date": "2026-10-21",
-    "commit": "4c8a0a2",
-    "repositories": 140,
-    "findings": 585,
+    "commit": "122d612",
+    "repositories": 145,
+    "findings": 616,
     "precision": 1,
     "recall": 1,
     "perDetector": {
@@ -105,7 +125,7 @@
         "falseNegatives": 0
       },
       "ci-images": {
-        "truePositives": 0,
+        "truePositives": 8,
         "falsePositives": 0,
         "falseNegatives": 0
       },
@@ -120,12 +140,12 @@
         "falseNegatives": 0
       },
       "dotnet": {
-        "truePositives": 84,
+        "truePositives": 105,
         "falsePositives": 0,
         "falseNegatives": 0
       },
       "github-actions": {
-        "truePositives": 260,
+        "truePositives": 261,
         "falsePositives": 0,
         "falseNegatives": 0
       },
@@ -150,7 +170,7 @@
         "falseNegatives": 0
       },
       "npm": {
-        "truePositives": 48,
+        "truePositives": 49,
         "falsePositives": 0,
         "falseNegatives": 0
       },

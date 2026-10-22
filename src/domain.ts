@@ -2,6 +2,14 @@ export const severityValues = ["info", "low", "medium", "high", "critical"] as c
 
 export type Severity = (typeof severityValues)[number];
 
+/**
+ * How the version behind a finding was read: `exact` from a pinned declaration, `range` from a compatibility
+ * range that merely allows it, `inferred-from-lock` from a lockfile entry.
+ */
+export const confidenceValues = ["exact", "range", "inferred-from-lock"] as const;
+
+export type Confidence = (typeof confidenceValues)[number];
+
 export interface EvidenceSource {
   title: string;
   url: string;
@@ -30,19 +38,20 @@ export const sourceLanguageValues = [
   "ini",
   "php",
   "swift",
+  "dart",
 ] as const;
 
 export type SourceLanguage = (typeof sourceLanguageValues)[number];
 
 export interface ImportUsageMatcher {
   kind: "import";
-  language: "javascript" | "typescript" | "python" | "go" | "java" | "kotlin" | "rust" | "csharp" | "ruby" | "php" | "swift";
+  language: "javascript" | "typescript" | "python" | "go" | "java" | "kotlin" | "rust" | "csharp" | "ruby" | "php" | "swift" | "dart";
   module: string;
 }
 
 export interface CallUsageMatcher {
   kind: "call";
-  language: "javascript" | "typescript" | "python" | "go" | "rust" | "csharp" | "ruby" | "php" | "swift";
+  language: "javascript" | "typescript" | "python" | "go" | "rust" | "csharp" | "ruby" | "php" | "swift" | "dart";
   module: string;
   targets: string[];
 }
@@ -86,7 +95,7 @@ export interface SourceUsageContract {
 }
 
 export interface SourceUsage {
-  kind: "import" | "call" | "config-key";
+  kind: "import" | "call" | "config-key" | "symbol";
   language: SourceLanguage;
   symbol: string;
   location: SourceLocation;
@@ -142,6 +151,7 @@ export interface Finding {
   title: string;
   summary: string;
   severity: Severity;
+  confidence: Confidence;
   location: SourceLocation;
   replacement?: string;
   deadline?: string;

@@ -3,7 +3,7 @@
   "referenceDay": "2026-10-21",
   "corpus": {
     "file": "benchmarks/public-repositories.json",
-    "repositories": 140
+    "repositories": 165
   },
   "sources": {
     "thresholds": "benchmarks/thresholds.json",
@@ -12,9 +12,9 @@
   },
   "run": {
     "date": "2026-10-21",
-    "commit": "4c8a0a2",
-    "repositories": 140,
-    "findings": 585,
+    "commit": "122d612",
+    "repositories": 145,
+    "findings": 616,
     "runAgeDays": 0,
     "recordedPrecision": 1,
     "recordedRecall": 1,
@@ -57,17 +57,17 @@
         "enforced": false
       },
       "run": {
-        "truePositives": 0,
+        "truePositives": 8,
         "falsePositives": 0,
         "falseNegatives": 0,
-        "precision": null,
-        "recall": null
+        "precision": 1,
+        "recall": 1
       },
       "evidence": {
-        "repositoriesWithFindings": 0,
-        "expectedFindings": 0,
-        "zeroFindingRepositories": 0,
-        "repositories": 0,
+        "repositoriesWithFindings": 4,
+        "expectedFindings": 8,
+        "zeroFindingRepositories": 1,
+        "repositories": 5,
         "blindRepositories": 0
       }
     },
@@ -87,8 +87,8 @@
         "recall": 1
       },
       "evidence": {
-        "repositoriesWithFindings": 7,
-        "expectedFindings": 19,
+        "repositoriesWithFindings": 9,
+        "expectedFindings": 23,
         "zeroFindingRepositories": 1,
         "repositories": 5,
         "blindRepositories": 0
@@ -118,6 +118,40 @@
       }
     },
     {
+      "id": "dart",
+      "level": "experimental",
+      "earnedLevel": "experimental",
+      "precisionFloor": {
+        "value": 0.95,
+        "enforced": false
+      },
+      "run": null,
+      "evidence": {
+        "repositoriesWithFindings": 4,
+        "expectedFindings": 8,
+        "zeroFindingRepositories": 1,
+        "repositories": 5,
+        "blindRepositories": 0
+      }
+    },
+    {
+      "id": "database",
+      "level": "experimental",
+      "earnedLevel": "experimental",
+      "precisionFloor": {
+        "value": 0.95,
+        "enforced": false
+      },
+      "run": null,
+      "evidence": {
+        "repositoriesWithFindings": 6,
+        "expectedFindings": 8,
+        "zeroFindingRepositories": 1,
+        "repositories": 5,
+        "blindRepositories": 1
+      }
+    },
+    {
       "id": "dotnet",
       "level": "beta",
       "earnedLevel": "beta",
@@ -126,15 +160,15 @@
         "enforced": true
       },
       "run": {
-        "truePositives": 84,
+        "truePositives": 105,
         "falsePositives": 0,
         "falseNegatives": 0,
         "precision": 1,
         "recall": 1
       },
       "evidence": {
-        "repositoriesWithFindings": 9,
-        "expectedFindings": 84,
+        "repositoriesWithFindings": 10,
+        "expectedFindings": 112,
         "zeroFindingRepositories": 9,
         "repositories": 18,
         "blindRepositories": 12
@@ -149,15 +183,15 @@
         "enforced": true
       },
       "run": {
-        "truePositives": 260,
+        "truePositives": 261,
         "falsePositives": 0,
         "falseNegatives": 0,
         "precision": 1,
         "recall": 1
       },
       "evidence": {
-        "repositoriesWithFindings": 46,
-        "expectedFindings": 260,
+        "repositoriesWithFindings": 55,
+        "expectedFindings": 295,
         "zeroFindingRepositories": 2,
         "repositories": 11,
         "blindRepositories": 0
@@ -264,15 +298,15 @@
         "enforced": true
       },
       "run": {
-        "truePositives": 48,
+        "truePositives": 49,
         "falsePositives": 0,
         "falseNegatives": 0,
         "precision": 1,
         "recall": 1
       },
       "evidence": {
-        "repositoriesWithFindings": 12,
-        "expectedFindings": 48,
+        "repositoriesWithFindings": 13,
+        "expectedFindings": 49,
         "zeroFindingRepositories": 8,
         "repositories": 26,
         "blindRepositories": 0
@@ -394,6 +428,23 @@
       }
     },
     {
+      "id": "shell",
+      "level": "experimental",
+      "earnedLevel": "experimental",
+      "precisionFloor": {
+        "value": 0.95,
+        "enforced": false
+      },
+      "run": null,
+      "evidence": {
+        "repositoriesWithFindings": 4,
+        "expectedFindings": 11,
+        "zeroFindingRepositories": 1,
+        "repositories": 5,
+        "blindRepositories": 1
+      }
+    },
+    {
       "id": "swift",
       "level": "beta",
       "earnedLevel": "beta",
@@ -409,11 +460,28 @@
         "recall": 1
       },
       "evidence": {
-        "repositoriesWithFindings": 10,
-        "expectedFindings": 15,
+        "repositoriesWithFindings": 11,
+        "expectedFindings": 16,
         "zeroFindingRepositories": 2,
         "repositories": 13,
         "blindRepositories": 7
+      }
+    },
+    {
+      "id": "terraform",
+      "level": "experimental",
+      "earnedLevel": "experimental",
+      "precisionFloor": {
+        "value": 0.95,
+        "enforced": false
+      },
+      "run": null,
+      "evidence": {
+        "repositoriesWithFindings": 5,
+        "expectedFindings": 7,
+        "zeroFindingRepositories": 1,
+        "repositories": 5,
+        "blindRepositories": 0
       }
     }
   ],
