@@ -324,6 +324,7 @@ Every lifecycle claim Evergreen makes comes from a reviewed rule with an authori
 - [q is deprecated](npm.package.q.deprecated.html) — deprecated, `npm.package.q.deprecated`
 - [querystring is deprecated](npm.package.querystring.deprecated.html) — deprecated, `npm.package.querystring.deprecated`
 - [react-beautiful-dnd is deprecated](npm.package.react-beautiful-dnd.deprecated.html) — deprecated, `npm.package.react-beautiful-dnd.deprecated`
+- [React Native 0.77 through 0.84 are unsupported](npm.package.react-native.0.77-to-0.84.end-of-support.html) — end of support, `npm.package.react-native.0.77-to-0.84.end-of-support`
 - [read-package-json is no longer supported](npm.package.read-package-json.eol.html) — end of life, `npm.package.read-package-json.eol`
 - [request-promise-native is deprecated](npm.package.request-promise-native.deprecated.html) — deprecated, `npm.package.request-promise-native.deprecated`
 - [request-promise is deprecated](npm.package.request-promise.deprecated.html) — deprecated, `npm.package.request-promise.deprecated`
@@ -360,6 +361,8 @@ Every lifecycle claim Evergreen makes comes from a reviewed rule with an authori
 
 - [doctrine/cache is abandoned](php.package.doctrine.cache.abandoned.html) — deprecated, `php.package.doctrine.cache.abandoned`
 - [fzaninotto/faker is abandoned](php.package.fzaninotto.faker.abandoned.html) — deprecated, `php.package.fzaninotto.faker.abandoned`
+- [Laravel 10 is no longer supported](php.package.laravel.framework-10.end-of-support.html) — end of support, `php.package.laravel.framework-10.end-of-support`
+- [Laravel 11 is no longer supported](php.package.laravel.framework-11.end-of-support.html) — end of support, `php.package.laravel.framework-11.end-of-support`
 - [sensiolabs/security-checker is abandoned](php.package.sensiolabs.security-checker.abandoned.html) — deprecated, `php.package.sensiolabs.security-checker.abandoned`
 - [swiftmailer/swiftmailer is abandoned](php.package.swiftmailer.swiftmailer.abandoned.html) — deprecated, `php.package.swiftmailer.swiftmailer.abandoned`
 - [zendframework/zend-stdlib is abandoned](php.package.zendframework.zend-stdlib.abandoned.html) — deprecated, `php.package.zendframework.zend-stdlib.abandoned`
@@ -480,6 +483,8 @@ Every lifecycle claim Evergreen makes comes from a reviewed rule with an authori
 ## ruby
 
 - [json 2.17.1.1 is yanked](ruby.gem.json.yanked-2.17.1.1.html) — removed, `ruby.gem.json.yanked-2.17.1.1`
+- [Rails 7.2 is end-of-life](ruby.gem.rails-7.2.end-of-life.html) — end of life, `ruby.gem.rails-7.2.end-of-life`
+- [Rails 8.0 security support is scheduled to end](ruby.gem.rails-8.0.scheduled-end-of-life.html) — scheduled end of life, `ruby.gem.rails-8.0.scheduled-end-of-life`
 - [Ruby 1.9.3 is end-of-life](ruby.runtime.eol-1.9.3.html) — end of life, `ruby.runtime.eol-1.9.3`
 - [Ruby 2.0.0 is end-of-life](ruby.runtime.eol-2.0.0.html) — end of life, `ruby.runtime.eol-2.0.0`
 - [Ruby 2.1 is end-of-life](ruby.runtime.eol-2.1.html) — end of life, `ruby.runtime.eol-2.1`
