@@ -41,8 +41,13 @@ Read the [public documentation](https://arminazimi.github.io/evergreen/), run th
 | **Shell and PowerShell** *(experimental)* | `#Requires -Version` in `*.ps1` / `*.psm1`, `PowerShellVersion` in `*.psd1`, and pinned `mcr.microsoft.com/powershell` image tags in `.github/workflows` | PowerShell 6.x and 7.0–7.3 past end of support. Windows PowerShell 5.1, shell names, Bash images, dynamic values, and directives with extra options are not judged. See [Shell and PowerShell](docs/detectors/shell.md) |
 | **Terraform** *(experimental)* | `*.tf` (`required_version`, `required_providers`), `.terraform.lock.hcl`, `.terraform-version`, `.tool-versions`: constraints, locked providers, and the pinned Terraform CLI | Terraform CLI release lines that no longer receive support when pinned exactly or by a `~> X.Y.Z` constraint. Ranges such as `>= 1.5` are not judged. See [Terraform](docs/detectors/terraform.md) |
 | **Rust** *(experimental)* | `Cargo.toml`, `Cargo.lock`, `rust-toolchain(.toml)`: the pinned toolchain and direct crate dependencies | Toolchains older than the newest stable release, and direct dependencies on unmaintained crates with the files that use them. `edition`, `rust-version`, `stable`, and anything it cannot read literally are not judged. See [Rust](docs/detectors/rust.md) |
+| **Swift** *(beta)* | `.swift-version`, `.xcode-version`, `Package.swift`, `Package.resolved`, and the application-target `IPHONEOS_DEPLOYMENT_TARGET` in `project.pbxproj` | Xcode and iOS releases App Store Connect no longer accepts, Swift toolchain lines with a lifecycle rule, and packages with a rule. Libraries and `platforms:` minimums are not judged. See [Swift](docs/detectors/swift.md) |
+| **Serverless runtimes** *(beta)* | `Runtime` in AWS SAM and CloudFormation templates, `provider.runtime` and `runtime` in `serverless.yml`, and `runtime` in Terraform `aws_lambda_function`, Google Cloud Functions, and Azure function apps | Lambda and Cloud Functions runtimes their vendor lists as end of life. See [Serverless runtimes](docs/detectors/serverless.md) |
+| **Ruby** *(experimental)* | `.ruby-version`, `.tool-versions`, `Gemfile`, `Gemfile.lock` | Ruby release lines past end of support and yanked gems, with the Ruby files that use a gem. See [Compatibility](docs/COMPATIBILITY.md#ruby-detector) |
+| **PHP** *(experimental)* | `.php-version`, `.tool-versions`, `composer.json`, `composer.lock` | PHP release lines past end of support and abandoned Composer packages. See [Compatibility](docs/COMPATIBILITY.md#php-detector) |
+| **Android** *(experimental)* | `build.gradle(.kts)`, `settings.gradle(.kts)`, `libs.versions.toml`: SDK levels, Android Gradle Plugin, Kotlin plugin, and Maven dependencies | Declarations that a reviewed rule names, such as Google Play Billing Library majors 5 through 9. See [Compatibility](docs/COMPATIBILITY.md#android-detector) |
 
-Each finding carries its rule's sources, review date, and migration steps; see [Lifecycle rules](docs/RULES.md). Other ecosystems are not guessed at: Evergreen reports a package it has no rule for as `no-data`, never as safe, and new ecosystems start from a [generated detector skeleton](docs/DETECTORS.md#start-a-new-detector-in-this-repository). The [compatibility matrix](docs/COMPATIBILITY.md) lists supported environments and hosts.
+The level in parentheses is the detector's maturity; the full list with each level is the [ecosystem coverage matrix](docs/COMPATIBILITY.md#ecosystem-coverage), and earned precision and recall per detector are on the [accuracy dashboard](https://arminazimi.github.io/evergreen/dashboard/). Each finding carries its rule's sources, review date, and migration steps; see [Lifecycle rules](docs/RULES.md). Other ecosystems are not guessed at: Evergreen reports a package it has no rule for as `no-data`, never as safe, and new ecosystems start from a [generated detector skeleton](docs/DETECTORS.md#start-a-new-detector-in-this-repository). The [compatibility matrix](docs/COMPATIBILITY.md) lists supported environments and hosts.
 
 ## Product principles
 
@@ -58,6 +63,12 @@ Requirements: Node.js 22 or newer.
 
 ```bash
 npx evergreen-deprecation scan .
+```
+
+Give an agent a short answer instead of the full report: one line per finding with its id, location, severity, and replacement, most severe first, capped at 25 findings (the rest are counted) and under 8 KiB:
+
+```bash
+npx evergreen-deprecation scan . --format compact
 ```
 
 Verify that the CLI, local MCP server, Agent Skill, plugin foundations, and CI
@@ -124,6 +135,14 @@ Tell the coding agents working in a repository to check dependencies before addi
 ```bash
 npx evergreen-deprecation init --agents --dry-run   # show the change
 npx evergreen-deprecation init --agents
+```
+
+To do this for every coding agent a repository is already set up for, run `setup`. It detects Claude Code, Codex, Cursor, Gemini CLI, GitHub Copilot, and Kilo Code configuration, shows the change for each host's instruction file, and writes only after you confirm (or pass `--yes`). It uses the same marked section as `init --agents`, so existing rules are never overwritten:
+
+```bash
+npx evergreen-deprecation setup --dry-run   # print the plan
+npx evergreen-deprecation setup             # ask, then write
+npx evergreen-deprecation setup --yes       # no prompt (CI, scripts)
 ```
 
 Connect a coding agent through the local MCP server:

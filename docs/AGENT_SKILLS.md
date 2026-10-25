@@ -37,6 +37,12 @@ The host also needs one Evergreen execution path:
 
 No account or API key is required.
 
+## One Skill for every ecosystem
+
+Evergreen briefly shipped four per-ecosystem Skills (Node.js, Python, GitHub Actions, containers) and removed them in favor of this one. They were near-copies of this Skill that differed only by a rule-prefix filter, so every workflow change had to be made five times, they could trigger together on one request, and they covered four of the ecosystems Evergreen supports. The claim that narrower descriptions trigger more reliably was never measured: the trigger evaluation covers only this Skill. If a measurement shows a gain, split by ecosystem then.
+
+The ecosystem-specific cautions live in this Skill's "Ecosystem notes".
+
 ## Use the guardrail in this repository
 
 Agents working on Evergreen itself follow the same rule the Skill teaches: run `evergreen check <purl>` before adding any dependency, runtime, or Action. Install the Skill as above, or run the check from source, which needs nothing else:

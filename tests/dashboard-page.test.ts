@@ -207,9 +207,11 @@ test("a level above the counted evidence is marked, not hidden", () => {
   assert.equal(api.isAboveEvidence("unknown", "experimental"), false);
   assert.equal(api.isAboveEvidence(undefined, "experimental"), false);
   const flagged = data.detectors.filter((detector) => api.rowModel(detector, data.sources).cells.find((cell) => cell.key === "level")!.flag);
-  assert.deepEqual(flagged.map((detector) => detector.id), ["github-actions", "nodejs", "npm", "python"]);
-  const npm = api.rowModel(data.detectors.find((detector) => detector.id === "npm")!, data.sources);
-  const level = npm.cells.find((cell) => cell.key === "level")!;
+  assert.deepEqual(flagged.map((detector) => detector.id), []);
+  // No shipped detector is above its evidence any more, so the marker is checked on a detector made to be.
+  const real = data.detectors.find((detector) => detector.id === "npm")!;
+  const above = api.rowModel({ ...real, level: "stable", earnedLevel: "beta" }, data.sources);
+  const level = above.cells.find((cell) => cell.key === "level")!;
   assert.equal(level.text, "stable");
   assert.equal(level.note, api.ABOVE_EVIDENCE_NOTE);
   assert.equal(level.noteHref, api.BLOB_URL + "docs/decisions/0013-detector-maturity.md");
@@ -430,9 +432,9 @@ test("run status reads the recorded age and the reference day", () => {
   assert.deepEqual({ ...api.runStatus({ ...data, referenceDay: "2026-11-02", run: { ...data.run, runAgeDays: 15 } }, new Date(2026, 10, 3)) }, {
     stale: true,
     ageDays: 15,
-    runDate: "2026-10-23",
+    runDate: data.run!.date,
     referenceDay: "2026-11-02",
-    visitorAgeDays: 11,
+    visitorAgeDays: Math.round((Date.UTC(2026, 10, 3) - Date.parse(`${data.run!.date}T00:00:00Z`)) / 86_400_000),
     staleAfterDays: 14,
   });
   assert.equal(api.runStatus({ run: null, referenceDay: "2026-11-02" }, new Date()).stale, false);

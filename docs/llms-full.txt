@@ -75,6 +75,22 @@ The exact settings location depends on the host. Evergreen needs no environment 
 
 Everything below is read-only and runs in the local process. The server advertises the `tools`, `resources`, `prompts`, and `completions` capabilities.
 
+### Write safety
+
+No tool, resource, or prompt writes to the repository, and none has an option that makes it write. Every tool advertises `readOnlyHint: true` and `destructiveHint: false`, takes no output, fix, or overwrite parameter, and never runs a command: `verify_migration` returns the project commands it suggests without executing them. [`tests/mcp-readonly.test.ts`](https://github.com/arminazimi/evergreen/blob/main/tests/mcp-readonly.test.ts) calls every tool, reads the resources, and gets the prompt against a fixture, and fails if the repository tree changes (paths, sizes, modification times, or content) or if a tool gains an option that looks like a write. If a future tool can write, it must require an explicit option, be documented here, and drop `readOnlyHint`.
+
+### Lifecycle status file
+
+An agent that cannot call the server can still read the repository's lifecycle state before it plans a change. `evergreen scan --write-status` writes `EVERGREEN_STATUS.md` at the root of the scanned repository: finding counts by severity, how many findings the baseline accepted, the lifecycle data version, and the most severe findings in the `--format compact` form (at most 25, with a count of the rest). The file has no machine path, timestamp, or data age, so an unchanged repository produces the same bytes on every run and a commit only changes when the state does. Without the flag nothing is written, and the MCP tools never write it.
+
+To point agents at it, add a line like this to `AGENTS.md` and refresh the file in CI or a pre-commit hook:
+
+```markdown
+Before planning dependency or runtime changes, read EVERGREEN_STATUS.md for the repository's current lifecycle findings. Re-run `npx evergreen-deprecation scan . --write-status` after you change them.
+```
+
+The file is a snapshot. Run a scan, or call `scan_repository`, to see the current state after an edit.
+
 ### Tools
 
 Each tool has an `outputSchema` (the published JSON Schema in [`schemas/`](https://github.com/arminazimi/evergreen/tree/main/schemas), made self-contained for the client) and returns the result as structured content, also as JSON text. Failures return `isError` with a message and no structured content.
@@ -150,6 +166,8 @@ The Tools tab lists the six tools with their output schemas, Resources lists the
 
 ## Checking a dependency before adding it
 
+To see afterwards what agents checked and which packages were flagged, set `EVERGREEN_USAGE_LOG=1` for the server and run `evergreen usage`. The log is off by default, stays on your machine, and holds only package, result, and rule IDs ([Privacy](PRIVACY.md#local-usage-log)). Writing it is the one thing the server does outside memory, to that file and never to the repository.
+
 Call `check_dependency` with a Package URL (`pkg:npm/request@2.88.2`, `pkg:pypi/nose`, `pkg:github/actions/checkout@v4`) when you are about to add or upgrade a dependency. The result has a `status`:
 
 - `affected`: a rule applies. Read `findings[].summary`, `replacement`, and `sources`, and choose the replacement instead.
@@ -170,7 +188,7 @@ Ready-to-copy setups for the dependency guardrail (an MCP entry plus the instruc
 | GitHub Copilot | `.vscode/mcp.json` (VS Code) or repository settings (coding agent) | `.github/copilot-instructions.md` |
 | Kilo Code | `kilo.jsonc` | `.kilo/rules/evergreen.md` |
 
-To put the same instruction into a repository's `AGENTS.md` or `CLAUDE.md`, run `evergreen init --agents` in it: it adds a delimited section, keeps everything else byte for byte, and is safe to run again (`--dry-run` prints the diff first).
+To put the same instruction into a repository's `AGENTS.md` or `CLAUDE.md`, run `evergreen init --agents` in it: it adds a delimited section, keeps everything else byte for byte, and is safe to run again (`--dry-run` prints the diff first). `evergreen setup` does the same for every detected host at once (Claude Code, Codex, Cursor, Gemini CLI, GitHub Copilot, Kilo Code), writing each host's own instruction file such as `.cursor/rules/evergreen.mdc` after confirmation or `--yes`; it does not edit MCP server entries, which stay in the per-host setups above.
 
 Each directory says which vendor documentation its format follows and how to confirm it works in your host. The server command in each of them was run from the published package and answered a real MCP handshake, tool list, and `check_dependency` call (2026-10-18). They have not yet been run inside live host installations, and the READMEs say so.
 
@@ -533,6 +551,37 @@ request, telemetry, or configuration write. Identical Evergreen versions produce
 byte-for-byte identical JSON output. The package's contract tests validate both the
 CLI output and committed example against the public JSON Schema and ensure every
 surface references registered capability identifiers.
+
+## Exit codes and error codes
+
+Every CLI failure belongs to one class. The class decides the exit code, and with
+`--json` (or `--format json`) the same class is written to stdout as an
+`evergreen.error.v1` document, so an agent can branch without parsing messages.
+
+| Class (`error.code`) | Exit code | Meaning |
+| --- | --- | --- |
+| *(none)* | 0 | The command succeeded. |
+| `policy` | 1 | A gate you configured failed: `check` found an affected dependency at or above `--fail-on`, `doctor` reported a failed check, or `--on-expired fail` met an expired suppression. |
+| `usage` | 2 | The command line is wrong: unknown command, flag, or value, or a missing argument. |
+| `data` | 3 | The input is well formed but the data is not there: a finding ID that was not found, a pinned data version that is not available, or a data update that was refused. |
+| `parse` | 4 | An input could not be parsed: an invalid Package URL, an unreadable or unsupported baseline, or an `AGENTS.md` section that is damaged. |
+| `internal` | 5 | Evergreen failed unexpectedly. This is a bug; please report it. |
+
+```json
+{
+  "schemaVersion": "evergreen.error.v1",
+  "error": {
+    "code": "usage",
+    "exitCode": 2,
+    "message": "Unknown command: frobnicate"
+  }
+}
+```
+
+The message is also written to stderr in every mode. A `policy` failure is a
+verdict on a result that was already printed, so stdout stays that single result
+document and no error document is added. The set of classes and their exit codes
+is stable; new classes would be added with new numbers, never by renumbering.
 
 ---
 
@@ -954,6 +1003,12 @@ The host also needs one Evergreen execution path:
 - the `evergreen` CLI available on `PATH`.
 
 No account or API key is required.
+
+## One Skill for every ecosystem
+
+Evergreen briefly shipped four per-ecosystem Skills (Node.js, Python, GitHub Actions, containers) and removed them in favor of this one. They were near-copies of this Skill that differed only by a rule-prefix filter, so every workflow change had to be made five times, they could trigger together on one request, and they covered four of the ecosystems Evergreen supports. The claim that narrower descriptions trigger more reliably was never measured: the trigger evaluation covers only this Skill. If a measurement shows a gain, split by ecosystem then.
+
+The ecosystem-specific cautions live in this Skill's "Ecosystem notes".
 
 ## Use the guardrail in this repository
 
@@ -1400,7 +1455,7 @@ Downloads honor `HTTP_PROXY`, `HTTPS_PROXY`, and `NO_PROXY` (Node.js 22.21 or ne
 
 ### Pinning
 
-`--data-version X` or `EVERGREEN_DATA_VERSION=X` (the flag wins) makes Evergreen use exactly bundle `X` from your cache, or `bundled` for the data shipped with the release. Unlike the automatic choice, a pin that cannot be met **stops the run** with exit code 2 instead of quietly using something else, so a CI job that pins its data either uses it or fails. The message tells you how to fetch it: `evergreen data update --data-version X`. A pinned bundle is verified just like any other, and is used whatever its age (the stale warning still appears).
+`--data-version X` or `EVERGREEN_DATA_VERSION=X` (the flag wins) makes Evergreen use exactly bundle `X` from your cache, or `bundled` for the data shipped with the release. Unlike the automatic choice, a pin that cannot be met **stops the run** with exit code 3 (a data failure) instead of quietly using something else, so a CI job that pins its data either uses it or fails. The message tells you how to fetch it: `evergreen data update --data-version X`. A pinned bundle is verified just like any other, and is used whatever its age (the stale warning still appears).
 
 ### Where the data is stored
 
@@ -1628,6 +1683,49 @@ The blind rule, fixed on 2026-10-23 before Evergreen ran on these additions: for
 Ground truth: for each repository the harness report was read line by line at the pinned commit, and every expected finding has a `maintainer-review` note quoting the path, line, and the matching text. The Go, Rust, Ruby, Android, C/C++, CI image, serverless, and GitHub Actions findings were also cross-checked against an independent `grep` over the pinned files (not Evergreen's output); the only differences are the scope boundaries below. Because the corpus scans every detector, every finding in these repositories is recorded, not only the ones for the ecosystem it was selected for. Findings of the npm, Node.js, Python, and .NET detectors were checked by reading the line, not by a second search. Several repositories that matched a version query have no finding in that ecosystem, which is expected: a range such as PHP `^7.4 || ^8.0` or Dart `sdk: ^3.8.0` still allows a supported release and is not an end-of-life declaration.
 
 Scope boundaries seen while checking, none of which is a finding in this corpus: the GitHub Actions detector reads only the root `.github/workflows` directory, so nested workflows (`pkg/cli/init-templates/base/.github/workflows` in `replicate/cog`, a `fixtures` directory in `webpro-nl/knip`) and composite `action.yml` files (`realabbas/Github-Actions-React-Native`, `awslabs/aws-config-rdklib`, `sarthak-behl/Signal-iOS`) are not scanned; the CI image detector reads files named `azure-pipelines.yml`, not `azure-pipelines-full.yml` (`microsoft/FASTER`); and the Android detector does not report a Play Billing pin written as `"gplayImplementation"("...")` (`d4rken-org/octi`) or inside an `androidTestImplementation` call (`BranchMetrics/android-branch-deep-linking-attribution`). These are candidates for follow-up issues, not corpus entries.
+
+## The 456-repository corpus
+
+Issue #740 added 156 repositories to the 300 above to close the evidence gaps in [decision 0013](decisions/0013-detector-maturity.md) for the four detectors that held `Supported` before the rules existed. Every one records `selection: "blind"`.
+
+The blind rule, fixed on 2026-10-23 before Evergreen ran on these additions: GitHub repository search for a language, 100 to 500 stars, last pushed from 2021-01-01 to 2024-12-31, not a fork, not archived, sorted by stars descending (`gh search repos --language <language> --stars 100..500 --updated 2021-01-01..2024-12-31 --archived=false --include-forks=false --sort stars --order desc --limit 100`). Walk the results in order and keep a repository unless it is already in the corpus, is larger than 50,000 KB, or lacks the file the ecosystem needs. Pin each at its default-branch commit on that date. Each expected finding is the scan result with the line read at the pinned commit, recorded as a `maintainer-review` note.
+
+- `node` (52, language JavaScript, a root `package.json`): `lucasbento/graphql-pokemon`, `adobe-photoshop/generator-assets`, `gruntjs/grunt-contrib-requirejs`, `mathiasbynens/CSS.escape`, `bitpay/bitauth`, `cloudinary/cloudinary-react`, `discordjs/RPC`, `pilwon/node-yahoo-finance`, `rpl/flow-coverage-report`, `sourcecred/sourcecred`, `Brainfock/Brainfock`, `manifoldfinance/defi-threat`, `remarkjs/remark-toc`, `fstirlitz/luaparse`, `mobxjs/mobx-react-todomvc`, `dxxzst/OfflineMap`, `ElementUI/element-theme`, `algorithm-visualizer/algorithms`, `d3/d3-interpolate`, `twilio-labs/call-gpt`, `jiayisheji/blog`, `svrxjs/svrx`, `wix-incubator/react-native-keyboard-aware-scrollview`, `malte-wessel/react-textfit`, `bartve/disconnect`, `insodoc/insomnia-documenter`, `whoisandy/react-blocks`, `o2team/elf`, `standard/ts-standard`, `briancavalier/slides`, `YataoZhang/my-single-spa`, `parmsang/gatsby-starter-ecommerce`, `acode/copenhagen`, `snorpey/triangulation`, `bchiang7/octoprofile`, `mahnunchik/gulp-responsive`, `cferdinandi/build-tool-boilerplate`, `mixtur/webpack-spritesmith`, `wzpan/hexo-generator-search`, `dai-shi/react-hooks-async`, `lazd/gulp-replace`, `mapmeld/profanity-pgp`, `lbovet/docson`, `lexich/redux-api`, `smartcontractkit/defi-minimal`, `allegro/node-worker-nodes`, `drawcall/AgileJS`, `tani/cheeriogs`, `Semantic-Org/Semantic-UI-CSS`, `uncleLian/vue2-news`, `abramenal/cypress-file-upload`, `CoreyGinnivan/whocanuse`.
+- `python` (34, language Python, a root `pyproject.toml`, `setup.py`, `setup.cfg`, `Pipfile`, or `requirements.txt`): `NTMC-Community/MatchZoo-py`, `layer8secure/SilentHound`, `LAION-AI/natural_voice_assistant`, `caserec/CaseRecommender`, `SqueezeAILab/TinyAgent`, `jarus/flask-testing`, `Deadpool2000/Paybag`, `alxschwrz/codex_py2cpp`, `harperreed/photo-similarity-search`, `FranxYao/Long-Context-Data-Engineering`, `DougDougGithub/Babagaboosh`, `aryanvikash/Youtube-Downloader-Bot`, `tappi287/openvr_fsr_app`, `microsoft/powerbi-jupyter`, `JPCERTCC/MalConfScan`, `msight-tech/research-ms-loss`, `HazyResearch/evaporate`, `achembarpu/pockyt`, `blacknbunny/CVE-2018-10933`, `peract/peract`, `sweetcocoa/pop2piano`, `shichao-an/leetcode-python`, `simonw/db-to-sqlite`, `alexdelorenzo/cast_control`, `prateekiiest/Code-Sleep-Python`, `SourceCode-AI/aura`, `szc19990412/TransMIL`, `PrithivirajDamodaran/Styleformer`, `elbayadm/attn2d`, `CryptoGnome/Limit-Sniper`, `kturung/langgraph_streamlit_codeassistant`, `busimus/cutelog`, `flopp/GpxTrackPoster`, `corenel/pytorch-adda`.
+- `node-actions` (13, language TypeScript, at least one workflow file in `.github/workflows`): `iamraphson/react-paystack`, `dai-shi/reactive-react-redux`, `mgmeyers/obsidian-list-callouts`, `rubenspgcavalcante/webpack-extension-reloader`, `innocenzi/tailwindcss-theming`, `lbdremy/solr-node-client`, `galnir/Master-Bot`, `ericnorris/striptags`, `xmindltd/xmind-sdk-js`, `rametta/pratica`, `wessberg/rollup-plugin-ts`, `Ff00ff/mammoth`, `bryanmylee/svelte-headless-table`.
+
+A second Python pass followed, because the 34 repositories above held only 4 Python findings and `stable` needs 60. The blind rule, fixed on 2026-10-23 before Evergreen ran on these additions: for each query below, run `gh search code <query> --filename <file> --limit 60`, walk the results in the order returned that day, and keep the first five or six unique repositories whose matching path is exactly that file at the root, skipping forks, archives, repositories larger than 50,000 KB, and repositories already in the corpus. Pin each at its default-branch commit on that date. The queries look for old Python declarations, so they are expected to produce findings, but the repository is chosen by the query result and not by any Evergreen output.
+
+- `python` (56 more):
+  - `gh search code requires-python = ">=3.8" --filename pyproject.toml`: `cobrateam/splinter`, `pallets-eco/flask-debugtoolbar`, `Aiven-Open/pghoard`, `epfl-lts2/pygsp`, `isaiahbjork/Auto-GPT-Crypto-Plugin`, `widgetti/ipyvuetify`.
+  - `gh search code python_requires=">=3.7" --filename setup.py`: `shenweichen/GraphEmbedding`, `Overv/outrun`, `BasicProtein/AugmentCode-Free`, `machow/siuba`, `LAMDA-NJU/Deep-Forest`, `drunkdream/weread-exporter`.
+  - `gh search code 3.8 --filename .python-version`: `bndr/pipreqs`, `login-securite/lsassy`, `Lawouach/WebSocket-for-Python`, `n8henrie/pycookiecheat`, `DarrenOfficial/dpaste`, `psevensas/DjangoChannelsGraphqlWs`.
+  - `gh search code python-3.8 --filename runtime.txt`: `AnimeKaizoku/EnterpriseALRobot`, `weareasterisk/gavel2`, `AbirHasan2005/TG-String-Session`, `IceKirby/NaTrave`, `urschrei/hexagrams`, `zolabar/trendPy`.
+  - `gh search code python_version = "3.7" --filename Pipfile`: `hustlei/QssStylesheetEditor`, `DanMcInerney/pymetasploit3`, `donsheehy/datastructures`, `CodeForPhilly/chime`, `mozilla/crlite`, `prideout/svg3d`.
+  - `gh search code requires-python = ">=3.7" --filename pyproject.toml`: `LAION-AI/CLAP`, `ncclient/ncclient`, `nschloe/tiptop`, `nschloe/perfplot`, `huggingface/hf_transfer`, `zu1k/Good-MITM`.
+  - `gh search code python_requires=">=3.6" --filename setup.py`: `alibaba/tidevice`, `rachpt/lanzou-gui`, `Hsury/BiliDrive`, `malinkang/weread2notion-pro`, `maxhumber/gazpacho`.
+  - `gh search code python = "^3.7" --filename pyproject.toml`: `bee-san/pyWhat`, `Gerapy/Gerapy`, `jayfk/statuspage`, `python-gino/gino`, `wustho/epr`.
+  - `gh search code requires-python = ">=3.6" --filename pyproject.toml`: `doableware/djongo`, `python273/vk_api`, `miguelgrinberg/Flask-Migrate`, `vinifmor/bauh`, `cvg/glue-factory`.
+  - `gh search code python 3.8 --filename .tool-versions`: `leosussan/fastapi-gino-arq-uvicorn`, `muxinc/mux-python`, `ozzs/monobox`, `crflynn/skranger`, `verypossible/very_plot`.
+
+One more \`node-actions\` repository followed #1101: the new \`node-version\` rule gave findings to two repositories that had none, leaving three zero-finding GitHub Actions repositories where \`stable\` needs four. The rule, fixed before scanning: \`gh search code actions/checkout@v6 --extension yml --limit 60\`, walk the results in order, keep unique repositories that are not forks, archives, larger than 50,000 KB, or already pinned, and stop as soon as the zero-finding count reaches four. The first one walked, \`asciimoo/hister\`, had no findings, so it is the only addition.
+
+The search returns different results on another day, so the pinned list above, not a re-run, is the record.
+
+Effect on the levels: `github-actions`, `nodejs`, `npm`, and `python` now meet `stable` on the corpus evidence, so none of them is grandfathered any more.
+
+## The held-out set
+
+The main corpus is circular: its expected findings were written by reviewing the same commits Evergreen is scored on, so 1.0 shows that nothing regressed and not that Evergreen generalizes (issue #740, decision 0013). The held-out set (`benchmarks/held-out-repositories.json`) is separate: it is never used to write or tune a rule, and its ground truth was committed before Evergreen scanned it.
+
+- **Rule, fixed on 2026-10-23.** The two repository searches behind the node and GitHub Actions entries above (JavaScript and TypeScript, 100 to 500 stars, last pushed 2021-01-01 to 2024-12-31, not a fork, not archived, sorted by stars) were walked past the last repository they had already supplied. The first repositories after that point that are not in the corpus, are at most 50,000 KB, and have a workflow file are held out: 15 (five from the JavaScript list at ranks 76 to 97, ten from the TypeScript list at ranks 65 to 81; the lists ended at 100 results).
+- **Ground truth first.** `benchmarks/held-out/label.ts` labels the set from the text alone (it imports no detector and reads no registry): `uses: actions/checkout`, `actions/setup-node`, and `actions/cache` at major version 4 or lower, and workflow `node-version:` lines or `.nvmrc` naming Node.js 20 or lower. The labels were committed (`test(validation): write the held-out ground truth before any scan`) before the first scan.
+- **Scope.** The comparison covers only the families `github-actions.checkout`, `github-actions.setup-node`, `github-actions.cache`, and `nodejs.runtime`, by family, path, and line. A rule that is outside the labeller is not judged here.
+- **Run.** `npm run validate:held-out` (add `-- --output benchmarks/held-out-result.json` to record). It reports and never fails the build.
+
+First result (before #1101): 15 repositories, 55 true positives, 2 false positives, 18 false negatives, precision 0.9649, recall 0.7534. The 18 misses were all `nodejs.runtime` lines in workflows that pin Node.js 14 or 16 (for example `node-version: 16`): the GitHub Actions detector did not read the `node-version` of `actions/setup-node` at all. The main corpus never exercised that case, which is what a held-out set is for. Issue #1101 added it (see [DETECTORS.md](DETECTORS.md)); the 130 `nodejs.runtime` findings it adds to the main corpus were each checked by reading the line.
+
+After #1101: 15 repositories, 73 true positives, 3 false positives, 0 false negatives, precision 0.9605, recall 1. The 3 "false positives" are not errors: two are `engines.node` declarations in `package.json` and one is a `strategy.matrix` Node.js list (`node: [8, 10, 12]` in `reid/node-jslint`), none of which the labeller reads. Because the rule was written after the first held-out run, this repository set no longer measures generalization for `node-version`; a fresh held-out set is needed for the next rule.
 
 ## Precision thresholds
 
@@ -1882,25 +1980,25 @@ Every difference has one of three causes, none of them a wrong finding:
 Precision is true positives over true positives plus false positives; recall is true positives over true positives plus false negatives. Both come from the last full corpus run recorded in [`benchmarks/thresholds.json`](../benchmarks/thresholds.json), so a reader can regenerate every number: run `npm run record:corpus-run`, then `npm run build:coverage`. The table below is generated; a test fails when it drifts from the recorded run. `nodejs` is the Node.js runtime rules served by the npm detector. A dash means the last full run did not score that detector.
 
 <!-- accuracy-tables:start -->
-Measured on 300 pinned repositories at commit `1d3e43f` on 2026-10-23. Regenerate with `npm run build:coverage` after `npm run record:corpus-run`.
+Measured on 456 pinned repositories at commit `c7b4e14` on 2026-10-24. Regenerate with `npm run build:coverage` after `npm run record:corpus-run`.
 
 | Detector | Maturity | True positives | False positives | False negatives | Precision | Recall |
 | --- | --- | --- | --- | --- | --- | --- |
 | android | Experimental | 9 | 0 | 0 | 1.000 | 1.000 |
 | ci-images | Experimental | 13 | 0 | 0 | 1.000 | 1.000 |
-| container | Experimental | 57 | 0 | 0 | 1.000 | 1.000 |
+| container | Experimental | 74 | 0 | 0 | 1.000 | 1.000 |
 | cpp | Experimental | 18 | 0 | 0 | 1.000 | 1.000 |
 | dart | Experimental | 8 | 0 | 0 | 1.000 | 1.000 |
 | database | Experimental | 16 | 0 | 0 | 1.000 | 1.000 |
 | dotnet | Beta | 304 | 0 | 0 | 1.000 | 1.000 |
-| github-actions | Supported | 662 | 0 | 0 | 1.000 | 1.000 |
-| go | Experimental | 51 | 0 | 0 | 1.000 | 1.000 |
-| java | Beta | 60 | 0 | 0 | 1.000 | 1.000 |
-| kubernetes | Beta | 67 | 0 | 0 | 1.000 | 1.000 |
-| nodejs | Supported | 64 | 0 | 0 | 1.000 | 1.000 |
-| npm | Supported | 54 | 0 | 0 | 1.000 | 1.000 |
+| github-actions | Supported | 986 | 0 | 0 | 1.000 | 1.000 |
+| go | Experimental | 54 | 0 | 0 | 1.000 | 1.000 |
+| java | Beta | 61 | 0 | 0 | 1.000 | 1.000 |
+| kubernetes | Beta | 71 | 0 | 0 | 1.000 | 1.000 |
+| nodejs | Supported | 305 | 0 | 0 | 1.000 | 1.000 |
+| npm | Supported | 100 | 0 | 0 | 1.000 | 1.000 |
 | php | Experimental | 5 | 0 | 0 | 1.000 | 1.000 |
-| python | Supported | 24 | 0 | 0 | 1.000 | 1.000 |
+| python | Supported | 74 | 0 | 0 | 1.000 | 1.000 |
 | ruby | Experimental | 24 | 0 | 0 | 1.000 | 1.000 |
 | rust | Experimental | 18 | 0 | 0 | 1.000 | 1.000 |
 | serverless | Beta | 26 | 0 | 0 | 1.000 | 1.000 |
@@ -1928,6 +2026,10 @@ The local tools read supported manifests, lockfiles, workflow files, runtime-ver
 The plugin launches the exact published `evergreen-deprecation` npm version recorded in its manifest. The package manager may contact the configured npm registry to obtain that package. Lifecycle evidence links are returned as references; Evergreen does not open them automatically.
 
 Scans use no network. The one exception is `evergreen data update`, which you run yourself to fetch newer, signed lifecycle rules from the project's public GitHub releases. It sends nothing about you or your repository (a request for a public release list and two public files, which the host can see as it can any download), verifies the signature before using the data, and falls back to the rules shipped with the release if verification fails. See [Lifecycle data](DATA.md).
+
+## Local usage log
+
+By default Evergreen records nothing about what you or an agent checked. If you set `EVERGREEN_USAGE_LOG=1` (or to a file path), each `evergreen check` and each `check_dependency` call appends one line to a file on your machine: the time, the package URL and version checked, the result, its severity, and the matching rule IDs. It records no repository path, file content, user name, or prompt. `evergreen usage` reads that file and prints how many checks ran and which packages were flagged as `affected` (what the guardrail told an agent to avoid; Evergreen cannot itself stop an edit). **Nothing in this log is sent anywhere: Evergreen has no code that uploads it, and the summary command reads only the local file.** Delete the file to erase it; unset the variable to stop recording. Because the file lives on disk, anything that can read your files can read it.
 
 Evergreen's tools do not edit repository files, execute suggested migration commands, open a network listener, or request credentials. Users can disable or remove the plugin at any time. Questions can be reported through [GitHub Issues](https://github.com/arminazimi/evergreen/issues).
 
@@ -2749,10 +2851,24 @@ Trusted publishing needs the package to name its publisher. On npmjs.com, open t
    ```
 
 6. **Publish to npm.** Pushing the tag in step 5 runs [`publish.yml`](../.github/workflows/publish.yml), which publishes with npm trusted publishing: no stored token, and a provenance attestation that names this repository, workflow, and commit. It refuses a tag that does not match the version in `package.json` or a commit that is not on `main`, and `prepack` runs `npm run check` again, so a broken tree cannot be published. A pre-release tag such as `vX.Y.Z-rc.1` is published under the `next` tag, so `latest` does not move. After publishing, a second job installs the published version on a fresh machine and runs `--help`, `capabilities`, and a scan of `tests/fixtures/smoke` (`.github/scripts/smoke.mjs`); a package that installs but does not work fails the run. Watch the run in the Actions tab, then confirm with `npm view evergreen-deprecation version` and run `npx evergreen-deprecation@X.Y.Z --help` in an empty directory. To publish by hand instead (for example if the workflow is unavailable), run `npm publish` from the tagged commit; it will have no provenance.
-7. **Create the GitHub release** for the tag, with the changelog section as the body.
-8. **Move the major tag** only if the project publishes one (for example `v1`), as a force-updated lightweight tag pointing at the new release. Do not move it for a pre-1.0 version. The `Release notes` workflow does this by itself after a successful `Publish to npm` run, for stable tags from `v1.0.0` on: the decision is in `.github/scripts/major-tag.mjs` (unit-tested), the tag only moves forward, and a pre-release or `0.x` tag changes nothing. To see what it would do for a tag without pushing anything, run the `Release notes` workflow by hand with `release_tag` set (a manual run is always a dry run).
-9. **Package the plugins.** For Codex, `npm run package:codex-plugin` writes `artifacts/evergreen-codex-plugin-<version>.zip`; follow [Codex submission](CODEX_SUBMISSION.md) to submit it. The Claude plugin is served from the repository marketplace, so the merged change in step 4 is its release; see [Claude plugin](CLAUDE_PLUGIN.md).
-10. **Announce** only after the npm package, tag, and release are live.
+7. **Publish to the MCP Registry.** The registry lists the server for MCP clients and tools that look for one. It holds only the metadata in `server.json`, which points at the npm package, so publish it **after** step 6, when `npm view evergreen-deprecation version` shows the new version (the registry checks the package on npm, so it must exist there first). Nothing automates this yet, which is how 0.4.0 and 0.5.0 were missed. With the `mcp-publisher` command-line tool installed ([registry quickstart](https://github.com/modelcontextprotocol/registry)), from the tagged commit:
+
+   ```bash
+   mcp-publisher login github   # approve the device code in a browser as the arminazimi account
+   mcp-publisher publish
+   ```
+
+   A published registry version cannot be changed, so check that `server.json` carries the version you just released first. Then confirm it is the latest:
+
+   ```bash
+   curl -s "https://registry.modelcontextprotocol.io/v0/servers?search=evergreen"
+   ```
+
+   The response lists `io.github.arminazimi/evergreen` with the new `version`. The name is owned by the `arminazimi` GitHub account, and `package.json`'s `mcpName` ties the npm package to it.
+8. **Create the GitHub release** for the tag, with the changelog section as the body.
+9. **Move the major tag** only if the project publishes one (for example `v1`), as a force-updated lightweight tag pointing at the new release. Do not move it for a pre-1.0 version. The `Release notes` workflow does this by itself after a successful `Publish to npm` run, for stable tags from `v1.0.0` on: the decision is in `.github/scripts/major-tag.mjs` (unit-tested), the tag only moves forward, and a pre-release or `0.x` tag changes nothing. To see what it would do for a tag without pushing anything, run the `Release notes` workflow by hand with `release_tag` set (a manual run is always a dry run).
+10. **Package the plugins.** For Codex, `npm run package:codex-plugin` writes `artifacts/evergreen-codex-plugin-<version>.zip`; follow [Codex submission](CODEX_SUBMISSION.md) to submit it. The Claude plugin is served from the repository marketplace, so the merged change in step 4 is its release; see [Claude plugin](CLAUDE_PLUGIN.md).
+11. **Announce** only after the npm package, tag, and release are live.
 
 ## Rule data
 

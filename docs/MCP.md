@@ -38,6 +38,22 @@ The exact settings location depends on the host. Evergreen needs no environment 
 
 Everything below is read-only and runs in the local process. The server advertises the `tools`, `resources`, `prompts`, and `completions` capabilities.
 
+### Write safety
+
+No tool, resource, or prompt writes to the repository, and none has an option that makes it write. Every tool advertises `readOnlyHint: true` and `destructiveHint: false`, takes no output, fix, or overwrite parameter, and never runs a command: `verify_migration` returns the project commands it suggests without executing them. [`tests/mcp-readonly.test.ts`](https://github.com/arminazimi/evergreen/blob/main/tests/mcp-readonly.test.ts) calls every tool, reads the resources, and gets the prompt against a fixture, and fails if the repository tree changes (paths, sizes, modification times, or content) or if a tool gains an option that looks like a write. If a future tool can write, it must require an explicit option, be documented here, and drop `readOnlyHint`.
+
+### Lifecycle status file
+
+An agent that cannot call the server can still read the repository's lifecycle state before it plans a change. `evergreen scan --write-status` writes `EVERGREEN_STATUS.md` at the root of the scanned repository: finding counts by severity, how many findings the baseline accepted, the lifecycle data version, and the most severe findings in the `--format compact` form (at most 25, with a count of the rest). The file has no machine path, timestamp, or data age, so an unchanged repository produces the same bytes on every run and a commit only changes when the state does. Without the flag nothing is written, and the MCP tools never write it.
+
+To point agents at it, add a line like this to `AGENTS.md` and refresh the file in CI or a pre-commit hook:
+
+```markdown
+Before planning dependency or runtime changes, read EVERGREEN_STATUS.md for the repository's current lifecycle findings. Re-run `npx evergreen-deprecation scan . --write-status` after you change them.
+```
+
+The file is a snapshot. Run a scan, or call `scan_repository`, to see the current state after an edit.
+
 ### Tools
 
 Each tool has an `outputSchema` (the published JSON Schema in [`schemas/`](https://github.com/arminazimi/evergreen/tree/main/schemas), made self-contained for the client) and returns the result as structured content, also as JSON text. Failures return `isError` with a message and no structured content.
@@ -113,6 +129,8 @@ The Tools tab lists the six tools with their output schemas, Resources lists the
 
 ## Checking a dependency before adding it
 
+To see afterwards what agents checked and which packages were flagged, set `EVERGREEN_USAGE_LOG=1` for the server and run `evergreen usage`. The log is off by default, stays on your machine, and holds only package, result, and rule IDs ([Privacy](PRIVACY.md#local-usage-log)). Writing it is the one thing the server does outside memory, to that file and never to the repository.
+
 Call `check_dependency` with a Package URL (`pkg:npm/request@2.88.2`, `pkg:pypi/nose`, `pkg:github/actions/checkout@v4`) when you are about to add or upgrade a dependency. The result has a `status`:
 
 - `affected`: a rule applies. Read `findings[].summary`, `replacement`, and `sources`, and choose the replacement instead.
@@ -133,7 +151,7 @@ Ready-to-copy setups for the dependency guardrail (an MCP entry plus the instruc
 | GitHub Copilot | `.vscode/mcp.json` (VS Code) or repository settings (coding agent) | `.github/copilot-instructions.md` |
 | Kilo Code | `kilo.jsonc` | `.kilo/rules/evergreen.md` |
 
-To put the same instruction into a repository's `AGENTS.md` or `CLAUDE.md`, run `evergreen init --agents` in it: it adds a delimited section, keeps everything else byte for byte, and is safe to run again (`--dry-run` prints the diff first).
+To put the same instruction into a repository's `AGENTS.md` or `CLAUDE.md`, run `evergreen init --agents` in it: it adds a delimited section, keeps everything else byte for byte, and is safe to run again (`--dry-run` prints the diff first). `evergreen setup` does the same for every detected host at once (Claude Code, Codex, Cursor, Gemini CLI, GitHub Copilot, Kilo Code), writing each host's own instruction file such as `.cursor/rules/evergreen.mdc` after confirmation or `--yes`; it does not edit MCP server entries, which stay in the per-host setups above.
 
 Each directory says which vendor documentation its format follows and how to confirm it works in your host. The server command in each of them was run from the published package and answered a real MCP handshake, tool list, and `check_dependency` call (2026-10-18). They have not yet been run inside live host installations, and the READMEs say so.
 
