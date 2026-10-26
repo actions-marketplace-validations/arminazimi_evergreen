@@ -9,16 +9,23 @@ import type { RegistryV2Rule } from "../../registry.js";
 import { DETECTOR_API_VERSION } from "../../sdk.js";
 import type { Detector, DetectorAnalysis, DetectorContext, DetectorFinding, DetectorInputs } from "../../sdk.js";
 import { versContains } from "../../vers.js";
+import { jdkRuleVersion, parseJdkVersion } from "../java/jdk-version.js";
 import { parseCompose } from "./parse-compose.js";
 import { parseDockerfile } from "./parse-dockerfile.js";
+import type { Runtime } from "./parse-dockerfile.js";
 import { parseImageReference } from "./parse-image.js";
+import { findRootfsSnapshots } from "./rootfs.js";
+import type { RootfsOsRelease, RootfsSnapshot } from "./rootfs.js";
 
 /**
- * Finds base images whose release line has reached a vendor-published end of life.
+ * Finds base images and Dockerfile runtime install commands whose release line has reached end of life,
+ * plus the OS and runtimes that ship inside a built image's filesystem.
  *
- * It reads Dockerfile / Containerfile `FROM` lines and Compose `services.*.image` values, and nothing
- * else (see decision 0007). A tag is classified only when every version it can stand for is inside a
- * rule's range, so a floating tag such as `mysql:8` is reported as unclassified, not guessed.
+ * It reads Dockerfile / Containerfile `FROM` and supported `RUN` lines plus Compose
+ * `services.*.image` values. A version is classified only when every version it can stand for is
+ * inside a rule's range, so a floating image tag such as `mysql:8` is not guessed. When the scanned
+ * directory is an unpacked root filesystem, or holds a local root filesystem archive, the same
+ * reviewed rules judge `os-release` and well-known runtime paths.
  */
 
 const MAXIMUM_DEPTH = 8;
@@ -27,6 +34,74 @@ const SKIPPED_DIRECTORIES = new Set([".git", "node_modules", "vendor", "dist", "
 const DOCKERFILE_NAME = /^(?:Dockerfile|Containerfile)(?:\.[A-Za-z0-9_.-]+)?$|\.(?:Dockerfile|Containerfile)$/;
 const COMPOSE_NAME = /^(?:docker-)?compose(?:\.[A-Za-z0-9_.-]+)?\.ya?ml$/;
 const VARIANT = /^(?:alpine(?:\d+(?:\.\d+)*)?|slim|bookworm|bullseye|buster|stretch|trixie|jessie|jammy|noble|focal|oracle|oraclelinux\d*|debian|ubuntu|minimal)$/;
+
+const DEBIAN_CODENAMES = new Map<string, string>([
+  ["buzz", "1.1"],
+  ["rex", "1.2"],
+  ["bo", "1.3"],
+  ["hamm", "2.0"],
+  ["slink", "2.1"],
+  ["potato", "2.2"],
+  ["woody", "3.0"],
+  ["sarge", "3.1"],
+  ["etch", "4"],
+  ["lenny", "5"],
+  ["squeeze", "6"],
+  ["wheezy", "7"],
+  ["jessie", "8"],
+  ["stretch", "9"],
+  ["buster", "10"],
+  ["bullseye", "11"],
+  ["bookworm", "12"],
+  ["trixie", "13"],
+  ["forky", "14"],
+]);
+
+const UBUNTU_CODENAMES = new Map<string, string>([
+  ["warty", "4.10"],
+  ["hoary", "5.04"],
+  ["breezy", "5.10"],
+  ["dapper", "6.06"],
+  ["edgy", "6.10"],
+  ["feisty", "7.04"],
+  ["gutsy", "7.10"],
+  ["hardy", "8.04"],
+  ["intrepid", "8.10"],
+  ["jaunty", "9.04"],
+  ["karmic", "9.10"],
+  ["lucid", "10.04"],
+  ["maverick", "10.10"],
+  ["natty", "11.04"],
+  ["oneiric", "11.10"],
+  ["precise", "12.04"],
+  ["quantal", "12.10"],
+  ["raring", "13.04"],
+  ["saucy", "13.10"],
+  ["trusty", "14.04"],
+  ["utopic", "14.10"],
+  ["vivid", "15.04"],
+  ["wily", "15.10"],
+  ["xenial", "16.04"],
+  ["yakkety", "16.10"],
+  ["zesty", "17.04"],
+  ["artful", "17.10"],
+  ["bionic", "18.04"],
+  ["cosmic", "18.10"],
+  ["disco", "19.04"],
+  ["eoan", "19.10"],
+  ["focal", "20.04"],
+  ["groovy", "20.10"],
+  ["hirsute", "21.04"],
+  ["impish", "21.10"],
+  ["jammy", "22.04"],
+  ["kinetic", "22.10"],
+  ["lunar", "23.04"],
+  ["mantic", "23.10"],
+  ["noble", "24.04"],
+  ["oracular", "24.10"],
+  ["plucky", "25.04"],
+]);
+
 /** Extra suffix parts that mcr.microsoft.com/dotnet tags carry: CPU architectures, image flavors, distros, and Windows builds. */
 const DOTNET_VARIANT = /^(?:amd64|arm64v8|arm64|arm32v7|chiseled|extra|composite|distroless|cbl|mariner\d+(?:\.\d+)?|azurelinux\d+(?:\.\d+)?|nanoserver|windowsservercore|ltsc20\d\d|\d{4})$/;
 /**
@@ -39,12 +114,23 @@ const DOTNET_IMAGES = new Set(["sdk", "aspnet", "runtime", "runtime-deps"].flatM
 const TAG_VERSION = /^(\d+)(?:\.(\d+))?(?:\.(\d+))?(?:-(.+))?$/;
 const UNBOUNDED = 999_999;
 
-interface Candidate {
+interface ImageCandidate {
+  kind: "image";
   path: string;
   line: number;
   value: string;
   dynamic: boolean;
 }
+
+interface RuntimeCandidate {
+  kind: "runtime";
+  path: string;
+  line: number;
+  value: string;
+  runtime: Runtime;
+}
+
+type Candidate = ImageCandidate | RuntimeCandidate;
 
 async function candidateFiles(root: string): Promise<string[]> {
   const files: string[] = [];
@@ -82,15 +168,155 @@ async function candidates(root: string): Promise<Candidate[]> {
     const name = basename(file);
     const declarations = COMPOSE_NAME.test(name) ? parseCompose(contents) : parseDockerfile(contents);
     for (const declaration of declarations) {
-      result.push({ path, line: declaration.line, value: declaration.value, dynamic: declaration.kind === "dynamic" });
+      if (declaration.kind === "runtime") {
+        result.push({
+          kind: "runtime",
+          path,
+          line: declaration.line,
+          value: declaration.value,
+          runtime: declaration.runtime,
+        });
+      } else {
+        result.push({
+          kind: "image",
+          path,
+          line: declaration.line,
+          value: declaration.value,
+          dynamic: declaration.kind === "dynamic",
+        });
+      }
     }
   }
   return result;
 }
 
+const RUNTIME_RULES: Readonly<Record<Runtime, { file: string; purl: string; prefix: string }>> = {
+  dotnet: { file: "registry/dotnet.json", purl: "pkg:generic/dotnet", prefix: "dotnet.runtime." },
+  golang: { file: "registry/go.json", purl: "pkg:generic/golang", prefix: "go.runtime." },
+  java: { file: "registry/java.json", purl: "pkg:generic/java", prefix: "java.jdk." },
+  nodejs: { file: "registry/nodejs.json", purl: "pkg:generic/nodejs", prefix: "nodejs.runtime." },
+  php: { file: "registry/php.json", purl: "pkg:generic/php", prefix: "php.runtime." },
+  python: { file: "registry/python.json", purl: "pkg:generic/python", prefix: "python.runtime." },
+  ruby: { file: "registry/ruby.json", purl: "pkg:generic/ruby", prefix: "ruby.runtime." },
+};
+
+function versionBounds(runtime: Runtime, value: string): { lowest: string; highest: string } | undefined {
+  if (runtime === "java") {
+    const parsed = parseJdkVersion(value);
+    if (!parsed) return undefined;
+    const version = jdkRuleVersion(parsed.major);
+    return { lowest: version, highest: version };
+  }
+  const match = /^v?(\d+)(?:\.(\d+))?(?:\.(\d+))?$/.exec(value);
+  if (!match) return undefined;
+  const [, major, minor, patch] = match;
+  return {
+    lowest: `${major}.${minor ?? "0"}.${patch ?? "0"}`,
+    highest: `${major}.${minor ?? UNBOUNDED}.${patch ?? UNBOUNDED}`,
+  };
+}
+
+function matchingRuntimeRule(rules: readonly RegistryV2Rule[], runtime: Runtime, value: string): RegistryV2Rule | undefined {
+  const bounds = versionBounds(runtime, value);
+  if (!bounds) return undefined;
+  return rules.find((rule) => {
+    try {
+      return versContains(rule.vers, bounds.lowest) && versContains(rule.vers, bounds.highest);
+    } catch {
+      return false;
+    }
+  });
+}
+
+/** The release line an `os-release` names, from `VERSION_ID` or a Debian or Ubuntu codename. */
+function osReleaseVersion(osRelease: RootfsOsRelease): string | undefined {
+  if (osRelease.versionId !== undefined) return osRelease.versionId;
+  const codename = osRelease.codename;
+  if (codename === undefined) return undefined;
+  return osRelease.id === "ubuntu" ? UBUNTU_CODENAMES.get(codename) : osRelease.id === "debian" ? DEBIAN_CODENAMES.get(codename) : undefined;
+}
+
+function osVersionBounds(value: string): { lowest: string; highest: string } | undefined {
+  const match = /^(\d+)(?:\.(\d+))?(?:\.(\d+))?$/.exec(value.trim());
+  if (!match) return undefined;
+  const [, major, minor, patch] = match;
+  return {
+    lowest: `${Number(major)}.${minor === undefined ? "0" : Number(minor)}.${patch === undefined ? "0" : Number(patch)}`,
+    highest: `${Number(major)}.${minor === undefined ? UNBOUNDED : Number(minor)}.${patch === undefined ? UNBOUNDED : Number(patch)}`,
+  };
+}
+
+function matchingOsRule(
+  rules: ReadonlyMap<string, RegistryV2Rule[]>,
+  osRelease: RootfsOsRelease,
+): RegistryV2Rule | undefined {
+  const version = osReleaseVersion(osRelease);
+  const bounds = version === undefined ? undefined : osVersionBounds(version);
+  if (!bounds) return undefined;
+  return rules.get(`library/${osRelease.id}`)?.find((rule) => {
+    try {
+      return versContains(rule.vers, bounds.lowest) && versContains(rule.vers, bounds.highest);
+    } catch {
+      return false;
+    }
+  });
+}
+
+function rootfsFindings(
+  snapshots: readonly RootfsSnapshot[],
+  osRules: ReadonlyMap<string, RegistryV2Rule[]>,
+  runtimeRules: ReadonlyMap<Runtime, RegistryV2Rule[]>,
+): DetectorFinding[] {
+  const findings: DetectorFinding[] = [];
+  for (const snapshot of snapshots) {
+    const osRelease = snapshot.osRelease;
+    const osRule = osRelease === undefined ? undefined : matchingOsRule(osRules, osRelease);
+    if (osRelease && osRule) {
+      const description = osRelease.prettyName ?? [osRelease.id, osRelease.versionId ?? osRelease.codename].filter(Boolean).join(" ");
+      findings.push({
+        id: `${osRule.id}:${osRelease.path}:${osRelease.line}`,
+        ruleId: osRule.id,
+        title: osRule.title,
+        summary: `${osRelease.path} reports ${description}. ${osRule.summary}`,
+        severity: osRule.severity,
+        location: { path: osRelease.path, line: osRelease.line },
+        ...(osRule.replacement ? { replacement: osRule.replacement } : {}),
+        ...(osRule.deadline ? { deadline: osRule.deadline } : {}),
+        ...(osRule.migration ? { migration: osRule.migration } : {}),
+        sources: osRule.sources,
+      });
+    }
+    for (const evidence of snapshot.runtimes) {
+      const rule = matchingRuntimeRule(runtimeRules.get(evidence.runtime) ?? [], evidence.runtime, evidence.version);
+      if (!rule) continue;
+      findings.push({
+        id: `${rule.id}:${evidence.path}:${evidence.line}`,
+        ruleId: rule.id,
+        title: rule.title,
+        summary: `${evidence.path} ships ${evidence.runtime} ${evidence.version}. ${rule.summary}`,
+        severity: rule.severity,
+        location: { path: evidence.path, line: evidence.line },
+        ...(rule.replacement ? { replacement: rule.replacement } : {}),
+        ...(rule.deadline ? { deadline: rule.deadline } : {}),
+        ...(rule.migration ? { migration: rule.migration } : {}),
+        sources: rule.sources,
+      });
+    }
+  }
+  return findings;
+}
+
 type TagClass =
   | { kind: "versions"; lowest: string; highest: string }
   | { kind: "unclassified"; reason: string };
+
+/** Replaces a Debian or Ubuntu codename at the start of a Docker Hub tag with its release number, so `debian:buster` reads as `debian:10`. */
+function resolveCodename(repository: string, tag: string): string {
+  const name = tag.split("-")[0]!;
+  const codenames = repository === "library/debian" ? DEBIAN_CODENAMES : repository === "library/ubuntu" ? UBUNTU_CODENAMES : undefined;
+  const release = codenames?.get(name);
+  return release === undefined ? tag : tag.replace(name, release);
+}
 
 /** The versions a tag can stand for, or why it cannot be read as a release line. */
 function classifyTag(tag: string | undefined, digest: string | undefined, extraVariant?: RegExp): TagClass {
@@ -136,7 +362,21 @@ export class ContainerDetector implements Detector {
   readonly id = "container";
   /** The files `scan` may read; conformance fails a scan that reads another. */
   readonly inputs: DetectorInputs = {
-    fileNames: ["Dockerfile*", "Containerfile*", "*.Dockerfile", "*.Containerfile", "docker-compose*.yml", "docker-compose*.yaml", "compose*.yml", "compose*.yaml"],
+    fileNames: [
+      "Dockerfile*",
+      "Containerfile*",
+      "*.Dockerfile",
+      "*.Containerfile",
+      "docker-compose*.yml",
+      "docker-compose*.yaml",
+      "compose*.yml",
+      "compose*.yaml",
+      "os-release",
+      "node_version.h",
+      "VERSION",
+      "release",
+    ],
+    extensions: [".tar", ".tar.gz", ".tgz"],
   };
 
   async scan(context: DetectorContext): Promise<DetectorFinding[]> {
@@ -145,18 +385,49 @@ export class ContainerDetector implements Detector {
 
   async analyze(context: DetectorContext): Promise<DetectorAnalysis> {
     const found = await candidates(context.root);
-    if (found.length === 0) return { findings: [], unclassified: [] };
+    const rootfs = await findRootfsSnapshots(context.root);
+    if (found.length === 0 && rootfs.length === 0) return { findings: [], unclassified: [] };
 
     const registry = validateRegistryV2(await loadDataFile("registry/container.json"));
     const rules = rulesByRepository(registry.rules);
     const dotnetRules = validateRegistryV2(await loadDataFile("registry/dotnet.json")).rules.filter(
       (rule) => rule.purl === "pkg:generic/dotnet" && rule.id.startsWith("dotnet.runtime."),
     );
+    const runtimeRules = new Map<Runtime, RegistryV2Rule[]>();
+    const runtimes = new Set<Runtime>([
+      ...found
+        .filter((candidate): candidate is RuntimeCandidate => candidate.kind === "runtime")
+        .map((candidate) => candidate.runtime),
+      ...rootfs.flatMap((snapshot) => snapshot.runtimes.map((evidence) => evidence.runtime)),
+    ]);
+    for (const runtime of runtimes) {
+      const source = RUNTIME_RULES[runtime];
+      const loaded = validateRegistryV2(await loadDataFile(source.file)).rules;
+      runtimeRules.set(runtime, loaded.filter((rule) => rule.purl === source.purl && rule.id.startsWith(source.prefix)));
+    }
     const findings: DetectorFinding[] = [];
     const unclassified: Omit<UnclassifiedReference, "detector">[] = [];
 
     for (const candidate of found) {
       const location = { path: candidate.path, line: candidate.line };
+      if (candidate.kind === "runtime") {
+        const rule = matchingRuntimeRule(runtimeRules.get(candidate.runtime) ?? [], candidate.runtime, candidate.value);
+        if (rule) {
+          findings.push({
+            id: `${rule.id}:${candidate.path}:${candidate.line}`,
+            ruleId: rule.id,
+            title: rule.title,
+            summary: `${candidate.path} installs ${candidate.runtime} ${candidate.value}. ${rule.summary}`,
+            severity: rule.severity,
+            location,
+            ...(rule.replacement ? { replacement: rule.replacement } : {}),
+            ...(rule.deadline ? { deadline: rule.deadline } : {}),
+            ...(rule.migration ? { migration: rule.migration } : {}),
+            sources: rule.sources,
+          });
+        }
+        continue;
+      }
       if (candidate.dynamic) {
         // Only name a reference when its repository part is a literal tracked image, as in node:${VERSION}.
         const repository = candidate.value.split(":")[0]!;
@@ -178,7 +449,7 @@ export class ContainerDetector implements Detector {
       const imageRules = rulesFor(image, rules, dotnetRules);
       if (!imageRules) continue;
 
-      const tag = classifyTag(image.tag, image.digest, image.registry === MICROSOFT_REGISTRY ? DOTNET_VARIANT : undefined);
+      const tag = classifyTag(image.registry === "docker.io" && image.tag !== undefined ? resolveCodename(image.repository, image.tag) : image.tag, image.digest, image.registry === MICROSOFT_REGISTRY ? DOTNET_VARIANT : undefined);
       if (tag.kind === "unclassified") {
         unclassified.push({ component: image.repository, reference: candidate.value, reason: tag.reason, location });
         continue;
@@ -208,6 +479,7 @@ export class ContainerDetector implements Detector {
       }
     }
 
+    findings.push(...rootfsFindings(rootfs, rules, runtimeRules));
     return { findings, unclassified };
   }
 }

@@ -2,6 +2,70 @@
 
 ## Unreleased
 
+- Add `--format slack`, `--format teams`, and `--format webhook` to render a chat or generic webhook payload for a digest step. Evergreen renders the payload only and never sends it.
+- Judge Debian, Ubuntu, and Alpine base image releases in Dockerfiles and Compose files, including codename tags such as `debian:buster` and `ubuntu:focal`. (#1051)
+
+## 0.6.1 - 2026-10-25
+
+- Add `evergreen fix --dry-run` to print `git apply` patches for deterministic fixes, starting with outdated GitHub Actions `uses:` versions. Nothing is written. (#1032)
+- Add `--format codequality` to emit a GitLab Code Quality report, which the GitLab component keeps as a job artifact. (#1173)
+- Add a scheduled workflow that opens an issue when an end-of-life date nears. (#1169)
+- Post one summary comment on pull requests. (#1168)
+- Group scan findings by CODEOWNERS owner with `--by-owner`. (#1167)
+- Merge scan reports from many repositories by product and owner. (#1166)
+- Add `evergreen diff <base>..<head>` for findings a change introduced or fixed. (#1165)
+- Ship a pre-commit framework hook. (#1164)
+- Add the GitLab CI/CD component, `templates/evergreen.yml`. (#1163)
+- Re-scan after `fix --branch` and print the verification commands. (#1160)
+- Add `evergreen fix --branch` to apply fixes on a local git branch. (#1159)
+- Add rename codemods for five deprecated npm packages. (#1158)
+- Move exact runtime pins to the lowest supported line. (#1157)
+- Reject a path that does not exist or is not a directory. (#1153)
+
+## 0.6.0 - 2026-10-25
+
+### Forecast and planning
+
+- Add `evergreen forecast` to list what reaches end of life in the next 6 and 12 months. (#1023)
+- Add `--as-of <date>` to scan as the world will look on that date. (#1024)
+- Add `--min-support-days` to warn about release lines that end soon. (#1029)
+- Plan an upgrade path past unsupported release lines, with safe intermediate versions. (#1025)
+- Warn when a suggested replacement needs a newer runtime than the repository pins. (#1028)
+- Add a lifecycle risk score from time past end of life, usage, and advisories. (#1026)
+- Show how long a finding has been end of life, using git history. (#1027)
+- Report deprecated transitive dependencies with the path that pulls them in. (#1030)
+- Track a lifecycle debt trend in the baseline history. (#1031)
+
+### Command line
+
+- Ship standalone binaries that need no Node.js (Linux, macOS, Windows), attached to each GitHub release with `SHA256SUMS` and build provenance. (#1016)
+- Add `--format html` to scan: one self-contained HTML report with no external requests. (#1022)
+- Add `--format compact` for agent context windows. (#1013)
+- Add `scan --interactive` to browse findings and open them in your editor. (#1019)
+- Add `scan --write-status` to write `EVERGREEN_STATUS.md` for agents. (#1008)
+- Scan several paths, or a folder of repositories, in one run. (#1014)
+- Add `evergreen watch` and a weekly digest for personal projects. (#1017)
+- Print a friendly summary on a zero-config first run. (#1018)
+- Add `evergreen init --hooks` and `evergreen init --personal` to install a git pre-push hook and a global config. (#999, #1020)
+- Add `evergreen doctor --system` to check the tools installed on this machine. (#1015)
+- Add `evergreen setup` to configure every detected agent host. (#1007)
+- Add `evergreen completions <bash|zsh|fish>` and one example per command in `--help`. (#1021)
+- Add stable error codes and exit codes, with JSON error output. (#1012)
+- Add `evergreen report-issue` to build a redacted false-positive report. (#1004)
+- Add a local-only usage log and `evergreen usage` summary. (#1010)
+- Add a confidence level to every finding. (#1003)
+- Add a branded SVG badge for the README. (#1142)
+
+### Rules and detectors
+
+- Add lifecycle rules for Rails, Laravel, and React Native. (#1099, #1097, #1098)
+- Add Node.js v21 and v22 lifecycle rules, and scheduled end-of-life rules for Node.js, PostgreSQL, and container images. (#932, #738)
+- Judge the `node-version` of `actions/setup-node`. (#1101)
+- Add migration steps and verification commands to curated rules. (#482, #993)
+- Parse literal PowerShell version declarations and workflow shell and image declarations with exact lines. (#477, #478)
+- Keep reading PowerShell files that use backtick line continuation. (#994)
+- Promote several detectors to beta on blind-selected corpora and grow the public corpus. (#727, #728, #740)
+
 ## 0.5.0 - 2026-10-22
 
 - Add end-of-life rules for every unsupported Django release series from 1.3 through 5.1 (`python.package.django-<series>.eol`), with the dates from the Django supported-versions page. A bounded Python package rule now matches a lockfile entry or an exact `==` pin, not a declared range, so a `Django>=3.2` requirement alone produces no Django finding. Supported series (5.2 LTS, 6.0, 6.1) have no rule until the page gives their end dates to the day.

@@ -18,7 +18,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v7
-      - uses: arminazimi/evergreen@v0.5.0
+      - uses: arminazimi/evergreen@v0.6.1
         with:
           baseline: .evergreen-baseline.json
           fail-on-severity: high
@@ -77,6 +77,30 @@ Only entries with an `expires` can expire, so a baseline written before these fi
 
 The Action then annotates and gates only findings not represented by that baseline.
 
+## Chat and webhook digests
+
+`evergreen scan --format slack`, `--format teams`, and `--format webhook` print a JSON payload to standard output. Evergreen only renders the payload and never sends it: the network call belongs to a step you write, so the scan itself stays offline.
+
+- `slack` is a Slack incoming-webhook message: a fallback `text`, a header, a counts summary, and one section per finding. It fits Slack's 50-block and 3,000-character section limits.
+- `teams` is a Microsoft Teams message with an Adaptive Card (version 1.4) for a Teams workflow webhook.
+- `webhook` is a generic JSON payload (`schemaVersion: "evergreen.webhook.v1"`) with a count per severity and every finding, for any system that accepts JSON.
+
+The chat formats list at most 20 findings, most severe first, and say how many were left out; `webhook` lists them all. Output is deterministic, with no timestamps in the chat formats.
+
+Pipe the payload into your own webhook step. The URL lives in a secret, and the step runs only where you choose:
+
+```yaml
+- uses: actions/checkout@v7
+- run: npm ci   # your project must already depend on evergreen-deprecation
+- name: Post digest to Slack
+  if: always()
+  run: npx --no-install evergreen-deprecation scan . --format slack | curl -sS -X POST -H "Content-Type: application/json" --data @- "$SLACK_WEBHOOK_URL"
+  env:
+    SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
+```
+
+Use `--format teams` with a Teams workflow URL, or `--format webhook` with any endpoint, in the same way.
+
 ## Inputs and outputs
 
 Every input is optional. The values below are the defaults used when a workflow
@@ -86,13 +110,16 @@ does not provide a `with` entry.
 | --- | --- | --- |
 | `path` | `.` | Repository root or subdirectory to scan; `.` is the checked-out repository. |
 | `baseline` | empty | Baseline path relative to `path`. Empty reports every finding; a configured path that is missing fails the Action. |
+| `min-support-days` | empty | Warn (medium severity) on lines whose support ends within this many days; off when empty. |
 | `baseline-warn-days` | `14` | Warn when a baseline suppression expires within this many days (0 to 365). |
 | `on-expired` | `resurface` | What a baseline suppression does after its `expires` day: `resurface` (its finding is reported again) or `fail` (also fail the job). |
 | `fail-on-severity` | `high` | Lowest failing level: `none`, `info`, `low`, `medium`, `high`, or `critical`. |
 | `report-name` | `evergreen-report` | Artifact name for the JSON report when `upload-report` is `true`. |
 | `upload-report` | `true` | Upload the JSON report as an Actions artifact. `false` keeps the generated report only on the runner. |
 | `upload-sarif` | `false` | Set to `true` to upload the findings to GitHub code scanning as SARIF. Needs `security-events: write`. |
-| `upload-badge` | `false` | Generate a Shields.io endpoint JSON and upload it as the `evergreen-badge` artifact (14 days). |
+| `upload-badge` | `false` | Generate a Shields.io endpoint JSON and a branded SVG badge, and upload both as the `evergreen-badge` artifact (14 days). |
+| `pr-comment` | `false` | Set to `true` to post one summary comment on pull requests (counts and the top findings). Re-runs update the same comment. Needs `pull-requests: write`. |
+| `github-token` | `${{ github.token }}` | Token used to post the comment when `pr-comment` is `true`. |
 | `attribution` | `true` | Adds one line to the job summary saying the scan was done by Evergreen, with a link. Set to `false` to leave it out. |
 
 | Output | Availability | Meaning |
@@ -100,15 +127,39 @@ does not provide a `with` entry.
 | `report-path` | Always | Absolute runner path to the generated JSON report, whether or not `upload-report` is enabled. |
 | `finding-count` | Always | Number of findings remaining after baseline comparison, encoded as a decimal string. |
 | `badge-path` | When `upload-badge` is `true` | Absolute runner path to `evergreen-badge.json`; otherwise empty. |
+| `badge-svg-path` | When `upload-badge` is `true` | Absolute runner path to `evergreen-badge.svg`, next to the JSON; otherwise empty. |
 | `sarif-path` | When `upload-sarif` is `true` | Absolute runner path to the generated SARIF file; otherwise empty. |
 
 The job summary shows how many findings there are per severity, the ten most severe findings with their location and a link to the evidence each one cites, the age of the lifecycle data, and a warning when the data is stale. When there are more than ten findings, it says how many more there are; the JSON report artifact lists them all.
 
 High and critical findings become error annotations, medium findings become warnings, and low or informational findings become notices. The gate is evaluated independently from annotation level.
 
+### Pull request comment
+
+Set `pr-comment: true` to get one comment on the pull request with the counts per severity and the top findings, instead of reading every annotation. The same comment is updated on each re-run. The scan itself stays offline; only posting the comment calls the GitHub API.
+
+```yaml
+permissions:
+  contents: read
+  pull-requests: write
+steps:
+  - uses: actions/checkout@v6
+  - uses: arminazimi/evergreen@v0
+    with:
+      pr-comment: "true"
+```
+
+Pull requests from forks get a read-only token, so the comment cannot be posted there: the Action logs a warning and the scan result is unaffected.
+
+## End-of-life reminder issue
+
+[`examples/lifecycle-watch.yml`](https://github.com/arminazimi/evergreen/blob/main/examples/lifecycle-watch.yml) is a copyable starter that reminds a team before a deadline without anyone running a scan. Copy it to `.github/workflows/lifecycle-watch.yml`. Every Monday (and on demand) it scans with `min-support-days`, then opens one issue listing each line whose support ends within `WINDOW_DAYS` (default 90). The next run updates that same issue instead of opening another, and closes it when nothing is near its deadline.
+
+The scan stays offline; only the final step calls the GitHub API. The job needs `contents: read` and `issues: write`, and sets `fail-on-severity: none` so the schedule does not fail. Change `WINDOW_DAYS` or the cron line to taste.
+
 ## Permissions and privacy
 
-Only `contents: read` is required. Evergreen does not need `pull-requests: write`, does not post comments, and does not send repository contents to an Evergreen backend. Annotations are emitted through runner workflow commands.
+Only `contents: read` is required. Evergreen does not need `pull-requests: write` unless you set `pr-comment: true`; it then posts one comment on the pull request, found again by a hidden marker and updated on every re-run, and needs only `pull-requests: write` for that. Evergreen does not send repository contents to an Evergreen backend. Annotations are emitted through runner workflow commands.
 
 The bundled scan is local and deterministic. When `upload-report` is `true`, the official `actions/upload-artifact` adapter sends `evergreen-report.json` to GitHub and retains it for 14 days. The report can contain repository-relative paths, matched source excerpts, dependency versions, and lifecycle evidence. Repository administrators should apply normal Actions artifact access controls or disable uploading for sensitive repositories.
 
@@ -116,19 +167,25 @@ Forked pull requests receive the same read-only scan behavior; no repository sec
 
 ## README badge
 
-Set `upload-badge: true` to generate `evergreen-badge.json` and upload the
+Set `upload-badge: true` to generate `evergreen-badge.json` and `evergreen-badge.svg` and upload the
 `evergreen-badge` artifact, even when the severity gate fails. The `badge-path`
 output lets a later step publish the same file. This is opt-in and does not grant
 the Action write access or make network requests during the scan.
 
-The [Shields.io endpoint format](https://shields.io/badges/endpoint-badge) contains
-only `schemaVersion`, `label`, `message`, and `color`. The message counts findings
-**after baseline comparison** and names the highest remaining severity. It does
-not say a repository is risk-free: suppressed findings are excluded, and the
-severity gate can pass while lower-severity findings remain. High/critical are
-red, medium orange, low yellow, info blue, and zero findings bright green. An
-expired baseline under `on-expired: fail` makes the badge red. Stale lifecycle data
-is named in the message and prevents a zero-findings badge from being green.
+The badge reads `evergreen | clean`, or `evergreen | 3 high` when findings remain.
+The message counts findings **after baseline comparison** and names the highest
+remaining severity. It does not say a repository is risk-free: suppressed findings
+are excluded, and the severity gate can pass while lower-severity findings remain.
+`stale` means the lifecycle data is old (appended as `· stale` when findings remain),
+and `expired` means a baseline suppression expired under `on-expired: fail`. Colors
+come from the Evergreen palette: Verified Green for clean, muted amber for low and
+medium, red for high and critical.
+
+`evergreen-badge.svg` is the finished badge with the Evergreen mark. The
+[Shields.io endpoint format](https://shields.io/badges/endpoint-badge) file,
+`evergreen-badge.json`, holds `schemaVersion`, `label`, `message`, `color`, and
+`labelColor`, for use with `img.shields.io/endpoint` when you want a different
+Shields style.
 
 Actions artifacts require authentication, so their download URLs cannot be used
 as public Shields endpoints. For a public README, publish the JSON to a public
@@ -163,6 +220,7 @@ jobs:
         if: always() && steps.scan.outputs.badge-path != ''
         env:
           BADGE_PATH: ${{ steps.scan.outputs.badge-path }}
+          BADGE_SVG_PATH: ${{ steps.scan.outputs.badge-svg-path }}
           GH_TOKEN: ${{ github.token }}
         shell: bash
         run: |
@@ -178,9 +236,10 @@ jobs:
             git -C "$publish" checkout --orphan evergreen-badge
           fi
           cp "$BADGE_PATH" "$publish/evergreen-badge.json"
+          cp "$BADGE_SVG_PATH" "$publish/evergreen-badge.svg"
           git -C "$publish" config user.name github-actions[bot]
           git -C "$publish" config user.email 41898282+github-actions[bot]@users.noreply.github.com
-          git -C "$publish" add evergreen-badge.json
+          git -C "$publish" add evergreen-badge.json evergreen-badge.svg
           if ! git -C "$publish" diff --cached --quiet; then
             git -C "$publish" commit -m "chore: update Evergreen badge"
             git -C "$publish" push origin HEAD:evergreen-badge
@@ -190,7 +249,7 @@ jobs:
 Then add this to the README, replacing `OWNER` and `REPO`:
 
 ```markdown
-[![Evergreen lifecycle findings](https://img.shields.io/endpoint?url=https%3A%2F%2Fraw.githubusercontent.com%2FOWNER%2FREPO%2Fevergreen-badge%2Fevergreen-badge.json)](https://github.com/OWNER/REPO/actions)
+[![Evergreen lifecycle findings](https://raw.githubusercontent.com/OWNER/REPO/evergreen-badge/evergreen-badge.svg)](https://github.com/OWNER/REPO/actions)
 ```
 
 Shields and GitHub cache badge images, so updates can take time to appear. The
@@ -211,7 +270,7 @@ permissions:
 
 steps:
   - uses: actions/checkout@v7
-  - uses: arminazimi/evergreen@v0.5.0
+  - uses: arminazimi/evergreen@v0.6.1
     with:
       upload-sarif: true
 ```

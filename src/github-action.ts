@@ -3,6 +3,8 @@ import { dirname, resolve } from "node:path";
 
 import { evaluateBaseline, expiredSuppressionsFail, readBaseline } from "./baseline.js";
 import type { ExpiredPolicy } from "./baseline.js";
+import { badgeState, renderBadgeSvg } from "./badge.js";
+import { applyMinSupport } from "./min-support.js";
 import { builtInDetectors } from "./detectors/index.js";
 import type { Finding, ScanResult, Severity, SourceLocation } from "./domain.js";
 import { severityValues } from "./domain.js";
@@ -34,6 +36,8 @@ export interface GitHubActionOptions {
   baselineWarnDays?: number;
   /** What an expired suppression does: `resurface` (default) or `fail`. */
   onExpired?: ExpiredPolicy;
+  /** Warn on lines whose support ends within this many days; off when unset. */
+  minSupportDays?: number;
   failOnSeverity?: SeverityGate;
 }
 
@@ -42,6 +46,8 @@ export interface GitHubActionOutcome {
   reportPath: string;
   sarifPath?: string;
   badgePath?: string;
+  /** The same badge as an SVG in the Evergreen brand colors, written next to `badgePath`. */
+  badgeSvgPath?: string;
   annotations: GitHubAnnotation[];
   /** The job should fail: the severity gate was met, or the `fail` expiry policy applies. */
   failed: boolean;
@@ -89,6 +95,9 @@ export async function runGitHubAction(options: GitHubActionOptions): Promise<Git
   const root = resolve(options.root);
   const gate = parseGate(options.failOnSeverity);
   let result = await scanRepository(root, builtInDetectors);
+  if (options.minSupportDays !== undefined) {
+    result = applyMinSupport(result, options.minSupportDays, options.today ?? new Date().toISOString().slice(0, 10));
+  }
   let expiredFailure = false;
   if (options.baselinePath) {
     const evaluated = evaluateBaseline(result, await readBaseline(resolve(root, options.baselinePath)), {
@@ -113,15 +122,19 @@ export async function runGitHubAction(options: GitHubActionOptions): Promise<Git
   const gateRank = gate === "none" ? Number.POSITIVE_INFINITY : severityRank.get(gate)!;
   const gateFailed = result.findings.some((finding) => severityRank.get(finding.severity)! >= gateRank);
   let badgePath: string | undefined;
+  let badgeSvgPath: string | undefined;
   if (options.badgePath) {
     badgePath = resolve(options.badgePath);
+    badgeSvgPath = badgePath.replace(/\.json$/, "") + ".svg";
     await mkdir(dirname(badgePath), { recursive: true });
     await writeFile(badgePath, `${renderBadge(result, expiredFailure)}\n`, "utf8");
+    await writeFile(badgeSvgPath, `${renderBadgeSvg(result, expiredFailure)}\n`, "utf8");
   }
   return {
     result,
     reportPath,
     ...(badgePath ? { badgePath } : {}),
+    ...(badgeSvgPath ? { badgeSvgPath } : {}),
     ...(sarifPath ? { sarifPath } : {}),
     annotations: result.findings.map(annotationFor),
     failed: expiredFailure || gateFailed,
@@ -133,16 +146,8 @@ export async function runGitHubAction(options: GitHubActionOptions): Promise<Git
 
 /** Shields.io endpoint schema v1; contains aggregate counts only, after baseline comparison. */
 export function renderBadge(result: Pick<ScanResult, "findings" | "data">, expiredFailure = false): string {
-  const count = result.findings.length;
-  const highest = [...severityValues].reverse().find((severity) => result.findings.some((finding) => finding.severity === severity));
-  const colors: Record<Severity, string> = { critical: "red", high: "red", medium: "orange", low: "yellow", info: "blue" };
-  const message = [
-    `${count} finding${count === 1 ? "" : "s"}${highest ? ` (${highest})` : ""}`,
-    ...(expiredFailure ? ["baseline expired"] : []),
-    ...(result.data?.stale ? ["stale data"] : []),
-  ].join("; ");
-  const color = expiredFailure ? "red" : highest ? colors[highest] : result.data?.stale ? "orange" : "brightgreen";
-  return JSON.stringify({ schemaVersion: 1, label: "evergreen", message, color });
+  const { message, color } = badgeState(result, expiredFailure);
+  return JSON.stringify({ schemaVersion: 1, label: "evergreen", message, color, labelColor: "#23423A" });
 }
 
 /**
@@ -219,4 +224,12 @@ export function renderSummary(findings: readonly Finding[], failed: boolean, gat
   }
   if (attribution) lines.push(ATTRIBUTION_LINE, "");
   return lines.join("\n");
+}
+
+/** Hidden marker that identifies the one comment Evergreen owns on a pull request, so re-runs update it. */
+export const PR_COMMENT_MARKER = "<!-- evergreen-pr-comment -->";
+
+/** The pull-request comment: the marker, then the same counts and top findings as the job summary. */
+export function renderComment(findings: readonly Finding[], failed: boolean, gate: SeverityGate, data: DataInfo | undefined, attribution: boolean, suppressions?: SuppressionState): string {
+  return `${PR_COMMENT_MARKER}\n${renderSummary(findings, failed, gate, data, attribution, suppressions)}`;
 }

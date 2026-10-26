@@ -1,11 +1,125 @@
+import { createHash } from "node:crypto";
+
 import type { DependencyCheck } from "./check-dependency.js";
 import type { DataInfo, Finding, ScanResult, Severity } from "./domain.js";
 import { severityValues } from "./domain.js";
-import type { MigrationPacket } from "./migration-packet.js";
+import type { MigrationPacket, UpgradePath } from "./migration-packet.js";
 import { VERSION } from "./version.js";
 
 export function renderJson(result: ScanResult): string {
   return JSON.stringify(result, null, 2);
+}
+
+/** Escapes untrusted text for a Markdown table cell while keeping the report on one physical line per row. */
+function escapeMarkdown(value: string | number): string {
+  const escapes: Record<string, string> = {
+    "&": "&amp;",
+    "<": "&lt;",
+    ">": "&gt;",
+    "|": "&#124;",
+    "\\": "&#92;",
+  };
+  return String(value)
+    .replace(/\r\n?/g, "\n")
+    .split("\n")
+    .map((line) =>
+      line.replace(/[&<>|\\\x60*_{}\[\]()#+\-.!]/g, (character) =>
+        escapes[character] ?? "\\" + character,
+      ),
+    )
+    .join("<br>");
+}
+
+/** Only trusted web schemes become Markdown links; unsafe or malformed URLs stay plain text. */
+function markdownSource(source: { title: string; url: string }): string {
+  const title = escapeMarkdown(source.title);
+  try {
+    const url = new URL(source.url);
+    if (url.protocol !== "http:" && url.protocol !== "https:") return title + " (" + escapeMarkdown(source.url) + ")";
+    const destination = url.href.replace(/[()<>\s]/g, (character) => "%" + character.charCodeAt(0).toString(16).toUpperCase().padStart(2, "0"));
+    return "[" + title + "](" + destination + ")";
+  } catch {
+    return title + " (" + escapeMarkdown(source.url) + ")";
+  }
+}
+
+/**
+ * Renders a paste-ready Markdown report with a stable table and evidence links.
+ * Findings use the same deterministic location/rule ordering as the machine-readable reporters.
+ * All finding-controlled text is escaped, and only HTTP(S) evidence URLs become links.
+ */
+export function renderMarkdown(result: ScanResult): string {
+  const findings = [...result.findings].sort(findingOrder);
+  const lines = [
+    "# Evergreen scan report",
+    "",
+    "- **Repository:** " + escapeMarkdown(result.root),
+    "- **Scanned:** " + escapeMarkdown(result.scannedAt),
+    "- **Findings:** " + findings.length,
+    ...(result.data ? ["- " + escapeMarkdown(describeData(result.data))] : []),
+    "",
+    "## Findings",
+    "",
+    "| Severity | Finding | Location | Summary | Replacement | Evidence |",
+    "| --- | --- | --- | --- | --- | --- |",
+    ...(findings.length === 0
+      ? ["| — | No findings | — | No lifecycle risks found. | — | — |"]
+      : findings.map((finding) => {
+          const location = finding.location.line
+            ? finding.location.path + ":" + finding.location.line
+            : finding.location.path;
+          const evidence = finding.sources.length > 0
+            ? finding.sources.map(markdownSource).join("<br>")
+            : "—";
+          return "| " + escapeMarkdown(finding.severity) + " | " + escapeMarkdown(finding.title) + " | " +
+            escapeMarkdown(location) + " | " + escapeMarkdown(finding.summary) + " | " +
+            escapeMarkdown(finding.replacement ?? "—") + " | " + evidence + " |";
+        })),
+  ];
+  if (result.diagnostics.length > 0) {
+    lines.push("", "## Notes", "", ...result.diagnostics.map((diagnostic) => "- " + escapeMarkdown(diagnostic)));
+  }
+  return lines.join("\n");
+}
+
+/** Strips characters XML 1.0 cannot represent, then escapes the rest for use in text or attribute values. */
+function escapeXml(value: string | number): string {
+  return String(value)
+    .replace(/[^\x09\x0A\x0D\x20-\uD7FF\uE000-\uFFFD\u{10000}-\u{10FFFF}]/gu, "")
+    .replace(/[&<>"']/g, (character) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&apos;" })[character]!);
+}
+
+/**
+ * Renders a scan as JUnit XML: one testsuite, one failed testcase per finding. The failure carries the
+ * severity, location, replacement, and evidence sources. Output is deterministic (same order as the other
+ * machine-readable reporters, no timestamps or machine-specific paths), and all finding text is escaped.
+ */
+export function renderJunit(result: ScanResult): string {
+  const findings = [...result.findings].sort(findingOrder);
+  const cases = findings.map((finding) => {
+    const location = finding.location.line ? finding.location.path + ":" + finding.location.line : finding.location.path;
+    const body = [
+      "Severity: " + finding.severity,
+      "Location: " + location,
+      finding.summary,
+      ...(finding.replacement ? ["Replacement: " + finding.replacement] : []),
+      ...finding.sources.map((source) => "Evidence: " + source.title + " (" + source.url + ")"),
+    ].join("\n");
+    return [
+      `    <testcase classname="${escapeXml(finding.ruleId)}" name="${escapeXml(finding.title + " (" + location + ")")}" file="${escapeXml(finding.location.path)}"${finding.location.line ? ` line="${finding.location.line}"` : ""}>`,
+      `      <failure message="${escapeXml(finding.summary)}" type="${escapeXml(finding.severity)}">${escapeXml(body)}</failure>`,
+      "    </testcase>",
+    ].join("\n");
+  });
+  return [
+    '<?xml version="1.0" encoding="UTF-8"?>',
+    `<testsuites name="Evergreen" tests="${findings.length}" failures="${findings.length}" errors="0">`,
+    `  <testsuite name="Evergreen scan" tests="${findings.length}" failures="${findings.length}" errors="0" skipped="0">`,
+    ...cases,
+    ...(result.diagnostics.length > 0 ? ["    <system-out>" + escapeXml(result.diagnostics.join("\n")) + "</system-out>"] : []),
+    "  </testsuite>",
+    "</testsuites>",
+  ].join("\n");
 }
 
 const SARIF_SCHEMA = "https://json.schemastore.org/sarif-2.1.0.json";
@@ -159,6 +273,257 @@ export function renderRdjson(result: ScanResult): string {
   return JSON.stringify(rdjson, null, 2);
 }
 
+const CODE_QUALITY_SEVERITY: Record<Severity, "blocker" | "critical" | "major" | "minor" | "info"> = {
+  critical: "blocker",
+  high: "critical",
+  medium: "major",
+  low: "minor",
+  info: "info",
+};
+
+/**
+ * Renders a scan as a GitLab Code Quality report (the CodeClimate-style JSON array GitLab shows in merge requests).
+ * Findings use the same order as SARIF. The fingerprint is a hash of the finding ID, so GitLab can match the same
+ * finding across pipelines. A finding without a line is reported at line 1, which GitLab requires. Like SARIF, the
+ * output has no root path or timestamp, so it is deterministic.
+ */
+export function renderCodeQuality(result: ScanResult): string {
+  const issues = [...result.findings].sort(findingOrder).map((finding) => ({
+    description: finding.summary,
+    check_name: finding.ruleId,
+    fingerprint: createHash("sha256").update(finding.id).digest("hex"),
+    severity: CODE_QUALITY_SEVERITY[finding.severity],
+    location: { path: finding.location.path, lines: { begin: finding.location.line ?? 1 } },
+  }));
+  return JSON.stringify(issues, null, 2);
+}
+
+/** The most findings a chat or webhook message lists. The rest are counted, not listed, so one message stays small. */
+export const CHAT_MAX_FINDINGS = 20;
+/** Slack's documented limit for the text of one section block, in characters. */
+const SLACK_SECTION_MAX = 3000;
+
+/** The findings most severe first, in the same order `--format compact` uses. */
+function sortedFindings(result: ScanResult): Finding[] {
+  return [...result.findings].sort((left, right) => severityRank(right.severity) - severityRank(left.severity) || findingOrder(left, right));
+}
+
+/** One line of counts, such as "Evergreen: 3 findings (high 2, low 1)". It names no path and no time, so it is deterministic. */
+function chatHeadline(findings: Finding[]): string {
+  if (findings.length === 0) return "Evergreen: no lifecycle risks found";
+  const counts = severityValues
+    .slice()
+    .reverse()
+    .map((severity) => [severity, findings.filter((finding) => finding.severity === severity).length] as const)
+    .filter(([, count]) => count > 0)
+    .map(([severity, count]) => `${severity} ${count}`);
+  return `Evergreen: ${findings.length} finding${findings.length === 1 ? "" : "s"} (${counts.join(", ")})`;
+}
+
+function findingLocation(finding: Finding): string {
+  return finding.location.line ? `${finding.location.path}:${finding.location.line}` : finding.location.path;
+}
+
+/** Slack mrkdwn treats `&`, `<` and `>` as control characters, so only those three are escaped. */
+function escapeSlack(value: string): string {
+  return value.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+}
+
+/**
+ * Escapes `text` for a Slack section of at most `max` characters, ending in "…" when it is cut. The cut is made on the
+ * raw text and the result is escaped afterwards, so it never splits an entity such as `&amp;` in half.
+ */
+function clipSlack(text: string, max: number): string {
+  const escaped = escapeSlack(text);
+  if (escaped.length <= max) return escaped;
+  // Escaping only grows text, so the kept prefix is at most max - 1 raw characters; shrink until it and "…" fit.
+  let end = Math.min(text.length, max - 1);
+  while (escapeSlack(text.slice(0, end)).length + 1 > max) end--;
+  return `${escapeSlack(text.slice(0, end))}…`;
+}
+
+/**
+ * Renders a scan as a Slack incoming-webhook message: a header, a counts summary, and one section per finding, most
+ * severe first, capped at {@link CHAT_MAX_FINDINGS}. The top-level `text` is the fallback Slack shows in notifications.
+ * It only renders the payload; nothing is sent.
+ */
+export function renderSlack(result: ScanResult): string {
+  const findings = sortedFindings(result);
+  const headline = chatHeadline(findings);
+  const blocks: Record<string, unknown>[] = [
+    { type: "header", text: { type: "plain_text", text: "Evergreen lifecycle scan", emoji: false } },
+    { type: "section", text: { type: "mrkdwn", text: escapeSlack(headline) } },
+    ...findings.slice(0, CHAT_MAX_FINDINGS).map((finding) => ({
+      type: "section",
+      text: {
+        type: "mrkdwn",
+        text: clipSlack(
+          `*${finding.severity}* ${finding.title}\n${findingLocation(finding)}\n${finding.summary}` +
+            (finding.replacement ? `\nReplacement: ${finding.replacement}` : ""),
+          SLACK_SECTION_MAX,
+        ),
+      },
+    })),
+  ];
+  const omitted = findings.length - CHAT_MAX_FINDINGS;
+  if (omitted > 0) {
+    blocks.push({ type: "context", elements: [{ type: "mrkdwn", text: escapeSlack(`${omitted} more finding${omitted === 1 ? "" : "s"} omitted; use --format json for all.`) }] });
+  }
+  return JSON.stringify({ text: headline, blocks }, null, 2);
+}
+
+/**
+ * Renders a scan as a Microsoft Teams message: an Adaptive Card (version 1.4, which Teams workflow webhooks accept)
+ * with a header, a counts summary, and one block per finding, capped at {@link CHAT_MAX_FINDINGS}. Finding text goes
+ * through {@link escapeMarkdown} because Adaptive TextBlocks render Markdown. It only renders the payload; nothing is sent.
+ */
+export function renderTeams(result: ScanResult): string {
+  const findings = sortedFindings(result);
+  const body: Record<string, unknown>[] = [
+    { type: "TextBlock", text: "Evergreen lifecycle scan", weight: "Bolder", size: "Medium", wrap: true },
+    { type: "TextBlock", text: escapeMarkdown(chatHeadline(findings)), wrap: true },
+    ...findings.slice(0, CHAT_MAX_FINDINGS).flatMap((finding) => [
+      {
+        type: "TextBlock",
+        text: escapeMarkdown(`${finding.severity}: ${finding.title} (${findingLocation(finding)})`),
+        weight: "Bolder",
+        wrap: true,
+        separator: true,
+      },
+      { type: "TextBlock", text: escapeMarkdown(finding.summary), wrap: true, isSubtle: true, spacing: "None" },
+    ]),
+  ];
+  const omitted = findings.length - CHAT_MAX_FINDINGS;
+  if (omitted > 0) {
+    body.push({ type: "TextBlock", text: escapeMarkdown(`${omitted} more finding${omitted === 1 ? "" : "s"} omitted; use --format json for all.`), wrap: true, isSubtle: true });
+  }
+  const message = {
+    type: "message",
+    attachments: [
+      {
+        contentType: "application/vnd.microsoft.card.adaptive",
+        contentUrl: null,
+        content: { $schema: "http://adaptivecards.io/schemas/adaptive-card.json", type: "AdaptiveCard", version: "1.4", body },
+      },
+    ],
+  };
+  return JSON.stringify(message, null, 2);
+}
+
+/** The schema tag of the generic webhook payload. Consumers can check it before reading the rest. */
+export const WEBHOOK_SCHEMA_VERSION = "evergreen.webhook.v1";
+
+/**
+ * Renders a scan as a generic webhook payload for any system that accepts JSON: the schema tag, the scan time, a count
+ * per severity (zeros included, so the shape never changes), and every finding with its rule, location, replacement,
+ * deadline, and evidence. Findings are ordered like the other machine-readable reporters, so the same scan always renders the same bytes.
+ */
+export function renderWebhook(result: ScanResult): string {
+  const findings = sortedFindings(result);
+  const payload = {
+    schemaVersion: WEBHOOK_SCHEMA_VERSION,
+    source: "evergreen",
+    scannedAt: result.scannedAt,
+    summary: {
+      findings: findings.length,
+      bySeverity: Object.fromEntries(severityValues.map((severity) => [severity, findings.filter((finding) => finding.severity === severity).length])),
+    },
+    findings: findings.map((finding) => ({
+      id: finding.id,
+      ruleId: finding.ruleId,
+      severity: finding.severity,
+      title: finding.title,
+      summary: finding.summary,
+      location: finding.location,
+      ...(finding.replacement ? { replacement: finding.replacement } : {}),
+      ...(finding.deadline ? { deadline: finding.deadline } : {}),
+      sources: finding.sources,
+    })),
+  };
+  return JSON.stringify(payload, null, 2);
+}
+
+const HTML_ESCAPES: Record<string, string> = { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" };
+
+/** Escapes a value for HTML text or a quoted attribute. Every value in the HTML report goes through this. */
+export function escapeHtml(value: string | number): string {
+  return String(value).replace(/[&<>"']/g, (char) => HTML_ESCAPES[char]!);
+}
+
+const HTML_STYLE = `body{font:15px/1.5 system-ui,sans-serif;margin:0 auto;max-width:56rem;padding:1.5rem;color:#1b1f24;background:#fff}
+h1{margin:0 0 .25rem}.meta{color:#57606a;margin:0 0 1.5rem}
+article{border:1px solid #d0d7de;border-left-width:6px;border-radius:6px;padding:.75rem 1rem;margin:0 0 1rem}
+article h2{font-size:1.05rem;margin:0 0 .25rem}.critical,.high{border-left-color:#cf222e}.medium{border-left-color:#bf8700}.low,.info{border-left-color:#0969da}
+.badge{font-size:.75rem;font-weight:600;text-transform:uppercase;margin-right:.5rem}dl{margin:.5rem 0 0}dt{font-weight:600}dd{margin:0 0 .25rem}
+code{font-family:ui-monospace,monospace;background:#f6f8fa;padding:0 .25rem;border-radius:3px}
+@media (prefers-color-scheme:dark){body{color:#e6edf3;background:#0d1117}.meta{color:#8b949e}article{border-color:#30363d}code{background:#161b22}}`;
+
+function htmlLocation(location: { path: string; line?: number }): string {
+  return `${location.path}${location.line ? `:${location.line}` : ""}`;
+}
+
+/** An evidence link is clickable only for http(s) URLs; any other value is shown as plain text. */
+function htmlSource(source: { title: string; url: string }): string {
+  const title = escapeHtml(source.title);
+  return /^https?:\/\//i.test(source.url) ? `<a href="${escapeHtml(source.url)}" rel="noopener noreferrer">${title}</a> <code>${escapeHtml(source.url)}</code>` : `${title} <code>${escapeHtml(source.url)}</code>`;
+}
+
+function htmlFinding(finding: Finding): string {
+  const rows: Array<[string, string]> = [
+    ["Location", `<code>${escapeHtml(htmlLocation(finding.location))}</code>`],
+    ["Rule", `<code>${escapeHtml(finding.ruleId)}</code> (detector ${escapeHtml(finding.detector)})`],
+    ["Confidence", escapeHtml(finding.confidence)],
+  ];
+  if (finding.dependencyPath) rows.push(["Path", escapeHtml(finding.dependencyPath.join(" > "))]);
+  if (finding.replacement) rows.push(["Replacement", escapeHtml(finding.replacement)]);
+  if (finding.deadline) rows.push(["Deadline", escapeHtml(finding.deadline)]);
+  if (finding.impact) rows.push(["Impact", escapeHtml(`${finding.impact.level} (${finding.impact.usageCount} usages across ${finding.impact.affectedFiles} files)`)]);
+  for (const usage of finding.usages ?? []) rows.push(["Usage", `<code>${escapeHtml(htmlLocation(usage.location))}</code> ${escapeHtml(usage.kind)} ${escapeHtml(usage.symbol)}`]);
+  for (const step of finding.migration?.steps ?? []) rows.push(["Migration", `${escapeHtml(step.title)}: ${escapeHtml(step.instructions)}`]);
+  for (const item of finding.migration?.verification ?? []) rows.push(["Verify", `<code>${escapeHtml(item.command)}</code> ${escapeHtml(item.purpose)}`]);
+  for (const source of finding.sources) rows.push(["Source", htmlSource(source)]);
+  return [
+    `<article class="${escapeHtml(finding.severity)}" id="${escapeHtml(finding.id)}">`,
+    `<h2><span class="badge">${escapeHtml(finding.severity)}</span>${escapeHtml(finding.title)}</h2>`,
+    `<p>${escapeHtml(finding.summary)}</p>`,
+    `<dl>${rows.map(([name, value]) => `<dt>${name}</dt><dd>${value}</dd>`).join("")}</dl>`,
+    "</article>",
+  ].join("\n");
+}
+
+/**
+ * Renders a scan as one self-contained HTML file for sharing without a terminal or Code Scanning: inline styles, no
+ * scripts, and no external requests (a CSP forbids them). Every value is escaped. The full JSON report is embedded as an
+ * inert data block, so the page and `--format json` always describe the same scan. Findings keep the JSON order.
+ */
+export function renderHtml(result: ScanResult): string {
+  // "<" is escaped so no value can close the data block; JSON.parse reads the text back to the exact JSON report.
+  const data = renderJson(result).replace(/</g, "\\u003c");
+  const count = result.findings.length;
+  const meta = [`Repository: ${result.root}`, `Scanned: ${result.scannedAt}`, ...(result.data ? [describeData(result.data)] : [])];
+  const notes = result.diagnostics.map((diagnostic) => `<p class="meta">Note: ${escapeHtml(diagnostic)}</p>`);
+  return [
+    "<!doctype html>",
+    '<html lang="en">',
+    "<head>",
+    '<meta charset="utf-8">',
+    '<meta name="viewport" content="width=device-width, initial-scale=1">',
+    `<meta http-equiv="Content-Security-Policy" content="default-src 'none'; style-src 'unsafe-inline'">`,
+    "<title>Evergreen report</title>",
+    `<style>${HTML_STYLE}</style>`,
+    "</head>",
+    "<body>",
+    "<h1>Evergreen report</h1>",
+    `<p class="meta">${meta.map(escapeHtml).join("<br>")}</p>`,
+    `<p><strong>${count} finding${count === 1 ? "" : "s"}</strong></p>`,
+    ...result.findings.map(htmlFinding),
+    ...notes,
+    `<script type="application/json" id="evergreen-report">${data}</script>`,
+    "</body>",
+    "</html>",
+  ].join("\n");
+}
+
 /** The most findings `--format compact` lists. The rest are counted, not listed. */
 export const COMPACT_MAX_FINDINGS = 25;
 /** The longest one compact line gets, in characters; longer lines end in an ellipsis. */
@@ -186,8 +551,30 @@ export function renderCompact(result: ScanResult): string {
   return lines.join("\n");
 }
 
-export function renderText(result: ScanResult): string {
+export interface TextOptions {
+  /** No Evergreen config exists yet: lead with a short summary and the next command to run. */
+  firstRun?: boolean;
+}
+
+/** A headline, the top three findings, and the next command, for a user who has not set Evergreen up yet. */
+export function renderFirstRunSummary(result: ScanResult): string[] {
+  const count = result.findings.length;
+  if (count === 0) {
+    return ["No lifecycle risks found. Evergreen checked this repository and it looks healthy.", "Next: run `evergreen init --personal` to check every repository before you push.", ""];
+  }
+  const lines = [`Found ${count} lifecycle risk${count === 1 ? "" : "s"}. The most urgent:`];
+  for (const finding of result.findings.slice(0, 3)) {
+    const line = finding.location.line ? `:${finding.location.line}` : "";
+    lines.push(`  ${finding.severity.toUpperCase()} ${finding.title} (${finding.location.path}${line})`);
+  }
+  if (count > 3) lines.push(`  …and ${count - 3} more below.`);
+  lines.push("Next: run `evergreen init --personal` to check every repository before you push.", "");
+  return lines;
+}
+
+export function renderText(result: ScanResult, options: TextOptions = {}): string {
   const lines = [
+    ...(options.firstRun ? renderFirstRunSummary(result) : []),
     "Evergreen scan",
     `Repository: ${result.root}`,
     `Findings: ${result.findings.length}`,
@@ -206,6 +593,9 @@ export function renderText(result: ScanResult): string {
     lines.push(`${finding.location.path}${line}`);
     lines.push(`Confidence: ${finding.confidence}`);
     lines.push(finding.summary);
+    if (finding.dependencyPath) {
+      lines.push(`Path: ${finding.dependencyPath.join(" > ")}`);
+    }
     if (finding.replacement) {
       lines.push(`Replacement: ${finding.replacement}`);
     }
@@ -268,6 +658,7 @@ export function renderFindingText(finding: ScanResult["findings"][number]): stri
     "",
     finding.summary,
   ];
+  if (finding.dependencyPath) lines.push("", `Path: ${finding.dependencyPath.join(" > ")}`);
   if (finding.replacement) lines.push("", `Replacement: ${finding.replacement}`);
   if (finding.deadline) lines.push(`Deadline: ${finding.deadline}`);
   if (finding.impact) {
@@ -289,6 +680,18 @@ export function renderFindingText(finding: ScanResult["findings"][number]): stri
   return lines.join("\n");
 }
 
+function renderUpgradePath(path: UpgradePath): string[] {
+  const target = path.target.replacement
+    ? path.target.replacement
+    : `${path.target.title} (${path.target.versions}${path.target.endsOn ? `, supported until ${path.target.endsOn}` : ""})`;
+  return [
+    "Upgrade path:",
+    `- From: ${path.from.title} (${path.from.versions})`,
+    ...path.skipped.map((line) => `- Skip: ${line.title} (${line.versions}) — ${line.status === "ended" ? "support has ended" : `support ends ${line.endsOn}`}`),
+    `- Land on: ${target}`,
+  ];
+}
+
 export function renderMigrationPacketText(packet: MigrationPacket): string {
   const lines = [
     `Migration context: ${packet.finding.title}`,
@@ -303,6 +706,7 @@ export function renderMigrationPacketText(packet: MigrationPacket): string {
     "",
     "Migration steps:",
     ...packet.steps.map((step, index) => `${index + 1}. ${step.title}: ${step.instructions}`),
+    ...(packet.upgradePath ? ["", ...renderUpgradePath(packet.upgradePath)] : []),
     "",
     "Verification:",
     ...packet.verification.map((verification) =>

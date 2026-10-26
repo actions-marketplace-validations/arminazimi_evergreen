@@ -177,6 +177,53 @@ Call `check_dependency` with a Package URL (`pkg:npm/request@2.88.2`, `pkg:pypi/
 
 The tool is read-only and idempotent, never touches the network, and answers from the lifecycle rules bundled with the server.
 
+## Language server for any editor
+
+The same engine runs as a Language Server Protocol server over stdio, so VS Code, Neovim, Helix, Zed, and JetBrains can show lifecycle findings without an MCP host. It starts no listener and makes no network call.
+
+From the published package:
+
+```bash
+npx --yes --package evergreen-deprecation evergreen-lsp
+```
+
+From a source checkout:
+
+```bash
+npm run build
+node dist/src/lsp.js
+```
+
+Point the editor's LSP client at that command. For Neovim:
+
+```lua
+vim.lsp.start({
+  name = "evergreen",
+  cmd = { "npx", "--yes", "--package", "evergreen-deprecation", "evergreen-lsp" },
+  root_dir = vim.fs.dirname(vim.fs.find({ ".git" }, { upward = true })[1]),
+})
+```
+
+For Helix, in `languages.toml`:
+
+```toml
+[language-server.evergreen]
+command = "npx"
+args = ["--yes", "--package", "evergreen-deprecation", "evergreen-lsp"]
+```
+
+The server provides:
+
+| Capability | Behavior |
+| --- | --- |
+| Diagnostics | Every finding in the open document, at its line, with the rule id, severity, and a link to the first evidence source. |
+| Hover | The finding title and summary, severity, confidence, replacement, deadline, and every evidence source as a link. |
+| Code actions | `Evergreen: explain …` shows the finding with its evidence, and `Evergreen: open evidence …` opens the first source URL. Both run through `workspace/executeCommand`. |
+
+Only the open document is scanned. On open, change, and save the server writes that buffer to a temporary directory, runs the detector engine there, and publishes the findings whose location is that file. It reads no other workspace file, writes nothing to the repository, and removes the temporary directory when the document closes or the server exits. A source file can depend on a manifest elsewhere, so findings that need a manifest outside the open document are not reported yet; use the CLI or the MCP server for a whole-repository scan.
+
+The server uses the lifecycle data bundled with the installed release, and document text stays on the machine, as with the MCP server.
+
 ## Other agent hosts
 
 Ready-to-copy setups for the dependency guardrail (an MCP entry plus the instruction to call `check_dependency` before adding a dependency) are in [`examples/agents/`](https://github.com/arminazimi/evergreen/tree/main/examples/agents):
@@ -236,7 +283,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v7
-      - uses: arminazimi/evergreen@v0.5.0
+      - uses: arminazimi/evergreen@v0.6.1
         with:
           baseline: .evergreen-baseline.json
           fail-on-severity: high
@@ -295,6 +342,30 @@ Only entries with an `expires` can expire, so a baseline written before these fi
 
 The Action then annotates and gates only findings not represented by that baseline.
 
+## Chat and webhook digests
+
+`evergreen scan --format slack`, `--format teams`, and `--format webhook` print a JSON payload to standard output. Evergreen only renders the payload and never sends it: the network call belongs to a step you write, so the scan itself stays offline.
+
+- `slack` is a Slack incoming-webhook message: a fallback `text`, a header, a counts summary, and one section per finding. It fits Slack's 50-block and 3,000-character section limits.
+- `teams` is a Microsoft Teams message with an Adaptive Card (version 1.4) for a Teams workflow webhook.
+- `webhook` is a generic JSON payload (`schemaVersion: "evergreen.webhook.v1"`) with a count per severity and every finding, for any system that accepts JSON.
+
+The chat formats list at most 20 findings, most severe first, and say how many were left out; `webhook` lists them all. Output is deterministic, with no timestamps in the chat formats.
+
+Pipe the payload into your own webhook step. The URL lives in a secret, and the step runs only where you choose:
+
+```yaml
+- uses: actions/checkout@v7
+- run: npm ci   # your project must already depend on evergreen-deprecation
+- name: Post digest to Slack
+  if: always()
+  run: npx --no-install evergreen-deprecation scan . --format slack | curl -sS -X POST -H "Content-Type: application/json" --data @- "$SLACK_WEBHOOK_URL"
+  env:
+    SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
+```
+
+Use `--format teams` with a Teams workflow URL, or `--format webhook` with any endpoint, in the same way.
+
 ## Inputs and outputs
 
 Every input is optional. The values below are the defaults used when a workflow
@@ -304,13 +375,16 @@ does not provide a `with` entry.
 | --- | --- | --- |
 | `path` | `.` | Repository root or subdirectory to scan; `.` is the checked-out repository. |
 | `baseline` | empty | Baseline path relative to `path`. Empty reports every finding; a configured path that is missing fails the Action. |
+| `min-support-days` | empty | Warn (medium severity) on lines whose support ends within this many days; off when empty. |
 | `baseline-warn-days` | `14` | Warn when a baseline suppression expires within this many days (0 to 365). |
 | `on-expired` | `resurface` | What a baseline suppression does after its `expires` day: `resurface` (its finding is reported again) or `fail` (also fail the job). |
 | `fail-on-severity` | `high` | Lowest failing level: `none`, `info`, `low`, `medium`, `high`, or `critical`. |
 | `report-name` | `evergreen-report` | Artifact name for the JSON report when `upload-report` is `true`. |
 | `upload-report` | `true` | Upload the JSON report as an Actions artifact. `false` keeps the generated report only on the runner. |
 | `upload-sarif` | `false` | Set to `true` to upload the findings to GitHub code scanning as SARIF. Needs `security-events: write`. |
-| `upload-badge` | `false` | Generate a Shields.io endpoint JSON and upload it as the `evergreen-badge` artifact (14 days). |
+| `upload-badge` | `false` | Generate a Shields.io endpoint JSON and a branded SVG badge, and upload both as the `evergreen-badge` artifact (14 days). |
+| `pr-comment` | `false` | Set to `true` to post one summary comment on pull requests (counts and the top findings). Re-runs update the same comment. Needs `pull-requests: write`. |
+| `github-token` | `${{ github.token }}` | Token used to post the comment when `pr-comment` is `true`. |
 | `attribution` | `true` | Adds one line to the job summary saying the scan was done by Evergreen, with a link. Set to `false` to leave it out. |
 
 | Output | Availability | Meaning |
@@ -318,15 +392,39 @@ does not provide a `with` entry.
 | `report-path` | Always | Absolute runner path to the generated JSON report, whether or not `upload-report` is enabled. |
 | `finding-count` | Always | Number of findings remaining after baseline comparison, encoded as a decimal string. |
 | `badge-path` | When `upload-badge` is `true` | Absolute runner path to `evergreen-badge.json`; otherwise empty. |
+| `badge-svg-path` | When `upload-badge` is `true` | Absolute runner path to `evergreen-badge.svg`, next to the JSON; otherwise empty. |
 | `sarif-path` | When `upload-sarif` is `true` | Absolute runner path to the generated SARIF file; otherwise empty. |
 
 The job summary shows how many findings there are per severity, the ten most severe findings with their location and a link to the evidence each one cites, the age of the lifecycle data, and a warning when the data is stale. When there are more than ten findings, it says how many more there are; the JSON report artifact lists them all.
 
 High and critical findings become error annotations, medium findings become warnings, and low or informational findings become notices. The gate is evaluated independently from annotation level.
 
+### Pull request comment
+
+Set `pr-comment: true` to get one comment on the pull request with the counts per severity and the top findings, instead of reading every annotation. The same comment is updated on each re-run. The scan itself stays offline; only posting the comment calls the GitHub API.
+
+```yaml
+permissions:
+  contents: read
+  pull-requests: write
+steps:
+  - uses: actions/checkout@v6
+  - uses: arminazimi/evergreen@v0
+    with:
+      pr-comment: "true"
+```
+
+Pull requests from forks get a read-only token, so the comment cannot be posted there: the Action logs a warning and the scan result is unaffected.
+
+## End-of-life reminder issue
+
+[`examples/lifecycle-watch.yml`](https://github.com/arminazimi/evergreen/blob/main/examples/lifecycle-watch.yml) is a copyable starter that reminds a team before a deadline without anyone running a scan. Copy it to `.github/workflows/lifecycle-watch.yml`. Every Monday (and on demand) it scans with `min-support-days`, then opens one issue listing each line whose support ends within `WINDOW_DAYS` (default 90). The next run updates that same issue instead of opening another, and closes it when nothing is near its deadline.
+
+The scan stays offline; only the final step calls the GitHub API. The job needs `contents: read` and `issues: write`, and sets `fail-on-severity: none` so the schedule does not fail. Change `WINDOW_DAYS` or the cron line to taste.
+
 ## Permissions and privacy
 
-Only `contents: read` is required. Evergreen does not need `pull-requests: write`, does not post comments, and does not send repository contents to an Evergreen backend. Annotations are emitted through runner workflow commands.
+Only `contents: read` is required. Evergreen does not need `pull-requests: write` unless you set `pr-comment: true`; it then posts one comment on the pull request, found again by a hidden marker and updated on every re-run, and needs only `pull-requests: write` for that. Evergreen does not send repository contents to an Evergreen backend. Annotations are emitted through runner workflow commands.
 
 The bundled scan is local and deterministic. When `upload-report` is `true`, the official `actions/upload-artifact` adapter sends `evergreen-report.json` to GitHub and retains it for 14 days. The report can contain repository-relative paths, matched source excerpts, dependency versions, and lifecycle evidence. Repository administrators should apply normal Actions artifact access controls or disable uploading for sensitive repositories.
 
@@ -334,19 +432,25 @@ Forked pull requests receive the same read-only scan behavior; no repository sec
 
 ## README badge
 
-Set `upload-badge: true` to generate `evergreen-badge.json` and upload the
+Set `upload-badge: true` to generate `evergreen-badge.json` and `evergreen-badge.svg` and upload the
 `evergreen-badge` artifact, even when the severity gate fails. The `badge-path`
 output lets a later step publish the same file. This is opt-in and does not grant
 the Action write access or make network requests during the scan.
 
-The [Shields.io endpoint format](https://shields.io/badges/endpoint-badge) contains
-only `schemaVersion`, `label`, `message`, and `color`. The message counts findings
-**after baseline comparison** and names the highest remaining severity. It does
-not say a repository is risk-free: suppressed findings are excluded, and the
-severity gate can pass while lower-severity findings remain. High/critical are
-red, medium orange, low yellow, info blue, and zero findings bright green. An
-expired baseline under `on-expired: fail` makes the badge red. Stale lifecycle data
-is named in the message and prevents a zero-findings badge from being green.
+The badge reads `evergreen | clean`, or `evergreen | 3 high` when findings remain.
+The message counts findings **after baseline comparison** and names the highest
+remaining severity. It does not say a repository is risk-free: suppressed findings
+are excluded, and the severity gate can pass while lower-severity findings remain.
+`stale` means the lifecycle data is old (appended as `· stale` when findings remain),
+and `expired` means a baseline suppression expired under `on-expired: fail`. Colors
+come from the Evergreen palette: Verified Green for clean, muted amber for low and
+medium, red for high and critical.
+
+`evergreen-badge.svg` is the finished badge with the Evergreen mark. The
+[Shields.io endpoint format](https://shields.io/badges/endpoint-badge) file,
+`evergreen-badge.json`, holds `schemaVersion`, `label`, `message`, `color`, and
+`labelColor`, for use with `img.shields.io/endpoint` when you want a different
+Shields style.
 
 Actions artifacts require authentication, so their download URLs cannot be used
 as public Shields endpoints. For a public README, publish the JSON to a public
@@ -381,6 +485,7 @@ jobs:
         if: always() && steps.scan.outputs.badge-path != ''
         env:
           BADGE_PATH: ${{ steps.scan.outputs.badge-path }}
+          BADGE_SVG_PATH: ${{ steps.scan.outputs.badge-svg-path }}
           GH_TOKEN: ${{ github.token }}
         shell: bash
         run: |
@@ -396,9 +501,10 @@ jobs:
             git -C "$publish" checkout --orphan evergreen-badge
           fi
           cp "$BADGE_PATH" "$publish/evergreen-badge.json"
+          cp "$BADGE_SVG_PATH" "$publish/evergreen-badge.svg"
           git -C "$publish" config user.name github-actions[bot]
           git -C "$publish" config user.email 41898282+github-actions[bot]@users.noreply.github.com
-          git -C "$publish" add evergreen-badge.json
+          git -C "$publish" add evergreen-badge.json evergreen-badge.svg
           if ! git -C "$publish" diff --cached --quiet; then
             git -C "$publish" commit -m "chore: update Evergreen badge"
             git -C "$publish" push origin HEAD:evergreen-badge
@@ -408,7 +514,7 @@ jobs:
 Then add this to the README, replacing `OWNER` and `REPO`:
 
 ```markdown
-[![Evergreen lifecycle findings](https://img.shields.io/endpoint?url=https%3A%2F%2Fraw.githubusercontent.com%2FOWNER%2FREPO%2Fevergreen-badge%2Fevergreen-badge.json)](https://github.com/OWNER/REPO/actions)
+[![Evergreen lifecycle findings](https://raw.githubusercontent.com/OWNER/REPO/evergreen-badge/evergreen-badge.svg)](https://github.com/OWNER/REPO/actions)
 ```
 
 Shields and GitHub cache badge images, so updates can take time to appear. The
@@ -429,7 +535,7 @@ permissions:
 
 steps:
   - uses: actions/checkout@v7
-  - uses: arminazimi/evergreen@v0.5.0
+  - uses: arminazimi/evergreen@v0.6.1
     with:
       upload-sarif: true
 ```
@@ -464,6 +570,170 @@ Output is deterministic: rules and results are sorted, paths are repository-rela
 JSON, text, annotations, and SARIF are renderings of the same findings. A finding suppressed by a baseline is absent from all of them.
 
 **Privacy.** SARIF contains no source code: only file paths, line numbers, and Evergreen's own rule text and evidence links. It is uploaded only when `upload-sarif` is `true`, and then only to GitHub code scanning in the same repository. Nothing is sent to an Evergreen service.
+
+---
+
+Source: https://arminazimi.github.io/evergreen/GITLAB.html
+
+# GitLab
+
+Evergreen ships a GitLab CI/CD component, [`templates/evergreen.yml`](../templates/evergreen.yml). It adds one job that scans the checked-out repository, keeps the JSON report as a job artifact, and fails the pipeline at a severity gate. Its inputs mirror the [GitHub Action](GITHUB_ACTION.md): `path`, `baseline`, `baseline_warn_days`, `on_expired`, `min_support_days`, and `fail_on_severity` have the same meanings and defaults.
+
+## Add the job
+
+```yaml
+include:
+  - component: $CI_SERVER_FQDN/<group>/<project>/evergreen@<version>
+    inputs:
+      baseline: .evergreen-baseline.json
+      fail_on_severity: high
+```
+
+`<group>/<project>` is the project that hosts the component on your GitLab instance. The `version` input pins the `evergreen-deprecation` npm package the job runs; it defaults to the version the component was released with.
+
+## Permissions
+
+The job needs nothing beyond the default pipeline permissions:
+
+- It reads the files GitLab checks out for the job. It uses a shallow clone (`GIT_DEPTH: "1"`).
+- It uses no access token, project or group variable, or secret, and does not call the GitLab API.
+- It writes two files, kept as job artifacts for 14 days even when the gate fails: the JSON report (`evergreen-report.json` unless you set `report_name`) and a [Code Quality](https://docs.gitlab.com/ci/testing/code_quality/) report (`gl-code-quality-report.json` unless you set `code_quality_report_name`), which GitLab shows as findings in merge requests. The same report is available locally with `evergreen scan --format codequality`.
+- It never edits the repository, opens a merge request, or runs a migration command.
+
+## Network behavior
+
+Scans make no network requests: the detectors read repository files and the lifecycle data bundled in the package. The job still needs the network twice, before the scan starts:
+
+| When | What | Where it goes |
+| --- | --- | --- |
+| The runner starts the job | Pulls the `image` input (default `node:24-trixie-slim`) | Your runner's container registry |
+| The job runs `npx` | Downloads `evergreen-deprecation@<version>` and its dependencies | The npm registry your runner is configured for |
+
+Neither request carries repository contents. Repository contents and findings stay on the runner; the report leaves it only as a GitLab job artifact.
+
+## Self-managed GitLab
+
+- **Hosting the component.** Put the component in a project on your instance, mirroring `templates/evergreen.yml`, and reference it with `$CI_SERVER_FQDN` as above. Components and `$[[ inputs.* ]]` interpolation need a GitLab version that supports CI/CD components; check your instance's release notes.
+- **No access to Docker Hub.** Mirror a Node.js 22 or newer image into your own registry and pass it as `image`.
+- **No access to the public npm registry.** Point npm at your internal registry or proxy, for example with an `NPM_CONFIG_REGISTRY` CI/CD variable, and make sure it serves `evergreen-deprecation` at the pinned version.
+- **Air-gapped runners.** Bake the package into the image and set `version` to match. The job's `npx --yes` call then finds it locally, and the scan itself already needs no network.
+- **Lifecycle data.** The job does not run `evergreen data update`, so it never fetches newer rules from GitHub. To change the rules a pipeline uses, change the `version` input. See [Lifecycle data](DATA.md).
+
+## Gate and baseline
+
+The job exits with the gate's status after writing the report, so the report is available when the job fails. Accept existing findings with a baseline committed to the repository, and set `baseline` to its path relative to `path`; the format, expiry warnings, and `on_expired` behavior are the same as in the [GitHub Action](GITHUB_ACTION.md). See also [Privacy](PRIVACY.md).
+
+---
+
+Source: https://arminazimi.github.io/evergreen/HOOKS.html
+
+# Git hooks
+
+`evergreen init --hooks` installs a Git pre-push hook that scans the repository before every push and blocks it when a finding reaches a severity you choose. It uses only local files; the scan never uses the network.
+
+```bash
+npx evergreen-deprecation init --hooks --dry-run   # show the hook first
+npx evergreen-deprecation init --hooks             # install it
+npx evergreen-deprecation init --agents --hooks    # also add the agent instructions
+```
+
+## What the hook does
+
+It runs `evergreen-deprecation scan . --fail-on <severity> --format compact`. The default gate is `high`; choose another with `--fail-on low|medium|high|critical`. Only findings at or above the gate block the push (exit code 1). If Evergreen is not installed in the project, or a scan fails for another reason, the push is not blocked.
+
+`scan --fail-on <severity|none>` works on its own too, for example in CI. Without it, `scan` exits 0 as before.
+
+## Safe to run again
+
+The hook holds one block between `# >>> evergreen pre-push >>>` and `# <<< evergreen pre-push <<<`. Running `init --hooks` again leaves a current block unchanged, and rewrites only that block when the gate changes. It creates `.git/hooks/pre-push` (honoring `core.hooksPath`) as an executable script.
+
+Evergreen never overwrites a hook it did not write. If `pre-push` already exists without the block, the command stops and prints the line to add to it yourself.
+
+## Husky and Lefthook
+
+When a `.husky/` folder or a `lefthook.yml` exists, that tool owns the hooks, so Evergreen writes nothing and prints what to add:
+
+```bash
+# .husky/pre-push
+npx --no-install evergreen-deprecation scan . --fail-on high --format compact
+```
+
+```yaml
+# lefthook.yml
+pre-push:
+  commands:
+    evergreen:
+      run: npx --no-install evergreen-deprecation scan . --fail-on high --format compact
+```
+
+## The pre-commit framework
+
+Teams that use [pre-commit](https://pre-commit.com) add Evergreen with three lines of config. Pin `rev` to a release tag so everyone runs the same scanner:
+
+```yaml
+# .pre-commit-config.yaml
+repos:
+  - repo: https://github.com/arminazimi/evergreen
+    rev: v0.6.1
+    hooks:
+      - id: evergreen
+```
+
+The repository defines two hooks in `.pre-commit-hooks.yaml`, both `language: node`:
+
+| Hook | Runs |
+|---|---|
+| `evergreen` | On every commit. |
+| `evergreen-changed-manifests` | Only when a manifest, lockfile, or CI workflow file is part of the commit. |
+
+Both run `evergreen scan . --fail-on high --format compact`, so a commit is blocked by a `high` or `critical` finding. The scan reads the whole repository, because a finding depends on more than the staged files, and it stays offline. To change the gate, override `entry` in your config:
+
+```yaml
+    hooks:
+      - id: evergreen-changed-manifests
+        entry: evergreen scan . --fail-on critical --format compact
+```
+
+Use `SKIP=evergreen git commit` to skip only Evergreen, or `git commit --no-verify` to skip every hook.
+
+## Bypass
+
+```bash
+git push --no-verify          # skip every hook for this push
+EVERGREEN_SKIP=1 git push     # skip only Evergreen
+```
+
+To remove the hook, delete the marked block (or the file, if it holds only that block).
+
+## One setup for every repository
+
+`evergreen init --personal` protects every repository on your machine. It writes `~/.config/evergreen/config.json` (honoring `XDG_CONFIG_HOME`) and a pre-push hook in `~/.config/evergreen/git-hooks/`, then runs `git config --global core.hooksPath` to point Git at it.
+
+```bash
+npx evergreen-deprecation init --personal --dry-run   # show what would be written
+npx evergreen-deprecation init --personal             # ask, then write
+npx evergreen-deprecation init --personal --yes       # confirm without asking
+```
+
+It asks before writing anything; without a terminal it needs `--yes`. `--fail-on <severity>` sets the gate (default `high`). Running it again changes nothing when the setup is current.
+
+A global hooks path replaces each repository's own `.git/hooks`, so the personal hook runs the repository's own `pre-push` afterwards, if it has one. Evergreen stops without changes when Git already uses a different global hooks path, or when the hook file there is not its own. Bypass and removal work as above; to remove it, run `git config --global --unset core.hooksPath`.
+
+## A digest for your personal projects
+
+`evergreen watch` re-scans the projects you register and prints only what is new since the last digest, so a new end-of-life date shows up once.
+
+```bash
+npx evergreen-deprecation watch add ~/code/my-app     # register a project
+npx evergreen-deprecation watch list                  # show registered projects
+npx evergreen-deprecation watch                       # re-scan and print what changed
+npx evergreen-deprecation watch --weekly              # do nothing unless a week has passed since the last digest
+npx evergreen-deprecation watch remove ~/code/my-app  # stop watching
+```
+
+The project list and what each digest already reported live in `~/.config/evergreen/watch.json` (honoring `XDG_CONFIG_HOME`). A finding is reported again only when its deadline changes. A project that cannot be scanned is named in the digest and keeps its history. Scans stay offline.
+
+For a weekly reminder, run it from cron or a login script, for example `0 9 * * 1 npx evergreen-deprecation watch --weekly`. `--json` prints an `evergreen.watch.v1` document.
 
 ---
 
@@ -601,6 +871,7 @@ npx evergreen-deprecation context '<finding-id>' . --json
 - The complete lifecycle finding and authoritative sources.
 - The declaration file plus exact import, call, and configuration usages.
 - Rule-specific behavioral and compatibility constraints.
+- A warning when the replacement needs a newer Node.js or Python than the repository pins in `.nvmrc`, `.node-version`, `.python-version`, or `.tool-versions`.
 - Ordered migration steps resolved to declaration, usage, or all affected paths.
 - Suggested ecosystem verification commands and a final Evergreen re-scan.
 
@@ -631,6 +902,13 @@ The doctor checks the Node.js runtime, installed package entry points, local MCP
 server, portable Agent Skill, shared plugin prerequisites, and local or CI
 workspace. It is read-only: it does not change configuration, execute suggested
 repairs, start a network listener, or upload repository data.
+
+`evergreen doctor --system` also asks `node`, `python3`, `go`, `java`, `dotnet`, and
+`terraform` for their version (`--version`, or `-version` for Java, which works on
+every release) and matches each against the bundled end-of-life and end-of-support
+rules. The report lists each tool, its release line, and its status in a `system`
+array; tools that are not installed are skipped. A tool that is out of support is a
+warning, not a failure. Nothing else is run and nothing uses the network.
 
 Text and JSON are generated from the same deterministic result. The JSON contract
 is `evergreen.doctor.v1`; its schema is
@@ -679,7 +957,7 @@ Matrix version: **2026-10-15 / v1**
 | Android | Experimental | Literal `compileSdk`, `minSdk`, `targetSdk`, and `buildToolsVersion` in `build.gradle` and `build.gradle.kts`, Android Gradle Plugin and Kotlin Android plugin versions in `settings.gradle(.kts)`, `agp` and `kotlin` keys in `libs.versions.toml`, and string-notation Maven dependencies, matched to reviewed rules. Bundled rules cover Google Play Billing Library majors 5 through 9. SDK and plugin declarations produce a finding only when a rule names them. See [Android](#android-detector). |
 | C and C++ | Experimental | `cmake_minimum_required`, C and C++ language standards, and compiler version checks in `CMakeLists.txt`; direct requirements in `conanfile.txt` and `conanfile.py`; and direct dependencies and `builtin-baseline` in `vcpkg.json`. Bundled rules cover CMake policy versions older than 3.5 (removed) and from 3.5 up to 3.10 (deprecated). See [C and C++](#c-and-c-detector). |
 | Dart and Flutter | Experimental | Resolved packages and SDK constraints in `pubspec.lock`, direct dependencies and `environment` constraints in `pubspec.yaml`, and the Flutter version pinned in `.fvmrc` and `.fvm/fvm_config.json`, for Dart SDK releases past end of support and discontinued pub packages. See [Dart and Flutter](detectors/dart.md). |
-| Database runtimes | Experimental | Image tags of `postgres`, `mysql`, `mariadb`, `redis`, and `mongo` services in Compose files, and literal `engine_version` of `postgres`, `mysql`, `mariadb`, and `redis` engines on AWS managed database resources in `*.tf`, for major and minor lines past end of life. Bundled rules cover PostgreSQL 11 through 13 and MySQL 5.7 and 8.0. See [Database runtimes](detectors/database.md). |
+| Database runtimes | Experimental | Image tags of `postgres`, `mysql`, `mariadb`, `redis`, and `mongo` services in Compose files, and literal engine versions on AWS (`engine` and `engine_version`), Azure (`version`), and Google Cloud SQL (`database_version`) managed database resources in `*.tf`, for major and minor lines past end of life or standard support. Bundled rules cover PostgreSQL 11 through 13 and MySQL 5.7 and 8.0, Azure Database for PostgreSQL 11 through 13 and MySQL 5.7, and Cloud SQL for PostgreSQL 9.6 through 13 and MySQL 5.6 and 5.7. Variables in Terraform version attributes are listed as unclassified. See [Database runtimes](detectors/database.md). |
 | Shell and PowerShell | Experimental | Literal `#Requires -Version` directives in `*.ps1` and `*.psm1`, `PowerShellVersion` in `*.psd1` manifests, and pinned `mcr.microsoft.com/powershell` image tags in `.github/workflows` files, for PowerShell releases past end of support. Bundled rules cover PowerShell 6.x and 7.0 through 7.3. Shell names such as `shell: pwsh` and Bash images carry no version and are not matched. See [Shell and PowerShell](detectors/shell.md). |
 | Terraform | Experimental | `required_version` and `required_providers` constraints in `*.tf`, locked provider versions in `.terraform.lock.hcl`, and the Terraform CLI version pinned in `.terraform-version` and `.tool-versions`, for Terraform CLI release lines past end of support. Bundled rules cover CLI lines 1.10 through 1.14; provider rules are not bundled yet. See [Terraform](detectors/terraform.md). |
 | Serverless runtimes | Beta | `Runtime` on AWS SAM and CloudFormation functions and `Globals`, `provider.runtime` and per-function `runtime` in `serverless.yml`, and Terraform `runtime` on `aws_lambda_function` plus Google Cloud Functions runtimes and Azure function-app `application_stack` version pins. Bundled rules cover selected AWS Lambda and Google Cloud Functions identifiers that the vendors list as end-of-life. See [Serverless runtimes](detectors/serverless.md). |
@@ -1164,6 +1442,7 @@ A second, smaller example lives in [`examples/registry.v2.example.json`](../exam
 | `summary` | yes | One or two sentences stating what the source says, without advice. |
 | `severity` | yes | `info`, `low`, `medium`, `high`, or `critical`. |
 | `replacement` | no | What to move to. |
+| `requires` | no | The lowest runtime versions the replacement works on, such as `{ "node": "18.0.0" }`. Only `node` and `python` are known. A migration packet warns when the repository pins an older runtime. |
 | `deadline` | no | The date from the source, as `YYYY-MM-DD`. Omit it when the source gives none. |
 | `sources` | yes | At least one authoritative source, each with a `title` and an `https` `url` (and optionally `accessedAt`). |
 | `provenance` | yes | See below. |
@@ -1339,6 +1618,18 @@ Every finding carries a `confidence` that says how the version behind it was rea
 | `inferred-from-lock` | Read from a lockfile, or from a manifest declaration whose resolved version a lockfile confirms. |
 
 A detector sets `confidence` when it knows better. Otherwise the engine uses `inferred-from-lock` for a finding located in a lockfile and `exact` for any other. The value appears in JSON output, in text output as a `Confidence:` line, and in SARIF as `properties.confidence`. It is additive: no existing field changes.
+
+## Risk score
+
+`riskScore` in `src/domain.ts` ranks findings so the riskiest are fixed first. It is a number from 0 to 100 built from three inputs and nothing else; popularity and download counts are never used.
+
+| Input | Where it comes from | Points | Cap |
+|---|---|---|---|
+| Time since end of life | Whole days from the finding's `deadline` to the day scored (0 before the deadline or without one) | `floor(days × 50 / 730)` | 50, reached at two years |
+| Usage | The finding's `impact.usageCount`, or its number of `usages` | 5 per usage | 25 |
+| Advisories | The count of imported advisories that apply to the finding, passed by the caller | 5 per advisory | 25 |
+
+`score` is the sum of the three point values, and the result also returns the inputs and the points so the number can be checked by hand. The function reads no clock: the caller passes `today` (`YYYY-MM-DD`), so the same finding on the same day always scores the same. Evergreen does not fetch advisories during a scan; the caller supplies the count it imported.
 
 ## Evidence policy
 
@@ -1571,6 +1862,8 @@ Seventeen public repositories at pinned commits cover the `kubernetes` detector.
 Blind (rule below): `kelseyhightower/kubernetes-cluster-federation` (extensions/v1beta1 Deployments, ReplicaSets, and an Ingress), `motiv-labs/janus` (a PodDisruptionBudget and an Ingress, plus Go and Action findings), `FairwindsOps/pluto` (two extensions/v1beta1 Deployments outside its test directories), `luksa/kubernetes-in-action` (thirty-odd manifests across extensions, apps/v1beta1 and v1beta2, PodSecurityPolicy, CronJob, StatefulSet, CRD, and Ingress), `ossf/package-analysis` (an autoscaling/v2beta2 HorizontalPodAutoscaler), `knrt10/kubernetes-basicLearning` (a networking.k8s.io/v1beta1 Ingress), and five with no Kubernetes finding: `hasura/skor` (the removed version appears only as a `kind: List` item), `stefanprodan/gitops-istio` (the removed version appears only as a Flagger `autoscalerRef`), `doitintl/kube-no-trouble` (the removed versions are in `fixtures/`), `elastic/crd-ref-docs`, and `yaml-schema/yaml-schema`, `shepherd44/helm-charts` (current API versions).
 
 Because the corpus scans every detector, every finding in these repositories is recorded, not only the Kubernetes ones. Each expected finding was checked by reading its line at the pinned commit, and its `groundTruthSource` is a `maintainer-review` note naming the path and line; none of these repositories has a migration commit for the finding, so none is cited. The rules' dates and removal releases come from the Kubernetes migration guide, not from these repositories. A run of `npm run validate:public-repos -- --ecosystem kubernetes` on 2026-10-23 over the seventeen Kubernetes entries reported no false positives or false negatives, with 67 expected `kubernetes` findings, all true.
+
+**Correction (blind ground truth).** The `FairwindsOps/pluto` entry was missing one expected finding: `e2e/tests/assets/list/list-deployment-deprecated-and-non-deprecated.yaml` line 3, an `extensions/v1beta1 Deployment` inside a `kind: List` document. The first corpus run with the `kind: List` parser reported it as unexpected. A re-read of the pinned file confirmed it is a real removed API, so the expected list was extended after that run, and this paragraph records the change. The earlier count of 67 expected `kubernetes` findings predates this correction.
 
 ## Kubernetes blind selection
 
@@ -2842,7 +3135,7 @@ Trusted publishing needs the package to name its publisher. On npmjs.com, open t
 
    This updates the plugin manifests and `.mcp.json` pins under `plugins/` and `.claude-plugin/marketplace.json`, and rebuilds `dist/action/index.js`. Never edit those generated files by hand.
 3. **Update the version in the docs and examples.** The README and `docs/GITHUB_ACTION.md` show `arminazimi/evergreen@vX.Y.Z`; update them to the new tag. The host setups under `examples/agents/` pin `evergreen-deprecation@X.Y.Z` (and the Gemini extension its `version`); a test fails until they match `package.json`. `server.json` (the MCP Registry description) carries the version twice; bump it with `package.json`, and a test fails until they agree.
-4. **Run the gates** above on the result, then commit as `chore: release X.Y.Z` through a pull request. Merge it once CI is green.
+4. **Run the gates** above on the result (with `EVERGREEN_VERIFY_ACTION_BUNDLE=1`, so `npm run check` also fails when `dist/action/index.js` is stale), then commit as `chore: release X.Y.Z` through a pull request. Merge it once CI is green.
 5. **Tag the merge commit.** On `main` after the merge:
 
    ```bash
@@ -2865,10 +3158,21 @@ Trusted publishing needs the package to name its publisher. On npmjs.com, open t
    ```
 
    The response lists `io.github.arminazimi/evergreen` with the new `version`. The name is owned by the `arminazimi` GitHub account, and `package.json`'s `mcpName` ties the npm package to it.
-8. **Create the GitHub release** for the tag, with the changelog section as the body.
+8. **Create the GitHub release** for the tag, with the changelog section as the body. If the [standalone binaries](#standalone-binaries) have already been attached, the release exists: edit its body instead of creating it.
 9. **Move the major tag** only if the project publishes one (for example `v1`), as a force-updated lightweight tag pointing at the new release. Do not move it for a pre-1.0 version. The `Release notes` workflow does this by itself after a successful `Publish to npm` run, for stable tags from `v1.0.0` on: the decision is in `.github/scripts/major-tag.mjs` (unit-tested), the tag only moves forward, and a pre-release or `0.x` tag changes nothing. To see what it would do for a tag without pushing anything, run the `Release notes` workflow by hand with `release_tag` set (a manual run is always a dry run).
 10. **Package the plugins.** For Codex, `npm run package:codex-plugin` writes `artifacts/evergreen-codex-plugin-<version>.zip`; follow [Codex submission](CODEX_SUBMISSION.md) to submit it. The Claude plugin is served from the repository marketplace, so the merged change in step 4 is its release; see [Claude plugin](CLAUDE_PLUGIN.md).
 11. **Announce** only after the npm package, tag, and release are live.
+
+## Standalone binaries
+
+Each stable or pre-release tag also produces binaries that need no Node.js, for Linux (x64, arm64), macOS (x64, arm64), and Windows (x64). The `binary` and `binary-release` jobs in [`release.yml`](../.github/workflows/release.yml) start after a successful `Publish to npm` run, so they build the commit that passed every gate. Nothing needs to be done by hand.
+
+- **What they are.** [`build-sea.mjs`](../.github/scripts/build-sea.mjs) stages exactly the files `npm pack` would publish, installs the production dependencies from `package-lock.json`, and embeds them in a Node.js [single executable application](https://nodejs.org/api/single-executable-applications.html) (built with `node --build-sea`, so the build runner uses Node.js 26). On first run, [`sea-boot.cjs`](../.github/scripts/sea-boot.cjs) unpacks the embedded package into the user's cache directory (`~/.cache/evergreen`, `~/Library/Caches/evergreen`, or `%LOCALAPPDATA%\evergreen`; `EVERGREEN_SEA_CACHE` overrides it) and runs the same CLI as the npm package. Scans still use no network.
+- **Gate.** Every binary runs `--help`, `capabilities`, and a scan of `tests/fixtures/smoke` (`.github/scripts/smoke.mjs`) before it is uploaded; on Linux and macOS this runs with `PATH=/usr/bin:/bin`, so a binary that secretly needs Node.js fails the release.
+- **What is attached.** The release gets `evergreen-<version>-<os>-<arch>` files (`.exe` on Windows) and `SHA256SUMS`. Each binary carries a build provenance attestation: `gh attestation verify evergreen-<version>-<os>-<arch> --repo arminazimi/evergreen`, or compare `sha256sum -c SHA256SUMS`. If no release exists for the tag yet, the job creates one with a placeholder body; replace it in step 8.
+- **macOS.** The binaries are signed ad hoc, not notarized. Downloaded with `curl` or `gh release download` they run as they are; a browser download is quarantined, and `xattr -d com.apple.quarantine <file>` clears it.
+- **If a binary job fails.** The npm package is already published and is not affected. Fix the cause, then re-run the failed jobs of the `Release notes` workflow run that followed the publish; `gh release upload --clobber` replaces files that were already attached.
+- **Trying it before a release.** From a built checkout with Node.js 25.5 or newer, `node .github/scripts/build-sea.mjs evergreen-test`, then `node .github/scripts/smoke.mjs tests/fixtures/smoke -- ./evergreen-test` (on macOS run `codesign --force --sign - evergreen-test` first). Use an official Node.js build; some distributions (Homebrew's, for one) are built without single-executable support.
 
 ## Rule data
 

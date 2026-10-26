@@ -26,10 +26,13 @@ Every lifecycle claim Evergreen makes comes from a reviewed rule with an authori
 
 ## container
 
+- [Alpine Linux image release lines 3.20 and older are end-of-life](container.alpine.eol-3.20-and-older.html) — end of life, `container.alpine.eol-3.20-and-older`
+- [Alpine Linux image release line 3.21 reaches end-of-life on 2026-11-01](container.alpine.eol-3.21.html) — scheduled end of life, `container.alpine.eol-3.21`
 - [Caddy image release lines 1 and older are end-of-life](container.caddy.eol-1-and-older.html) — end of life, `container.caddy.eol-1-and-older`
 - [ClickHouse image release lines 26.2 and older are end-of-life](container.clickhouse.eol-26.2-and-older.html) — end of life, `container.clickhouse.eol-26.2-and-older`
 - [Couchbase Server image release lines 7.2 and older are end-of-life](container.couchbase.eol-7.2-and-older.html) — end of life, `container.couchbase.eol-7.2-and-older`
 - [Apache CouchDB image release lines 3.3 and older are end-of-life](container.couchdb.eol-3.3-and-older.html) — end of life, `container.couchdb.eol-3.3-and-older`
+- [Debian image release lines 11 and older are end-of-life](container.debian.eol-11-and-older.html) — end of life, `container.debian.eol-11-and-older`
 - [Drupal image release lines 10.5 and older are end-of-life](container.drupal.eol-10.5-and-older.html) — end of life, `container.drupal.eol-10.5-and-older`
 - [Go image release lines 1.25 and older are end-of-life](container.golang.eol-1.25-and-older.html) — end of life, `container.golang.eol-1.25-and-older`
 - [MariaDB image release lines 10.10 and older are end-of-life](container.mariadb.eol-10.10-and-older.html) — end of life, `container.mariadb.eol-10.10-and-older`
@@ -43,6 +46,8 @@ Every lifecycle claim Evergreen makes comes from a reviewed rule with an authori
 - [Redis image release lines 6.0 and older are end-of-life](container.redis.eol-6.0-and-older.html) — end of life, `container.redis.eol-6.0-and-older`
 - [Ruby image release lines 3.2 and older are end-of-life](container.ruby.eol-3.2-and-older.html) — end of life, `container.ruby.eol-3.2-and-older`
 - [Traefik image release lines 3.6 and older are end-of-life](container.traefik.eol-3.6-and-older.html) — end of life, `container.traefik.eol-3.6-and-older`
+- [Ubuntu image release lines 20.04 and older are past standard support end-of-life](container.ubuntu.eol-20.04-and-older.html) — end of life, `container.ubuntu.eol-20.04-and-older`
+- [Ubuntu image release line 22.04 reaches standard support end-of-life on 2027-06-01](container.ubuntu.eol-22.04.html) — scheduled end of life, `container.ubuntu.eol-22.04`
 - [Apache ZooKeeper image release lines 3.7 and older are end-of-life](container.zookeeper.eol-3.7-and-older.html) — end of life, `container.zookeeper.eol-3.7-and-older`
 
 ## cpp
@@ -63,12 +68,24 @@ Every lifecycle claim Evergreen makes comes from a reviewed rule with an authori
 
 ## database
 
+- [Azure Database for MySQL 5.7 is past standard support](database.azure-mysql.standard-support-ended-5.7.html) — end of support, `database.azure-mysql.standard-support-ended-5.7`
+- [Azure Database for PostgreSQL 11, 12, and 13 are past standard support](database.azure-postgresql.standard-support-ended-11-to-13.html) — end of support, `database.azure-postgresql.standard-support-ended-11-to-13`
+- [Cloud SQL for MySQL 5.6 and 5.7 are in extended support](database.google-cloud-sql-mysql.extended-support-5.6-to-5.7.html) — end of support, `database.google-cloud-sql-mysql.extended-support-5.6-to-5.7`
+- [Cloud SQL for PostgreSQL 13 is in extended support](database.google-cloud-sql-postgresql.extended-support-13.html) — end of support, `database.google-cloud-sql-postgresql.extended-support-13`
+- [Cloud SQL for PostgreSQL 9.6 through 12 are in extended support](database.google-cloud-sql-postgresql.extended-support-9.6-to-12.html) — end of support, `database.google-cloud-sql-postgresql.extended-support-9.6-to-12`
 - [MySQL 5.7 is end-of-life](database.mysql.end-of-life-5.7.html) — end of life, `database.mysql.end-of-life-5.7`
 - [MySQL 8.0 is end-of-life](database.mysql.end-of-life-8.0.html) — end of life, `database.mysql.end-of-life-8.0`
 - [PostgreSQL 11 is no longer a supported major version](database.postgresql.end-of-life-11.html) — end of life, `database.postgresql.end-of-life-11`
 - [PostgreSQL 12 is no longer a supported major version](database.postgresql.end-of-life-12.html) — end of life, `database.postgresql.end-of-life-12`
 - [PostgreSQL 13 is no longer a supported major version](database.postgresql.end-of-life-13.html) — end of life, `database.postgresql.end-of-life-13`
 - [PostgreSQL 14 reaches the end of its support on 2026-11-12](database.postgresql.end-of-life-14.html) — scheduled end of life, `database.postgresql.end-of-life-14`
+
+## deno
+
+- [Bun 0.x pre-release is end-of-life](deno.bun.runtime.eol-0.x.html) — end of life, `deno.bun.runtime.eol-0.x`
+- [Bun 1.0.x is end-of-life](deno.bun.runtime.eol-1.0.html) — end of life, `deno.bun.runtime.eol-1.0`
+- [Deno 0.x pre-release is end-of-life](deno.runtime.eol-0.x.html) — end of life, `deno.runtime.eol-0.x`
+- [Deno 1.x is end-of-life](deno.runtime.eol-1.x.html) — end of life, `deno.runtime.eol-1.x`
 
 ## dotnet
 
@@ -142,6 +159,9 @@ Every lifecycle claim Evergreen makes comes from a reviewed rule with an authori
 - [mysql:mysql-connector-java has moved to com.mysql:mysql-connector-j](java.maven.mysql.mysql-connector-java.relocated.html) — deprecated, `java.maven.mysql.mysql-connector-java.relocated`
 - [org.hibernate:hibernate-entitymanager has moved to org.hibernate.orm:hibernate-entitymanager](java.maven.org.hibernate.hibernate-entitymanager.relocated.html) — deprecated, `java.maven.org.hibernate.hibernate-entitymanager.relocated`
 - [org.slf4j:slf4j-log4j12 has moved to org.slf4j:slf4j-reload4j](java.maven.org.slf4j.slf4j-log4j12.relocated.html) — deprecated, `java.maven.org.slf4j.slf4j-log4j12.relocated`
+- [Spring Boot 1.x is out of open-source support](java.maven.spring-boot.legacy-1x.end-of-support.html) — end of support, `java.maven.spring-boot.legacy-1x.end-of-support`
+- [Spring Boot 2.x is out of open-source support](java.maven.spring-boot.legacy-2x.end-of-support.html) — end of support, `java.maven.spring-boot.legacy-2x.end-of-support`
+- [Spring Boot 3.x is out of open-source support](java.maven.spring-boot.legacy-3x.end-of-support.html) — end of support, `java.maven.spring-boot.legacy-3x.end-of-support`
 
 ## kubernetes
 
@@ -316,7 +336,7 @@ Every lifecycle claim Evergreen makes comes from a reviewed rule with an authori
 - [Next.js 12 is out of support](npm.package.next.12.support-end.html) — end of support, `npm.package.next.12.support-end`
 - [Next.js 13 is out of support](npm.package.next.13.support-end.html) — end of support, `npm.package.next.13.support-end`
 - [Next.js 14 is out of support](npm.package.next.14.support-end.html) — end of support, `npm.package.next.14.support-end`
-- [Next.js 15 Maintenance LTS is scheduled to end](npm.package.next.15.support-end.html) — scheduled end of life, `npm.package.next.15.support-end`
+- [Next.js 15 is out of support](npm.package.next.15.support-end.html) — end of support, `npm.package.next.15.support-end`
 - [node-pre-gyp is deprecated](npm.package.node-pre-gyp.deprecated.html) — deprecated, `npm.package.node-pre-gyp.deprecated`
 - [Node Sass is end-of-life](npm.package.node-sass.eol.html) — end of life, `npm.package.node-sass.eol`
 - [nomnom is deprecated](npm.package.nomnom.deprecated.html) — deprecated, `npm.package.nomnom.deprecated`

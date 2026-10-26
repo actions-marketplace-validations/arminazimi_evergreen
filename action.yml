@@ -25,6 +25,12 @@ inputs:
       fail (also fail the job).
     required: false
     default: resurface
+  min-support-days:
+    description: >-
+      Warn (medium severity) on lines whose support ends within this many days. Leave empty to report only
+      what the data already marks.
+    required: false
+    default: ""
   fail-on-severity:
     description: Lowest severity that fails the job (none, info, low, medium, high, or critical).
     required: false
@@ -44,9 +50,19 @@ inputs:
     required: false
     default: "false"
   upload-badge:
-    description: Generate and upload aggregate lifecycle counts as a Shields.io endpoint JSON artifact.
+    description: Generate and upload aggregate lifecycle counts as a Shields.io endpoint JSON and a branded SVG badge artifact.
     required: false
     default: "false"
+  pr-comment:
+    description: >-
+      Post one summary comment on pull requests and update it on every re-run. Needs the
+      pull-requests: write permission on the job; leave it off for pull requests from forks, whose token is read-only.
+    required: false
+    default: "false"
+  github-token:
+    description: Token used to post the pull request comment when pr-comment is true.
+    required: false
+    default: ${{ github.token }}
   attribution:
     description: >-
       Add one line to the job summary that says the scan was done by Evergreen and links to it.
@@ -64,6 +80,9 @@ outputs:
   badge-path:
     description: Absolute runner path to the Shields.io endpoint JSON, or empty when upload-badge is false.
     value: ${{ steps.scan.outputs.badge-path }}
+  badge-svg-path:
+    description: Absolute runner path to the SVG badge, or empty when upload-badge is false.
+    value: ${{ steps.scan.outputs.badge-svg-path }}
   sarif-path:
     description: Absolute runner path to the generated SARIF file, or empty when upload-sarif is false.
     value: ${{ steps.scan.outputs.sarif-path }}
@@ -80,9 +99,12 @@ runs:
         INPUT_BASELINE: ${{ inputs.baseline }}
         INPUT_BASELINE-WARN-DAYS: ${{ inputs.baseline-warn-days }}
         INPUT_ON-EXPIRED: ${{ inputs.on-expired }}
+        INPUT_MIN-SUPPORT-DAYS: ${{ inputs.min-support-days }}
         INPUT_FAIL-ON-SEVERITY: ${{ inputs.fail-on-severity }}
         INPUT_UPLOAD-SARIF: ${{ inputs.upload-sarif }}
         INPUT_UPLOAD-BADGE: ${{ inputs.upload-badge }}
+        INPUT_PR-COMMENT: ${{ inputs.pr-comment }}
+        INPUT_GITHUB-TOKEN: ${{ inputs.github-token }}
         INPUT_ATTRIBUTION: ${{ inputs.attribution }}
     - name: Upload machine-readable report
       if: always() && inputs.upload-report == 'true'
@@ -97,7 +119,9 @@ runs:
       uses: actions/upload-artifact@v7
       with:
         name: evergreen-badge
-        path: ${{ steps.scan.outputs.badge-path }}
+        path: |
+          ${{ steps.scan.outputs.badge-path }}
+          ${{ steps.scan.outputs.badge-svg-path }}
         if-no-files-found: error
         retention-days: 14
     - name: Upload findings to code scanning
