@@ -946,7 +946,7 @@ Matrix version: **2026-10-15 / v1**
 | .NET | Beta | `global.json`, project files, `Directory.Build.props`, `Directory.Packages.props`, and `packages.lock.json`, for .NET release lines past end of support and deprecated NuGet packages. See [.NET](detectors/dotnet.md). |
 | Go | Experimental | `go` and `toolchain` directives in `go.mod` and `go.work`, and direct `require` entries, for Go release lines past end of support. See [Go](detectors/go.md). |
 | Java and Kotlin (JVM) | Beta | JDK declarations in `pom.xml`, Gradle build scripts, `.java-version`, `.sdkmanrc`, and `.tool-versions`, and direct Maven dependencies, for non-LTS JDK releases past end of support and moved artifacts. See [Java and Kotlin](detectors/java.md). |
-| Kubernetes APIs | Beta | The literal `apiVersion` and `kind` in YAML manifests, Helm chart templates, and kustomization patches, for API versions the Kubernetes project says are no longer served. See [Kubernetes APIs](detectors/kubernetes.md). |
+| Kubernetes APIs | Beta | The literal `apiVersion` and `kind` in YAML manifests, Helm chart templates, and kustomization patches, for API versions the Kubernetes project says are no longer served, and `Chart.yaml` dependencies that still point at the retired Helm stable or incubator repositories. See [Kubernetes APIs](detectors/kubernetes.md). |
 | GitHub Actions | Supported | Selected first-party Action lifecycle rules and exact workflow locations. |
 | Node.js and npm | Supported | Runtime declarations, direct dependencies, lockfiles, and supported source usages. |
 | PHP | Experimental | Pinned runtime declarations in `.php-version`, `.tool-versions`, `composer.json`, and `composer.lock`, for PHP release lines past end of support and abandoned Composer packages. See [PHP](#php-detector). |
@@ -958,8 +958,9 @@ Matrix version: **2026-10-15 / v1**
 | C and C++ | Experimental | `cmake_minimum_required`, C and C++ language standards, and compiler version checks in `CMakeLists.txt`; direct requirements in `conanfile.txt` and `conanfile.py`; and direct dependencies and `builtin-baseline` in `vcpkg.json`. Bundled rules cover CMake policy versions older than 3.5 (removed) and from 3.5 up to 3.10 (deprecated). See [C and C++](#c-and-c-detector). |
 | Dart and Flutter | Experimental | Resolved packages and SDK constraints in `pubspec.lock`, direct dependencies and `environment` constraints in `pubspec.yaml`, and the Flutter version pinned in `.fvmrc` and `.fvm/fvm_config.json`, for Dart SDK releases past end of support and discontinued pub packages. See [Dart and Flutter](detectors/dart.md). |
 | Database runtimes | Experimental | Image tags of `postgres`, `mysql`, `mariadb`, `redis`, and `mongo` services in Compose files, and literal engine versions on AWS (`engine` and `engine_version`), Azure (`version`), and Google Cloud SQL (`database_version`) managed database resources in `*.tf`, for major and minor lines past end of life or standard support. Bundled rules cover PostgreSQL 11 through 13 and MySQL 5.7 and 8.0, Azure Database for PostgreSQL 11 through 13 and MySQL 5.7, and Cloud SQL for PostgreSQL 9.6 through 13 and MySQL 5.6 and 5.7. Variables in Terraform version attributes are listed as unclassified. See [Database runtimes](detectors/database.md). |
+| Elixir and Mix | Experimental | Pinned Elixir and Erlang/OTP versions in `.tool-versions`, the project `elixir:` constraint and direct Hex deps in `mix.exs`, and resolved Hex packages in `mix.lock`, for Elixir and OTP release lines past end of support and retired Hex packages. See [Elixir and Mix](detectors/elixir.md). |
 | Shell and PowerShell | Experimental | Literal `#Requires -Version` directives in `*.ps1` and `*.psm1`, `PowerShellVersion` in `*.psd1` manifests, and pinned `mcr.microsoft.com/powershell` image tags in `.github/workflows` files, for PowerShell releases past end of support. Bundled rules cover PowerShell 6.x and 7.0 through 7.3. Shell names such as `shell: pwsh` and Bash images carry no version and are not matched. See [Shell and PowerShell](detectors/shell.md). |
-| Terraform | Experimental | `required_version` and `required_providers` constraints in `*.tf`, locked provider versions in `.terraform.lock.hcl`, and the Terraform CLI version pinned in `.terraform-version` and `.tool-versions`, for Terraform CLI release lines past end of support. Bundled rules cover CLI lines 1.10 through 1.14; provider rules are not bundled yet. See [Terraform](detectors/terraform.md). |
+| Terraform | Experimental | `required_version` and `required_providers` constraints in `*.tf`, locked provider versions in `.terraform.lock.hcl`, the Terraform CLI version pinned in `.terraform-version` and `.tool-versions`, and managed Kubernetes control-plane versions in `*.tf` for Amazon EKS, Google Kubernetes Engine, and Azure Kubernetes Service, for Terraform CLI and Kubernetes release lines past end of support. Bundled rules cover CLI lines 1.10 through 1.14 and EKS, GKE, and AKS versions 1.33 and earlier; provider rules are not bundled yet. See [Terraform](detectors/terraform.md). |
 | Serverless runtimes | Beta | `Runtime` on AWS SAM and CloudFormation functions and `Globals`, `provider.runtime` and per-function `runtime` in `serverless.yml`, and Terraform `runtime` on `aws_lambda_function` plus Google Cloud Functions runtimes and Azure function-app `application_stack` version pins. Bundled rules cover selected AWS Lambda and Google Cloud Functions identifiers that the vendors list as end-of-life. See [Serverless runtimes](detectors/serverless.md). |
 | Other language and platform ecosystems | Unsupported | Report the limitation; do not infer lifecycle status without a detector. |
 <!-- coverage-matrix:end -->
@@ -1068,6 +1069,10 @@ The `swift` detector is **beta**: its level is recorded as `beta` in `benchmarks
 
 The `dart` detector is **experimental**: its level is recorded as `experimental` in `benchmarks/thresholds.json`. Supported files, declaration forms, matching rules, and limits are documented in [Dart and Flutter](detectors/dart.md). Its lifecycle rules are in `registry/dart.json` and ship in the [data bundle](DATA.md).
 
+## Elixir and Mix detector
+
+The `elixir` detector is **experimental**: its level is recorded as `experimental` in `benchmarks/thresholds.json`. Supported files, declaration forms, matching rules, and limits are documented in [Elixir and Mix](detectors/elixir.md). Its lifecycle rules are in `registry/elixir.json` and ship with the package (see [Lifecycle data](DATA.md)).
+
 ## Database runtimes detector
 
 The `database` detector is **experimental**: its level is recorded as `experimental` in `benchmarks/thresholds.json`. Five public repositories are pinned in `benchmarks/public-repositories.json`: four targeted cases and one blind, zero-finding repository, with ground truth from the vendors' lifecycle sources. Supported files, declaration forms, matching rules, and limits are documented in [Database runtimes](detectors/database.md). Its lifecycle rules are in `registry/database.json` and ship in the [data bundle](DATA.md).
@@ -1079,6 +1084,14 @@ The `shell` detector is **experimental**: its level is recorded as `experimental
 ## Terraform detector
 
 The `terraform` detector is **experimental**: its level is recorded as `experimental` in `benchmarks/thresholds.json`. Supported files, declaration forms, matching rules, and limits are documented in [Terraform](detectors/terraform.md). Its lifecycle rules are in `registry/terraform.json` and ship in the [data bundle](DATA.md).
+
+### Managed Kubernetes
+
+| Product | Declaration read | Notes |
+| --- | --- | --- |
+| Amazon EKS | `cluster_version` and `kubernetes_version` in a module whose `source` is `terraform-aws-modules/eks/aws` | The module renamed `cluster_version` to `kubernetes_version` in v21; the source, not the attribute name, decides the vendor. |
+| Google Kubernetes Engine | `min_master_version` on `google_container_cluster`, or `kubernetes_version` and `min_master_version` in a module whose `source` is `terraform-google-modules/kubernetes-engine/google` | A `//submodule` path and a `?ref=` suffix are accepted. |
+| Azure Kubernetes Service | `kubernetes_version` on `azurerm_kubernetes_cluster`, or `kubernetes_version` in a module whose `source` is `Azure/aks/azurerm` | A module with an unknown source has its version attributes reported as unclassified. |
 
 ## C and C++ detector
 
@@ -1857,7 +1870,7 @@ The review tool (`benchmarks/mining/review.ts`) now accepts npm package, Python 
 
 ## Kubernetes corpus
 
-Seventeen public repositories at pinned commits cover the `kubernetes` detector. Targeted (chosen knowing their result): `argoproj/argocd-example-apps` (Helm and kustomize applications, no findings), `kelseyhightower/ingress-with-static-ip`, `unixhot/salt-kubebin` (a CronJob and three Ingresses), `kubernetes/examples` (two PodSecurityPolicy documents, plus the two end-of-life base images the container detector reports there), and `lusyoe/springboot-k8s-example` (a Helm template and a plain manifest).
+Seventeen public repositories at pinned commits cover the `kubernetes` detector. Targeted (chosen knowing their result): `argoproj/argocd-example-apps` (Helm and kustomize applications, including a Chart.yaml dependency on the retired Helm stable repository), `kelseyhightower/ingress-with-static-ip`, `unixhot/salt-kubebin` (a CronJob and three Ingresses), `kubernetes/examples` (two PodSecurityPolicy documents, plus the two end-of-life base images the container detector reports there), and `lusyoe/springboot-k8s-example` (a Helm template and a plain manifest). `ahmetb/kubernetes-network-policy-recipes` is a targeted zero-finding companion (modern NetworkPolicy examples only), added so the kubernetes corpus still has two empty `expected` lists after argocd-example-apps gained the Helm stable finding.
 
 Blind (rule below): `kelseyhightower/kubernetes-cluster-federation` (extensions/v1beta1 Deployments, ReplicaSets, and an Ingress), `motiv-labs/janus` (a PodDisruptionBudget and an Ingress, plus Go and Action findings), `FairwindsOps/pluto` (two extensions/v1beta1 Deployments outside its test directories), `luksa/kubernetes-in-action` (thirty-odd manifests across extensions, apps/v1beta1 and v1beta2, PodSecurityPolicy, CronJob, StatefulSet, CRD, and Ingress), `ossf/package-analysis` (an autoscaling/v2beta2 HorizontalPodAutoscaler), `knrt10/kubernetes-basicLearning` (a networking.k8s.io/v1beta1 Ingress), and five with no Kubernetes finding: `hasura/skor` (the removed version appears only as a `kind: List` item), `stefanprodan/gitops-istio` (the removed version appears only as a Flagger `autoscalerRef`), `doitintl/kube-no-trouble` (the removed versions are in `fixtures/`), `elastic/crd-ref-docs`, and `yaml-schema/yaml-schema`, `shepherd44/helm-charts` (current API versions).
 
@@ -2284,6 +2297,7 @@ Measured on 456 pinned repositories at commit `c7b4e14` on 2026-10-24. Regenerat
 | dart | Experimental | 8 | 0 | 0 | 1.000 | 1.000 |
 | database | Experimental | 16 | 0 | 0 | 1.000 | 1.000 |
 | dotnet | Beta | 304 | 0 | 0 | 1.000 | 1.000 |
+| elixir | Experimental | — | — | — | — | — |
 | github-actions | Supported | 986 | 0 | 0 | 1.000 | 1.000 |
 | go | Experimental | 54 | 0 | 0 | 1.000 | 1.000 |
 | java | Beta | 61 | 0 | 0 | 1.000 | 1.000 |
@@ -2370,7 +2384,7 @@ The interface guarantees:
 
 See [`examples/detectors/todo-comments.ts`](../examples/detectors/todo-comments.ts) for a complete minimal adapter.
 
-Built-in detectors with their own pages: [Container base images](detectors/container.md), [Dart and Flutter](detectors/dart.md), [Database runtimes](detectors/database.md), [.NET](detectors/dotnet.md), [Go](detectors/go.md), [Java and Kotlin](detectors/java.md), [Kubernetes APIs](detectors/kubernetes.md), [Rust](detectors/rust.md), [Serverless runtimes](detectors/serverless.md), [Shell and PowerShell](detectors/shell.md), [Swift](detectors/swift.md), [Terraform](detectors/terraform.md). The C and C++, Ruby, PHP, Android, and CI runner images detectors have no separate pages yet; their supported declarations and limits are in [Compatibility](COMPATIBILITY.md#c-and-c-detector), [Compatibility](COMPATIBILITY.md#ruby-detector), [Compatibility](COMPATIBILITY.md#php-detector), [Compatibility](COMPATIBILITY.md#android-detector), and [Compatibility](COMPATIBILITY.md#ci-runner-images-detector).
+Built-in detectors with their own pages: [Container base images](detectors/container.md), [Dart and Flutter](detectors/dart.md), [Database runtimes](detectors/database.md), [.NET](detectors/dotnet.md), [Elixir and Mix](detectors/elixir.md), [Go](detectors/go.md), [Java and Kotlin](detectors/java.md), [Kubernetes APIs](detectors/kubernetes.md), [Rust](detectors/rust.md), [Serverless runtimes](detectors/serverless.md), [Shell and PowerShell](detectors/shell.md), [Swift](detectors/swift.md), [Terraform](detectors/terraform.md). The C and C++, Ruby, PHP, Android, and CI runner images detectors have no separate pages yet; their supported declarations and limits are in [Compatibility](COMPATIBILITY.md#c-and-c-detector), [Compatibility](COMPATIBILITY.md#ruby-detector), [Compatibility](COMPATIBILITY.md#php-detector), [Compatibility](COMPATIBILITY.md#android-detector), and [Compatibility](COMPATIBILITY.md#ci-runner-images-detector).
 
 ## Ruby detector layout
 

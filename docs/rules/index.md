@@ -106,6 +106,14 @@ Every lifecycle claim Evergreen makes comes from a reviewed rule with an authori
 - [.NET 8 reaches end of support on 2026-11-10](dotnet.runtime.end-of-support-8.0.html) — scheduled end of life, `dotnet.runtime.end-of-support-8.0`
 - [.NET 9 reaches end of support on 2026-11-10](dotnet.runtime.end-of-support-9.0.html) — scheduled end of life, `dotnet.runtime.end-of-support-9.0`
 
+## elixir
+
+- [Erlang/OTP 25 no longer receives security updates](elixir.erlang.eol-25.html) — end of life, `elixir.erlang.eol-25`
+- [Erlang/OTP 26 no longer receives security updates](elixir.erlang.eol-26.html) — end of life, `elixir.erlang.eol-26`
+- [fennec is retired on Hex](elixir.package.fennec.retired.html) — deprecated, `elixir.package.fennec.retired`
+- [Elixir 1.14 no longer receives security updates](elixir.runtime.eol-1.14.html) — end of life, `elixir.runtime.eol-1.14`
+- [Elixir 1.15 no longer receives security updates](elixir.runtime.eol-1.15.html) — end of life, `elixir.runtime.eol-1.15`
+
 ## github-actions
 
 - [Unsupported softprops/action-gh-release runtime](github-actions.action-gh-release.node20.html) — end of support, `github-actions.action-gh-release.node20`
@@ -200,6 +208,8 @@ Every lifecycle claim Evergreen makes comes from a reviewed rule with an authori
 - [PriorityLevelConfiguration flowcontrol.apiserver.k8s.io/v1beta1 is no longer served](kubernetes.flowcontrol-apiserver-k8s-io.prioritylevelconfiguration.v1beta1.removed.html) — removed, `kubernetes.flowcontrol-apiserver-k8s-io.prioritylevelconfiguration.v1beta1.removed`
 - [PriorityLevelConfiguration flowcontrol.apiserver.k8s.io/v1beta2 is no longer served](kubernetes.flowcontrol-apiserver-k8s-io.prioritylevelconfiguration.v1beta2.removed.html) — removed, `kubernetes.flowcontrol-apiserver-k8s-io.prioritylevelconfiguration.v1beta2.removed`
 - [PriorityLevelConfiguration flowcontrol.apiserver.k8s.io/v1beta3 is no longer served](kubernetes.flowcontrol-apiserver-k8s-io.prioritylevelconfiguration.v1beta3.removed.html) — removed, `kubernetes.flowcontrol-apiserver-k8s-io.prioritylevelconfiguration.v1beta3.removed`
+- [Helm incubator chart repository is end of life](kubernetes.helm.repository.incubator.end-of-life.html) — end of life, `kubernetes.helm.repository.incubator.end-of-life`
+- [Helm stable chart repository is end of life](kubernetes.helm.repository.stable.end-of-life.html) — end of life, `kubernetes.helm.repository.stable.end-of-life`
 - [Ingress networking.k8s.io/v1beta1 is no longer served](kubernetes.networking-k8s-io.ingress.v1beta1.removed.html) — removed, `kubernetes.networking-k8s-io.ingress.v1beta1.removed`
 - [IngressClass networking.k8s.io/v1beta1 is no longer served](kubernetes.networking-k8s-io.ingressclass.v1beta1.removed.html) — removed, `kubernetes.networking-k8s-io.ingressclass.v1beta1.removed`
 - [RuntimeClass node.k8s.io/v1beta1 is no longer served](kubernetes.node-k8s-io.runtimeclass.v1beta1.removed.html) — removed, `kubernetes.node-k8s-io.runtimeclass.v1beta1.removed`
@@ -556,8 +566,23 @@ Every lifecycle claim Evergreen makes comes from a reviewed rule with an authori
 
 ## terraform
 
+- [AKS 1.28 and earlier are no longer supported](terraform.aks.end-of-life-1.28-and-older.html) — end of life, `terraform.aks.end-of-life-1.28-and-older`
+- [AKS 1.29 is past long-term support](terraform.aks.end-of-life-1.29.html) — end of life, `terraform.aks.end-of-life-1.29`
+- [AKS 1.30 is past long-term support](terraform.aks.end-of-life-1.30.html) — end of life, `terraform.aks.end-of-life-1.30`
+- [AKS 1.31 is past its 12-month support window](terraform.aks.end-of-support-1.31.html) — end of support, `terraform.aks.end-of-support-1.31`
+- [AKS 1.32 is past its 12-month support window](terraform.aks.end-of-support-1.32.html) — end of support, `terraform.aks.end-of-support-1.32`
+- [AKS 1.33 is past its 12-month support window](terraform.aks.end-of-support-1.33.html) — end of support, `terraform.aks.end-of-support-1.33`
 - [Terraform CLI 1.10 is no longer a supported release line](terraform.cli.end-of-support-1.10.html) — end of support, `terraform.cli.end-of-support-1.10`
 - [Terraform CLI 1.11 is no longer a supported release line](terraform.cli.end-of-support-1.11.html) — end of support, `terraform.cli.end-of-support-1.11`
 - [Terraform CLI 1.12 is no longer a supported release line](terraform.cli.end-of-support-1.12.html) — end of support, `terraform.cli.end-of-support-1.12`
 - [Terraform CLI 1.13 is no longer a supported release line](terraform.cli.end-of-support-1.13.html) — end of support, `terraform.cli.end-of-support-1.13`
 - [Terraform CLI 1.14 is no longer a supported release line](terraform.cli.end-of-support-1.14.html) — end of support, `terraform.cli.end-of-support-1.14`
+- [Amazon EKS 1.30 and earlier are past end of extended support](terraform.eks.end-of-life-1.30-and-older.html) — end of life, `terraform.eks.end-of-life-1.30-and-older`
+- [Amazon EKS 1.31 is past end of standard support](terraform.eks.end-of-support-1.31.html) — end of support, `terraform.eks.end-of-support-1.31`
+- [Amazon EKS 1.32 is past end of standard support](terraform.eks.end-of-support-1.32.html) — end of support, `terraform.eks.end-of-support-1.32`
+- [Amazon EKS 1.33 is past end of standard support](terraform.eks.end-of-support-1.33.html) — end of support, `terraform.eks.end-of-support-1.33`
+- [GKE 1.29 and earlier are no longer supported](terraform.gke.end-of-life-1.29-and-older.html) — end of life, `terraform.gke.end-of-life-1.29-and-older`
+- [GKE 1.30 is past end of extended support](terraform.gke.end-of-life-1.30.html) — end of life, `terraform.gke.end-of-life-1.30`
+- [GKE 1.31 is past end of extended support](terraform.gke.end-of-life-1.31.html) — end of life, `terraform.gke.end-of-life-1.31`
+- [GKE 1.32 is past end of standard support](terraform.gke.end-of-support-1.32.html) — end of support, `terraform.gke.end-of-support-1.32`
+- [GKE 1.33 is past end of standard support](terraform.gke.end-of-support-1.33.html) — end of support, `terraform.gke.end-of-support-1.33`

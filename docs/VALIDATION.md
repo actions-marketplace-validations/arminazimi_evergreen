@@ -50,7 +50,7 @@ The review tool (`benchmarks/mining/review.ts`) now accepts npm package, Python 
 
 ## Kubernetes corpus
 
-Seventeen public repositories at pinned commits cover the `kubernetes` detector. Targeted (chosen knowing their result): `argoproj/argocd-example-apps` (Helm and kustomize applications, no findings), `kelseyhightower/ingress-with-static-ip`, `unixhot/salt-kubebin` (a CronJob and three Ingresses), `kubernetes/examples` (two PodSecurityPolicy documents, plus the two end-of-life base images the container detector reports there), and `lusyoe/springboot-k8s-example` (a Helm template and a plain manifest).
+Seventeen public repositories at pinned commits cover the `kubernetes` detector. Targeted (chosen knowing their result): `argoproj/argocd-example-apps` (Helm and kustomize applications, including a Chart.yaml dependency on the retired Helm stable repository), `kelseyhightower/ingress-with-static-ip`, `unixhot/salt-kubebin` (a CronJob and three Ingresses), `kubernetes/examples` (two PodSecurityPolicy documents, plus the two end-of-life base images the container detector reports there), and `lusyoe/springboot-k8s-example` (a Helm template and a plain manifest). `ahmetb/kubernetes-network-policy-recipes` is a targeted zero-finding companion (modern NetworkPolicy examples only), added so the kubernetes corpus still has two empty `expected` lists after argocd-example-apps gained the Helm stable finding.
 
 Blind (rule below): `kelseyhightower/kubernetes-cluster-federation` (extensions/v1beta1 Deployments, ReplicaSets, and an Ingress), `motiv-labs/janus` (a PodDisruptionBudget and an Ingress, plus Go and Action findings), `FairwindsOps/pluto` (two extensions/v1beta1 Deployments outside its test directories), `luksa/kubernetes-in-action` (thirty-odd manifests across extensions, apps/v1beta1 and v1beta2, PodSecurityPolicy, CronJob, StatefulSet, CRD, and Ingress), `ossf/package-analysis` (an autoscaling/v2beta2 HorizontalPodAutoscaler), `knrt10/kubernetes-basicLearning` (a networking.k8s.io/v1beta1 Ingress), and five with no Kubernetes finding: `hasura/skor` (the removed version appears only as a `kind: List` item), `stefanprodan/gitops-istio` (the removed version appears only as a Flagger `autoscalerRef`), `doitintl/kube-no-trouble` (the removed versions are in `fixtures/`), `elastic/crd-ref-docs`, and `yaml-schema/yaml-schema`, `shepherd44/helm-charts` (current API versions).
 
@@ -477,6 +477,7 @@ Measured on 456 pinned repositories at commit `c7b4e14` on 2026-10-24. Regenerat
 | dart | Experimental | 8 | 0 | 0 | 1.000 | 1.000 |
 | database | Experimental | 16 | 0 | 0 | 1.000 | 1.000 |
 | dotnet | Beta | 304 | 0 | 0 | 1.000 | 1.000 |
+| elixir | Experimental | — | — | — | — | — |
 | github-actions | Supported | 986 | 0 | 0 | 1.000 | 1.000 |
 | go | Experimental | 54 | 0 | 0 | 1.000 | 1.000 |
 | java | Beta | 61 | 0 | 0 | 1.000 | 1.000 |

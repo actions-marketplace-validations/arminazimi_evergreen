@@ -76,6 +76,11 @@
   <url><loc>https://arminazimi.github.io/evergreen/rules/dotnet.runtime.end-of-support-7.0.html</loc><lastmod>2026-10-17</lastmod></url>
   <url><loc>https://arminazimi.github.io/evergreen/rules/dotnet.runtime.end-of-support-8.0.html</loc><lastmod>2026-10-18</lastmod></url>
   <url><loc>https://arminazimi.github.io/evergreen/rules/dotnet.runtime.end-of-support-9.0.html</loc><lastmod>2026-10-18</lastmod></url>
+  <url><loc>https://arminazimi.github.io/evergreen/rules/elixir.erlang.eol-25.html</loc><lastmod>2026-10-26</lastmod></url>
+  <url><loc>https://arminazimi.github.io/evergreen/rules/elixir.erlang.eol-26.html</loc><lastmod>2026-10-26</lastmod></url>
+  <url><loc>https://arminazimi.github.io/evergreen/rules/elixir.package.fennec.retired.html</loc><lastmod>2026-10-26</lastmod></url>
+  <url><loc>https://arminazimi.github.io/evergreen/rules/elixir.runtime.eol-1.14.html</loc><lastmod>2026-10-26</lastmod></url>
+  <url><loc>https://arminazimi.github.io/evergreen/rules/elixir.runtime.eol-1.15.html</loc><lastmod>2026-10-26</lastmod></url>
   <url><loc>https://arminazimi.github.io/evergreen/rules/github-actions.action-gh-release.node20.html</loc><lastmod>2026-10-16</lastmod></url>
   <url><loc>https://arminazimi.github.io/evergreen/rules/github-actions.bake-action.node20.html</loc><lastmod>2026-10-16</lastmod></url>
   <url><loc>https://arminazimi.github.io/evergreen/rules/github-actions.build-push-action.node20.html</loc><lastmod>2026-10-16</lastmod></url>
@@ -159,6 +164,8 @@
   <url><loc>https://arminazimi.github.io/evergreen/rules/kubernetes.flowcontrol-apiserver-k8s-io.prioritylevelconfiguration.v1beta1.removed.html</loc><lastmod>2026-10-20</lastmod></url>
   <url><loc>https://arminazimi.github.io/evergreen/rules/kubernetes.flowcontrol-apiserver-k8s-io.prioritylevelconfiguration.v1beta2.removed.html</loc><lastmod>2026-10-20</lastmod></url>
   <url><loc>https://arminazimi.github.io/evergreen/rules/kubernetes.flowcontrol-apiserver-k8s-io.prioritylevelconfiguration.v1beta3.removed.html</loc><lastmod>2026-10-20</lastmod></url>
+  <url><loc>https://arminazimi.github.io/evergreen/rules/kubernetes.helm.repository.incubator.end-of-life.html</loc><lastmod>2026-10-26</lastmod></url>
+  <url><loc>https://arminazimi.github.io/evergreen/rules/kubernetes.helm.repository.stable.end-of-life.html</loc><lastmod>2026-10-26</lastmod></url>
   <url><loc>https://arminazimi.github.io/evergreen/rules/kubernetes.networking-k8s-io.ingress.v1beta1.removed.html</loc><lastmod>2026-10-17</lastmod></url>
   <url><loc>https://arminazimi.github.io/evergreen/rules/kubernetes.networking-k8s-io.ingressclass.v1beta1.removed.html</loc><lastmod>2026-10-20</lastmod></url>
   <url><loc>https://arminazimi.github.io/evergreen/rules/kubernetes.node-k8s-io.runtimeclass.v1beta1.removed.html</loc><lastmod>2026-10-20</lastmod></url>
@@ -485,9 +492,24 @@
   <url><loc>https://arminazimi.github.io/evergreen/rules/swift.app-store.ios-below-13.html</loc><lastmod>2026-10-20</lastmod></url>
   <url><loc>https://arminazimi.github.io/evergreen/rules/swift.xcode.app-store-15-through-25.html</loc><lastmod>2026-10-19</lastmod></url>
   <url><loc>https://arminazimi.github.io/evergreen/rules/swift.xcode.app-store-below-15.html</loc><lastmod>2026-10-19</lastmod></url>
+  <url><loc>https://arminazimi.github.io/evergreen/rules/terraform.aks.end-of-life-1.28-and-older.html</loc><lastmod>2026-10-26</lastmod></url>
+  <url><loc>https://arminazimi.github.io/evergreen/rules/terraform.aks.end-of-life-1.29.html</loc><lastmod>2026-10-26</lastmod></url>
+  <url><loc>https://arminazimi.github.io/evergreen/rules/terraform.aks.end-of-life-1.30.html</loc><lastmod>2026-10-26</lastmod></url>
+  <url><loc>https://arminazimi.github.io/evergreen/rules/terraform.aks.end-of-support-1.31.html</loc><lastmod>2026-10-26</lastmod></url>
+  <url><loc>https://arminazimi.github.io/evergreen/rules/terraform.aks.end-of-support-1.32.html</loc><lastmod>2026-10-26</lastmod></url>
+  <url><loc>https://arminazimi.github.io/evergreen/rules/terraform.aks.end-of-support-1.33.html</loc><lastmod>2026-10-26</lastmod></url>
   <url><loc>https://arminazimi.github.io/evergreen/rules/terraform.cli.end-of-support-1.10.html</loc><lastmod>2026-10-21</lastmod></url>
   <url><loc>https://arminazimi.github.io/evergreen/rules/terraform.cli.end-of-support-1.11.html</loc><lastmod>2026-10-21</lastmod></url>
   <url><loc>https://arminazimi.github.io/evergreen/rules/terraform.cli.end-of-support-1.12.html</loc><lastmod>2026-10-21</lastmod></url>
   <url><loc>https://arminazimi.github.io/evergreen/rules/terraform.cli.end-of-support-1.13.html</loc><lastmod>2026-10-21</lastmod></url>
   <url><loc>https://arminazimi.github.io/evergreen/rules/terraform.cli.end-of-support-1.14.html</loc><lastmod>2026-10-21</lastmod></url>
+  <url><loc>https://arminazimi.github.io/evergreen/rules/terraform.eks.end-of-life-1.30-and-older.html</loc><lastmod>2026-10-26</lastmod></url>
+  <url><loc>https://arminazimi.github.io/evergreen/rules/terraform.eks.end-of-support-1.31.html</loc><lastmod>2026-10-26</lastmod></url>
+  <url><loc>https://arminazimi.github.io/evergreen/rules/terraform.eks.end-of-support-1.32.html</loc><lastmod>2026-10-26</lastmod></url>
+  <url><loc>https://arminazimi.github.io/evergreen/rules/terraform.eks.end-of-support-1.33.html</loc><lastmod>2026-10-26</lastmod></url>
+  <url><loc>https://arminazimi.github.io/evergreen/rules/terraform.gke.end-of-life-1.29-and-older.html</loc><lastmod>2026-10-26</lastmod></url>
+  <url><loc>https://arminazimi.github.io/evergreen/rules/terraform.gke.end-of-life-1.30.html</loc><lastmod>2026-10-26</lastmod></url>
+  <url><loc>https://arminazimi.github.io/evergreen/rules/terraform.gke.end-of-life-1.31.html</loc><lastmod>2026-10-26</lastmod></url>
+  <url><loc>https://arminazimi.github.io/evergreen/rules/terraform.gke.end-of-support-1.32.html</loc><lastmod>2026-10-26</lastmod></url>
+  <url><loc>https://arminazimi.github.io/evergreen/rules/terraform.gke.end-of-support-1.33.html</loc><lastmod>2026-10-26</lastmod></url>
 </urlset>
