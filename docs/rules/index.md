@@ -393,6 +393,11 @@ Every lifecycle claim Evergreen makes comes from a reviewed rule with an authori
 - [vue2-script-setup-transform is deprecated](npm.package.vue2-script-setup-transform.deprecated.html) — deprecated, `npm.package.vue2-script-setup-transform.deprecated`
 - [w3c-hr-time is deprecated](npm.package.w3c-hr-time.deprecated.html) — deprecated, `npm.package.w3c-hr-time.deprecated`
 
+## osv
+
+- [request has unfixed OSV advisories](osv.npm.request.html) — deprecated, `osv.npm.request`
+- [pycrypto has unfixed OSV advisories](osv.pypi.pycrypto.html) — deprecated, `osv.pypi.pycrypto`
+
 ## php
 
 - [doctrine/cache is abandoned](php.package.doctrine.cache.abandoned.html) — deprecated, `php.package.doctrine.cache.abandoned`
@@ -541,6 +546,12 @@ Every lifecycle claim Evergreen makes comes from a reviewed rule with an authori
 - [failure is no longer maintained](rust.crate.failure.unmaintained.html) — deprecated, `rust.crate.failure.unmaintained`
 - [tempdir is no longer maintained](rust.crate.tempdir.unmaintained.html) — deprecated, `rust.crate.tempdir.unmaintained`
 - [Rust 1.98 and older are no longer supported](rust.toolchain.end-of-support-1.98-and-older.html) — end of support, `rust.toolchain.end-of-support-1.98-and-older`
+
+## scala
+
+- [Scala 2.11 reached end of life](scala.runtime.eol-2.11.html) — end of life, `scala.runtime.eol-2.11`
+- [Scala 3.0–3.2 no longer receive patches](scala.runtime.eos-3.0-3.2.html) — end of support, `scala.runtime.eos-3.0-3.2`
+- [sbt 0.13 reached end of life](scala.sbt.eol-0.13.html) — end of life, `scala.sbt.eol-0.13`
 
 ## serverless
 

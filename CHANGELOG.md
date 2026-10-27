@@ -2,6 +2,9 @@
 
 ## Unreleased
 
+- Cross-reference end-of-life findings with unfixed OSV advisories: import ids into `registry/osv.json` at build time and list them on matching findings as `advisoryIds`. Scans stay offline. (#1063)
+- Judge committed `helm template` output as multi-document Kubernetes manifests, so APIs a Capabilities-guarded chart template hid become findings once rendered. Helm is never run. (#1060)
+- Add an experimental Scala and sbt detector for Scala pins in `.scala-version` and `build.sbt`, and for `sbt.version` in `project/build.properties`. (#1054)
 - Add an experimental Elixir and Mix detector for Elixir and Erlang/OTP pins in `.tool-versions` and `mix.exs`, and for Hex packages in `mix.exs` and `mix.lock`. (#1053)
 - Judge Helm `Chart.yaml` dependencies that still point at the retired stable or incubator chart repositories. Templated dependency fields and repository aliases stay unclassified. (#1052)
 - Judge managed Kubernetes control-plane versions in Terraform for Amazon EKS, Google Kubernetes Engine, and Azure Kubernetes Service, taking a module's vendor from its `source`. A variable or module reference is listed as unclassified. (#1050)
