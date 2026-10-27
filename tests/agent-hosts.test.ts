@@ -6,13 +6,15 @@ import { test } from "node:test";
 import { MCP_TOOL_NAMES } from "../src/mcp.js";
 
 const read = (path: string) => readFile(resolve("examples/agents", path), "utf8");
+const readRepo = (path: string) => readFile(resolve(path), "utf8");
 const readJson = async <T>(path: string) => JSON.parse(await read(path)) as T;
+const readRepoJson = async <T>(path: string) => JSON.parse(await readRepo(path)) as T;
 
 const { version } = JSON.parse(await readFile(resolve("package.json"), "utf8")) as { version: string };
 const packageSpec = `evergreen-deprecation@${version}`;
 const serverArguments = ["--yes", "--package", packageSpec, "evergreen-mcp"];
 
-interface Server { command: string; args: string[]; type?: string; tools?: string[]; trust?: boolean }
+interface Server { command: string; args: string[]; type?: string; tools?: string[]; trust?: boolean; disabled?: boolean; autoApprove?: string[] }
 
 test("every host starts the pinned MCP server with the current package version", async () => {
   const cursor = await readJson<{ mcpServers: { evergreen: Server } }>("cursor/.cursor/mcp.json");
@@ -20,7 +22,9 @@ test("every host starts the pinned MCP server with the current package version",
   const geminiSettings = await readJson<{ mcpServers: { evergreen: Server } }>("gemini/settings.json");
   const vscode = await readJson<{ servers: { evergreen: Server } }>("copilot/.vscode/mcp.json");
   const codingAgent = await readJson<{ mcpServers: { evergreen: Server } }>("copilot/coding-agent-mcp.json");
-  for (const server of [cursor.mcpServers.evergreen, gemini.mcpServers.evergreen, geminiSettings.mcpServers.evergreen, vscode.servers.evergreen, codingAgent.mcpServers.evergreen]) {
+  const cline = await readRepoJson<{ mcpServers: { evergreen: Server } }>("integrations/cline/cline_mcp_settings.json");
+  const windsurf = await readJson<{ mcpServers: { evergreen: Server } }>("windsurf/mcp_config.json");
+  for (const server of [cursor.mcpServers.evergreen, gemini.mcpServers.evergreen, geminiSettings.mcpServers.evergreen, vscode.servers.evergreen, codingAgent.mcpServers.evergreen, cline.mcpServers.evergreen, windsurf.mcpServers.evergreen]) {
     assert.equal(server.command, "npx");
     assert.deepEqual(server.args, serverArguments);
   }
@@ -43,14 +47,27 @@ test("host-specific fields follow each vendor's documented format", async () => 
   assert.equal(extension.contextFileName, "GEMINI.md");
   const cursorRule = await read("cursor/.cursor/rules/evergreen.mdc");
   assert.match(cursorRule, /^---\ndescription: .+\nalwaysApply: true\n---\n/);
+  const cline = (await readRepoJson<{ mcpServers: { evergreen: Server } }>("integrations/cline/cline_mcp_settings.json")).mcpServers.evergreen;
+  assert.equal(cline.disabled, false);
+  assert.deepEqual(cline.autoApprove, []);
+  const windsurfRule = await read("windsurf/.windsurf/rules/evergreen.md");
+  assert.match(windsurfRule, /^---\ntrigger: always_on\ndescription: .+\n---\n/);
 });
 
 test("every host's instruction file carries the shared dependency-check text", async () => {
   const shared = (await read("dependency-check.md")).split("\n\n").slice(1).join("\n\n").trim();
   assert.ok(shared.includes("`check_dependency`"));
-  for (const path of ["cursor/.cursor/rules/evergreen.mdc", "gemini/GEMINI.md", "copilot/.github/copilot-instructions.md", "kilo/.kilo/rules/evergreen.md"]) {
+  for (const path of ["cursor/.cursor/rules/evergreen.mdc", "gemini/GEMINI.md", "copilot/.github/copilot-instructions.md", "kilo/.kilo/rules/evergreen.md", "windsurf/.windsurf/rules/evergreen.md"]) {
     assert.ok((await read(path)).includes(shared), `${path} must contain the shared instruction text`);
   }
+  assert.ok((await readRepo("integrations/cline/.clinerules/evergreen.md")).includes(shared), "integrations/cline/.clinerules/evergreen.md must contain the shared instruction text");
+});
+
+test("the Cursor rule ships with the integration and the example, byte for byte identical", async () => {
+  const integration = await readRepo("integrations/cursor/evergreen.mdc");
+  assert.equal(integration, await read("cursor/.cursor/rules/evergreen.mdc"));
+  assert.match(integration, /^---\ndescription: Check a dependency with Evergreen before adding it\nalwaysApply: true\n---\n\n/);
+  assert.ok(integration.includes("`check_dependency`") && integration.includes("npx evergreen-deprecation check <purl>"));
 });
 
 test("the instruction text names only tools and CLI commands that exist", async () => {
@@ -62,7 +79,7 @@ test("the instruction text names only tools and CLI commands that exist", async 
 });
 
 test("each host README links its vendor documentation and is honest about verification", async () => {
-  for (const host of ["cursor", "gemini", "copilot", "kilo"]) {
+  for (const host of ["cursor", "gemini", "copilot", "kilo", "windsurf"]) {
     const readme = await read(`${host}/README.md`);
     assert.match(readme, /Documentation: .*https:\/\//, host);
     if (host === "cursor") assert.match(readme, /\*\*Checked in the host \(2026-10-19, Cursor 3\.25\.9/, host);
@@ -72,4 +89,9 @@ test("each host README links its vendor documentation and is honest about verifi
     assert.match(readme, /\*\*Checked \(2026-10-18[^)]*\):\*\*.*evergreen-deprecation@0\.3\.0 evergreen-mcp/, host);
     assert.doesNotMatch(readme, /needs the `evergreen-deprecation` package to be published/, host);
   }
+  const clineReadme = await readRepo("integrations/cline/README.md");
+  assert.match(clineReadme, /Documentation: .*https:\/\//);
+  assert.match(clineReadme, /has \*\*not\*\* been run inside a live installation of the host/);
+  assert.match(clineReadme, /\*\*Checked \(2026-10-18[^)]*\):\*\*.*evergreen-deprecation@0\.3\.0 evergreen-mcp/);
+  assert.doesNotMatch(clineReadme, /needs the `evergreen-deprecation` package to be published/);
 });

@@ -8,7 +8,7 @@ import { resolve } from "node:path";
 
 import { applyAsOf } from "./as-of.js";
 import { applyMinSupport, parseMinSupportDays } from "./min-support.js";
-import { DEFAULT_WARN_DAYS, createBaseline, debtTrendLine, evaluateBaseline, expiredPolicies, expiredSuppressionsFail, readBaseline, writeBaseline } from "./baseline.js";
+import { DEFAULT_WARN_DAYS, createBaseline, debtTrendLine, evaluateBaseline, expiredPolicies, expiredSuppressionsFail, readBaseline, readBaselines, writeBaseline } from "./baseline.js";
 import type { ExpiredPolicy } from "./baseline.js";
 import { isIsoDate } from "./registry.js";
 import { getCapabilityManifest, renderCapabilitiesText } from "./capabilities.js";
@@ -46,6 +46,16 @@ import { STATUS_FILE_NAME, writeStatusFile } from "./status-file.js";
 import { browseFindings, canBrowse } from "./tui.js";
 import { VERSION } from "./version.js";
 import { exportActiveCle } from "./export/cle.js";
+import {
+  invalidConfig,
+  isOfflineDataUpdateFailure,
+  offlineDataUpdate,
+  renderActionable,
+  unexpectedFailure,
+  unreadablePath,
+  unsupportedNodeVersion,
+  type ActionableMessage,
+} from "./errors.js";
 import { CycloneDxError, enrichCycloneDxFile } from "./sbom/cyclonedx.js";
 import { addWatched, listWatched, removeWatched, renderWatchText, runWatch } from "./watch.js";
 
@@ -53,7 +63,7 @@ const HELP = `Evergreen — local-first deprecation intelligence
 
 Usage:
   evergreen scan [path] [--json | --format <text|json|markdown|junit|sarif|rdjson|codequality|compact|html|slack|teams|webhook>]
-  evergreen scan [path] --baseline <file> [--baseline-warn-days <n>] [--on-expired resurface|fail] [--today <YYYY-MM-DD>] [--json]
+  evergreen scan [path] --baseline <file> [--baseline <file>...] [--baseline-warn-days <n>] [--on-expired resurface|fail] [--today <YYYY-MM-DD>] [--json]
   evergreen scan [path] --as-of <YYYY-MM-DD> [--json]   # scan as the world will look on a date; --today is an alias
   evergreen scan [path] --min-support-days <n>   # warn on lines whose support ends within n days
   evergreen scan [path] --write-status
@@ -90,6 +100,7 @@ Usage:
   evergreen report-issue <finding-id> [path] [--output <file>]
   evergreen capabilities [--json]
   evergreen completions <bash|zsh|fish>   # print a shell completion script
+  evergreen --debug …   # on unexpected failures, print the stack trace
   evergreen --help
   evergreen --version
 
@@ -103,6 +114,7 @@ const EXIT_CODES = { policy: 1, usage: 2, data: 3, parse: 4, internal: 5 } as co
 type FailureClass = keyof typeof EXIT_CODES;
 
 let jsonErrors = false;
+let debugErrors = false;
 
 /**
  * Reports a failure and returns its exit code. The message always goes to stderr; with `--json` it is also written to
@@ -116,6 +128,12 @@ function fail(kind: FailureClass, message: string, appendix = ""): number {
     process.stdout.write(`${JSON.stringify(document, null, 2)}\n`);
   }
   return EXIT_CODES[kind];
+}
+
+/** Reports an actionable failure: one-line cause (and JSON message) plus a stderr-only next step. */
+function failActionable(kind: FailureClass, actionable: ActionableMessage): number {
+  const { message, appendix } = renderActionable(actionable);
+  return fail(kind, message, appendix);
 }
 
 /**
@@ -136,11 +154,11 @@ function relaunchWithEnvironmentProxy(): number | undefined {
 }
 
 /** Returns why `path` cannot be scanned as a repository root, or undefined when it is an existing directory. */
-async function repositoryRootProblem(path: string): Promise<string | undefined> {
+async function repositoryRootProblem(path: string): Promise<ActionableMessage | undefined> {
   try {
-    return (await stat(path)).isDirectory() ? undefined : `Not a directory: ${path}`;
-  } catch {
-    return `Path does not exist: ${path}`;
+    return (await stat(path)).isDirectory() ? undefined : unreadablePath(path, "not-directory");
+  } catch (error) {
+    return unreadablePath(path, (error as NodeJS.ErrnoException).code === "ENOENT" ? "missing" : "unreadable");
   }
 }
 
@@ -345,9 +363,13 @@ async function watch(args: string[], json: boolean): Promise<number> {
   }
 }
 
-async function main(args: string[]): Promise<number> {
+async function main(rawArgs: string[]): Promise<number> {
+  debugErrors = rawArgs.includes("--debug");
+  const args = rawArgs.filter((argument) => argument !== "--debug");
   const formatValue = args[args.indexOf("--format") + 1];
   jsonErrors = args.includes("--json") || (args.includes("--format") && formatValue === "json");
+  const nodeProblem = unsupportedNodeVersion();
+  if (nodeProblem) return failActionable("usage", nodeProblem);
   if (args.includes("--help") || args.includes("-h") || args.length === 0) {
     process.stdout.write(HELP);
     return 0;
@@ -460,7 +482,11 @@ async function main(args: string[]): Promise<number> {
         process.stdout.write(`${json ? JSON.stringify(result, null, 2) : renderDataUpdateText(result)}\n`);
         return 0;
       } catch (error) {
-        if (error instanceof DataUpdateError) return fail("data", error.message);
+        if (error instanceof DataUpdateError) {
+          return isOfflineDataUpdateFailure(error.message)
+            ? failActionable("data", offlineDataUpdate(error.message))
+            : fail("data", error.message);
+        }
         throw error;
       }
     }
@@ -485,6 +511,16 @@ async function main(args: string[]): Promise<number> {
   const optionValue = (name: string): string | undefined => {
     const index = args.indexOf(name);
     return index === -1 ? undefined : args[index + 1];
+  };
+  const optionValues = (name: string): string[] => {
+    const values: string[] = [];
+    for (let index = 0; index < args.length; index += 1) {
+      if (args[index] === name && args[index + 1] !== undefined) {
+        values.push(args[index + 1]!);
+        index += 1;
+      }
+    }
+    return values;
   };
   if (command === "check") {
     const purl = positional[0];
@@ -579,9 +615,7 @@ async function main(args: string[]): Promise<number> {
     return 0;
   }
   const rootProblem = await repositoryRootProblem(pathArgument);
-  if (rootProblem) {
-    return fail("usage", rootProblem);
-  }
+  if (rootProblem) return failActionable("usage", rootProblem);
   const scanGate = optionValue("--fail-on") ?? "none";
   if (command === "scan" && scanGate !== "none" && !severityValues.includes(scanGate as Severity)) {
     return fail("usage", `Unknown severity for --fail-on: ${scanGate} (expected none, ${severityValues.join(", ")}).`);
@@ -642,8 +676,8 @@ async function main(args: string[]): Promise<number> {
     return 0;
   }
   let baselineExpiredFailure = false;
-  const baselinePath = optionValue("--baseline");
-  if (baselinePath) {
+  const baselinePaths = optionValues("--baseline");
+  if (baselinePaths.length > 0) {
     const today = asOfValue ?? new Date().toISOString().slice(0, 10);
     const warnValue = optionValue("--baseline-warn-days");
     const warnWithinDays = warnValue === undefined ? DEFAULT_WARN_DAYS : Number(warnValue);
@@ -651,11 +685,12 @@ async function main(args: string[]): Promise<number> {
     if (!isIsoDate(today) || !Number.isInteger(warnWithinDays) || warnWithinDays < 0 || warnWithinDays > 365 || !expiredPolicies.includes(onExpired)) {
       return fail("usage", `--today must be a date (YYYY-MM-DD), --baseline-warn-days a whole number from 0 to 365, and --on-expired one of ${expiredPolicies.join(", ")}.`);
     }
-    let baseline: Awaited<ReturnType<typeof readBaseline>>;
+    let baseline: Awaited<ReturnType<typeof readBaselines>>;
     try {
-      baseline = await readBaseline(resolve(baselinePath));
+      baseline = await readBaselines(baselinePaths.map((path) => resolve(path)));
     } catch (error) {
-      return fail("parse", error instanceof Error ? error.message : String(error));
+      const detail = error instanceof Error ? error.message : String(error);
+      return failActionable("parse", invalidConfig(detail));
     }
     const evaluated = evaluateBaseline(result, baseline, { today, warnWithinDays, onExpired });
     result = evaluated.result;
@@ -721,5 +756,6 @@ async function main(args: string[]): Promise<number> {
 try {
   process.exitCode = await main(process.argv.slice(2));
 } catch (error) {
-  process.exitCode = fail("internal", `Evergreen failed unexpectedly: ${error instanceof Error ? error.message : String(error)}`);
+  const { message, appendix } = unexpectedFailure(error, debugErrors || process.argv.includes("--debug"));
+  process.exitCode = fail("internal", message, appendix);
 }
