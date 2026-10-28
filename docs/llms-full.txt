@@ -243,6 +243,25 @@ To put the same instruction into a repository's `AGENTS.md` or `CLAUDE.md`, run 
 
 Each directory says which vendor documentation its format follows and how to confirm it works in your host. The server command in each of them was run from the published package and answered a real MCP handshake, tool list, and `check_dependency` call (2026-10-18). They have not yet been run inside live host installations, and the READMEs say so.
 
+## Where the server is listed
+
+The server is registered as `io.github.arminazimi/evergreen` in the [official MCP Registry](https://registry.modelcontextprotocol.io), which holds only the metadata in `server.json` and points at the npm package. Every directory below was checked on 2026-10-27. The description is the one in `server.json`, and each submission says that scans are local and use no network.
+
+| Directory | Status | Why, and what happened |
+| --- | --- | --- |
+| [Official MCP Registry](https://registry.modelcontextprotocol.io) | [Listed](https://registry.modelcontextprotocol.io/v0/servers?search=evergreen) | Published 2026-10-18; republished per release by step 7 of [RELEASING](RELEASING.md). |
+| [GitHub MCP Registry](https://github.com/mcp) | Not listed, requested | Onboarding of a new server is manual curation; versions sync from the official Registry once onboarded. Onboarding request posted 2026-10-27 in [github/github-mcp-server Discussion #1257](https://github.com/github/github-mcp-server/discussions/1257#discussioncomment-19227895); check with `curl https://github.com/mcp/arminazimi/evergreen` (404 = not onboarded yet), since the registry API's search is unreliable. |
+| VS Code / Copilot MCP gallery | Not listed, same route | The gallery reads the GitHub MCP Registry, so no separate step exists; it lists Evergreen once the onboarding above lands. |
+| [Docker MCP Catalog](https://hub.docker.com/mcp) | Not listed, PR open | Submission is a PR to [docker/mcp-registry](https://github.com/docker/mcp-registry), reviewed by Docker, who then build and host the image in the `mcp` namespace. Submitted 2026-10-27 ([PR #6199](https://github.com/docker/mcp-registry/pull/6199)); `servers/evergreen/server.yaml` pins a commit, so a new release does not change the catalog until the entry is updated by a follow-up PR. |
+| [Smithery](https://smithery.ai) | Not listed, not worth it | Smithery lists servers reachable over HTTP; local stdio servers ship as MCPB bundles instead, and its publishing flow shuts down on 2026-10-31 in favour of a passive directory. Skip. |
+| [Glama](https://glama.ai/mcp/servers) | Not listed, pending | Glama re-indexes public MCP servers continuously, so the entry may appear by itself at [glama.ai/mcp/servers/arminazimi/evergreen](https://glama.ai/mcp/servers/arminazimi/evergreen); claim it once it does (needs a browser sign-in, so it is a maintainer step). A repository without a LICENSE gets a public grade penalty; the Apache-2.0 file is already there. |
+| [PulseMCP](https://www.pulsemcp.com) | Not listed, not eligible | Submissions are paused (announced 2026-09-03). PulseMCP ingests the official Registry's servers automatically once it reopens, so no action until then. |
+| [mcp.so](https://mcp.so) | Not listed | Free listing is through the form at [mcp.so/submit?type=server](https://mcp.so/submit?type=server) and goes through a review; the form needs a browser session, so it is left for a maintainer (or take the paid instant path, which the project does not use). |
+| [Cursor Directory](https://cursor.directory) | Not listed, not worth it | Cursor's directory is now a plugin gallery for the Agent Plugins standard, which wants `plugin.json`/`mcp.json` resources that fit the CLI, not just the stdio server. Skip. |
+| [Cline MCP Marketplace](https://cline.bot/mcp-marketplace) | Not listed | Submission is a GitHub issue on [cline/mcp-marketplace](https://github.com/cline/mcp-marketplace) with a 400×400 logo and the confirmation that Cline can install from this repository's README; needs testing in Cline itself, so it waits for a maintainer with the product installed. |
+
+Submissions are outward-facing and hard to withdraw, so each one stayed conservative: they carry only the `server.json` metadata and README wording, and none of them pastes a token or credential; each directory is authenticated through its own flow.
+
 ## Agent workflow
 
 1. Call `scan_repository` or `list_deprecations` before editing.
@@ -633,7 +652,7 @@ Source: https://arminazimi.github.io/evergreen/HOOKS.html
 
 # Hooks
 
-Evergreen ships a Git pre-push hook that scans before you push, a Claude Code `PreToolUse` hook that checks packages before an agent installs them, and a Cursor project rule that tells the agent to check a dependency before it is added. All of them stay offline and use only the lifecycle rules bundled with Evergreen.
+Evergreen ships a Git pre-push hook that scans before you push, a Claude Code `PreToolUse` hook that checks packages before an agent installs them, a Cursor project rule, and a GitHub Copilot instructions file that tell the agent to check a dependency before it is added. All of them stay offline and use only the lifecycle rules bundled with Evergreen.
 
 ## Git pre-push
 
@@ -798,6 +817,29 @@ Cursor reads only rules with the `.mdc` extension, so the extension is not optio
 ### What the rule does
 
 Before Cursor's agent adds a package, runtime, or GitHub Action, or picks one to replace another, it calls `check_dependency` with a Package URL such as `pkg:npm/request@2.88.2` or `pkg:github/actions/checkout@v4`. When the status is `affected`, it prefers the replacement the finding names and cites the evidence links; `version-dependent` means it checks again with the exact version it intends to use, and `no-data` means Evergreen has no rule for that package, not that it is safe. The rule tells the agent not to use Evergreen for security audits or for routine upgrades the project already uses.
+
+## GitHub Copilot instructions
+
+Copilot Chat and the Copilot coding agent read `.github/copilot-instructions.md` from the repository root and include it in every session. Evergreen ships the file in two places, byte for byte identical, kept in sync by a test in this repository: `integrations/copilot/copilot-instructions.md` for the install below, and `examples/agents/copilot/.github/copilot-instructions.md` in the complete host example — that example's text is what was already checked in Copilot Chat in Agent mode (VS Code 1.142.0 on macOS, 2026-10-19; see that README for what the agent did). The Copilot coding agent's MCP path has not been checked in the host yet, and the example README says so.
+
+The file is an instruction, not an enforcement point: nothing blocks an edit the way the Claude Code hook can. The check itself stays offline, whether it goes through MCP or the CLI as below; only a first uncached `npx` run reaches the network to fetch the pinned package.
+
+### Install
+
+1. Copy the instructions into the project from a clone of this repository (from a release checkout, take the same file from the tree at that tag). The target name is fixed: Copilot reads only `.github/copilot-instructions.md`.
+
+```bash
+mkdir -p .github
+cp integrations/copilot/copilot-instructions.md .github/copilot-instructions.md
+```
+
+If the project already has a Copilot instructions file, run `evergreen setup` instead of copying over it: when it detects a Copilot configuration it adds the Evergreen section to the existing `.github/copilot-instructions.md`, keeps everything else byte for byte, and asks before touching a file it did not write.
+
+2. To have Copilot call the MCP tool, follow `examples/agents/copilot/README.md`: add the `evergreen` server to `.vscode/mcp.json` for Copilot Chat, or paste `coding-agent-mcp.json` under the repository's Copilot coding agent settings. Without MCP the instructions say what to run instead: `npx evergreen-deprecation check <purl>`.
+
+### What the instructions do
+
+Before Copilot's agent adds a package, runtime, or GitHub Action, or picks one to replace another, it calls `check_dependency` with a Package URL such as `pkg:npm/request@2.88.2` or `pkg:github/actions/checkout@v4`. When the status is `affected`, it prefers the replacement the finding names and cites the evidence links; `version-dependent` means it checks again with the exact version it intends to use, and `no-data` means Evergreen has no rule for that package, not that it is safe. The instructions tell the agent not to use Evergreen for security audits or for routine upgrades the project already uses.
 
 ## A digest for your personal projects
 
@@ -1373,6 +1415,8 @@ npx skills update evergreen-deprecation
 ```
 
 The npm package also includes the complete `skills/evergreen-deprecation` folder for hosts that prefer a manual copy or link.
+
+To tell the agents working in any other project to check dependencies with Evergreen, copy the snippet in [examples/agents-snippet.md](../examples/agents-snippet.md) into `AGENTS.md`, `CLAUDE.md`, or a similar instruction file.
 
 The host also needs one Evergreen execution path:
 
@@ -3290,20 +3334,24 @@ Trusted publishing needs the package to name its publisher. On npmjs.com, open t
    ```
 
 6. **Publish to npm.** Pushing the tag in step 5 runs [`publish.yml`](../.github/workflows/publish.yml), which publishes with npm trusted publishing: no stored token, and a provenance attestation that names this repository, workflow, and commit. It refuses a tag that does not match the version in `package.json` or a commit that is not on `main`, and `prepack` runs `npm run check` again, so a broken tree cannot be published. A pre-release tag such as `vX.Y.Z-rc.1` is published under the `next` tag, so `latest` does not move. After publishing, a second job installs the published version on a fresh machine and runs `--help`, `capabilities`, and a scan of `tests/fixtures/smoke` (`.github/scripts/smoke.mjs`); a package that installs but does not work fails the run. Watch the run in the Actions tab, then confirm with `npm view evergreen-deprecation version` and run `npx evergreen-deprecation@X.Y.Z --help` in an empty directory. To publish by hand instead (for example if the workflow is unavailable), run `npm publish` from the tagged commit; it will have no provenance.
-7. **Publish to the MCP Registry.** The registry lists the server for MCP clients and tools that look for one. It holds only the metadata in `server.json`, which points at the npm package, so publish it **after** step 6, when `npm view evergreen-deprecation version` shows the new version (the registry checks the package on npm, so it must exist there first). Nothing automates this yet, which is how 0.4.0 and 0.5.0 were missed. With the `mcp-publisher` command-line tool installed ([registry quickstart](https://github.com/modelcontextprotocol/registry)), from the tagged commit:
+7. **Publish to the MCP Registry.** The registry lists the server for MCP clients and tools that look for one. It holds only the metadata in `server.json`, which points at the npm package, so publish it **after** step 6, when `npm view evergreen-deprecation version` shows the new version (the registry checks the package on npm, so it must exist there first). This is automated: the same tag push runs the `registry` job of [`publish.yml`](../.github/workflows/publish.yml) after the `smoke` job. It refuses a tag that does not match `server.json`, skips pre-release tags, then publishes `server.json` through the `mcp-publisher` tool with a GitHub OIDC login — no stored secret, since the job's OIDC identity names this repository. The binary it downloads is pinned to release 1.8.6 and checked against the release's SHA-256; the pin is only moved after a maintainer reviews the new release first.
 
-   ```bash
-   mcp-publisher login github   # approve the device code in a browser as the arminazimi account
-   mcp-publisher publish
-   ```
-
-   A published registry version cannot be changed, so check that `server.json` carries the version you just released first. Then confirm it is the latest:
+   A published registry version cannot be changed, so check that `server.json` carries the version you just released first — the workflow refuses otherwise. Then confirm it is the latest:
 
    ```bash
    curl -s "https://registry.modelcontextprotocol.io/v0/servers?search=evergreen"
    ```
 
    The response lists `io.github.arminazimi/evergreen` with the new `version`. The name is owned by the `arminazimi` GitHub account, and `package.json`'s `mcpName` ties the npm package to it.
+
+   Other MCP directories need no step per release (recorded with their status in [MCP.md](MCP.md#where-the-server-is-listed)). Versions sync from the official Registry automatically in the directories that ingest it — the GitHub MCP Registry and the VS Code / Copilot gallery once its onboarding lands, and PulseMCP when its submissions reopen. The Docker MCP Catalog pins a commit in `servers/evergreen/server.yaml` of `docker/mcp-registry`, but only follow that entry when a release contains something a catalog user should see (a new tool, a new detector ecosystem); the npm package is what the pinned commit builds, so old tags keep working.
+
+   **Manual fallback.** Keep this until the automation has succeeded on a real release from start to finish. If the `registry` job fails or is unavailable, run it by hand from the tagged commit after `npm view evergreen-deprecation version` shows the new version:
+
+   ```bash
+   mcp-publisher login github   # approve the device code in a browser as the arminazimi account
+   mcp-publisher publish
+   ```
 8. **Create the GitHub release** for the tag, with the changelog section as the body. If the [standalone binaries](#standalone-binaries) have already been attached, the release exists: edit its body instead of creating it.
 9. **Move the major tag** only if the project publishes one (for example `v1`), as a force-updated lightweight tag pointing at the new release. Do not move it for a pre-1.0 version. The `Release notes` workflow does this by itself after a successful `Publish to npm` run, for stable tags from `v1.0.0` on: the decision is in `.github/scripts/major-tag.mjs` (unit-tested), the tag only moves forward, and a pre-release or `0.x` tag changes nothing. To see what it would do for a tag without pushing anything, run the `Release notes` workflow by hand with `release_tag` set (a manual run is always a dry run).
 10. **Package the plugins.** For Codex, `npm run package:codex-plugin` writes `artifacts/evergreen-codex-plugin-<version>.zip`; follow [Codex submission](CODEX_SUBMISSION.md) to submit it. The Claude plugin is served from the repository marketplace, so the merged change in step 4 is its release; see [Claude plugin](CLAUDE_PLUGIN.md).
