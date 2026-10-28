@@ -12,11 +12,11 @@ interface CommandSpec {
 const severities = "info low medium high critical none";
 
 export const COMMANDS: CommandSpec[] = [
-  { name: "scan", flags: ["--json", "--format", "--baseline", "--baseline-warn-days", "--on-expired", "--today", "--write-status", "--interactive", "--fail-on", "--all", "--by-owner", "--data-version"], example: "evergreen scan . --fail-on high" },
+  { name: "scan", flags: ["--demo", "--json", "--format", "--baseline", "--baseline-warn-days", "--on-expired", "--today", "--write-status", "--interactive", "--fail-on", "--all", "--by-owner", "--data-version"], example: "evergreen scan . --fail-on high" },
   { name: "baseline", flags: ["--output", "--data-version"], example: "evergreen baseline . --output evergreen-baseline.json" },
   { name: "forecast", flags: ["--months", "--as-of", "--today", "--json", "--data-version"], example: "evergreen forecast . --months 6" },
   { name: "diff", flags: ["--json", "--data-version"], example: "evergreen diff main..HEAD" },
-  { name: "rollup", flags: ["--owners", "--json"], example: "evergreen rollup reports/*.json --owners owners.json" },
+  { name: "rollup", flags: ["--owners", "--json", "--html", "--format"], example: "evergreen rollup reports/*.json --owners owners.json --html" },
   { name: "renovate-preset", flags: ["--data-version"], example: "evergreen renovate-preset ." },
   { name: "fix", flags: ["--dry-run", "--data-version"], example: "evergreen fix . --dry-run" },
   { name: "check", flags: ["--fail-on", "--json", "--format", "--data-version"], example: "evergreen check pkg:npm/request@2.88.2" },

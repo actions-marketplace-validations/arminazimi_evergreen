@@ -1,15 +1,43 @@
 import assert from "node:assert/strict";
-import { readFile, readdir } from "node:fs/promises";
+import { mkdtemp, readFile, readdir, rm, writeFile } from "node:fs/promises";
+import { tmpdir } from "node:os";
 import { resolve } from "node:path";
 import { test } from "node:test";
 
-import { collect, distinctRepositories, parseDownloads, parseMcpRegistry, parseSkillsInstalls, SCHEMA_VERSION } from "../tools/adoption-metrics.js";
+import {
+  collect,
+  countRepeatRepositories,
+  distinctRepositories,
+  distinctRepositoryNames,
+  parseDownloads,
+  parseMcpRegistry,
+  parseScorecard,
+  parseSkillsInstalls,
+  previousMonth,
+  SCHEMA_VERSION,
+  SERVICE_REPORTS,
+} from "../tools/adoption-metrics.js";
 import type { Fetcher, Metric, Snapshot } from "../tools/adoption-metrics.js";
 
 test("counts distinct repositories and leaves out the project's own", () => {
   const item = (name: string) => ({ repository: { full_name: name } });
   assert.equal(distinctRepositories([item("a/one"), item("a/one"), item("B/Two"), item("b/two"), item("arminazimi/evergreen"), item("arminazimi/other"), {}]), 2);
   assert.equal(distinctRepositories([]), 0);
+  assert.deepEqual(distinctRepositoryNames([item("b/two"), item("a/one"), item("arminazimi/evergreen")]), ["a/one", "b/two"]);
+});
+
+test("calculates previous calendar month correctly across month and year boundaries", () => {
+  assert.equal(previousMonth("2026-10-28"), "2026-09");
+  assert.equal(previousMonth("2026-01-15"), "2025-12");
+  assert.equal(previousMonth("2027-03-01"), "2027-02");
+});
+
+test("counts repeat repositories active in consecutive months", () => {
+  const current = ["org/repo-a", "org/repo-b", "org/repo-c"];
+  const previous = ["org/repo-b", "ORG/REPO-C", "org/repo-d"];
+  assert.equal(countRepeatRepositories(current, previous), 2);
+  assert.equal(countRepeatRepositories(current, []), 0);
+  assert.equal(countRepeatRepositories([], previous), 0);
 });
 
 test("reads npm downloads and reports an unpublished package as unavailable", () => {
@@ -32,26 +60,81 @@ test("reads the skills.sh install count from the page's structured data", () => 
   assert.equal(parseSkillsInstalls(404, "").status, "unavailable");
 });
 
+test("reads the Scorecard score and reports a missing score as unavailable", () => {
+  assert.deepEqual(parseScorecard(200, '{"score": 3.1}'), {
+    status: "ok",
+    value: 3.1,
+    detail: "https://securityscorecards.dev/viewer/?uri=github.com/arminazimi/evergreen",
+    source: "https://api.securityscorecards.dev/projects/github.com/arminazimi/evergreen",
+  });
+  assert.equal(parseScorecard(404, '{"message":"repo not found"}').status, "unavailable");
+  assert.equal(parseScorecard(500, "").status, "unavailable");
+  assert.equal(parseScorecard(200, "{}").status, "unavailable");
+  assert.equal(parseScorecard(200, "invalid-json").status, "unavailable");
+});
+
 test("one failing source is recorded and does not stop the others", async () => {
   const fetcher: Fetcher = async (url) => {
     if (url.includes("npmjs.org")) throw new Error("network down");
     if (url.includes("skills.sh")) return { status: 200, text: '"userInteractionCount": 7' };
     if (url.includes("registry.modelcontextprotocol.io")) return { status: 200, text: '{"servers":[]}' };
     if (url.includes("api.github.com/repos/")) return { status: 200, text: '{"stargazers_count": 3, "forks_count": 1}' };
+    if (url.includes("securityscorecards.dev")) return { status: 200, text: '{"score": 3.1}' };
     return { status: 200, text: JSON.stringify({ total_count: 2, items: [{ repository: { full_name: "x/a" } }, { repository: { full_name: "x/b" } }] }) };
   };
   const snapshot = await collect("2026-10-16", fetcher, "token");
   assert.equal(snapshot.schemaVersion, SCHEMA_VERSION);
   assert.deepEqual([snapshot.metrics.npmWeeklyDownloads!.status, (snapshot.metrics.npmWeeklyDownloads as { reason: string }).reason], ["unavailable", "network down"]);
   assert.equal((snapshot.metrics.githubActionRepositories as { value: number }).value, 2);
+  assert.equal((snapshot.metrics.repeatActionRepositories as { value: number }).value, 0);
   assert.equal((snapshot.metrics.skillsShInstalls as { value: number }).value, 7);
   assert.equal((snapshot.metrics.githubStars as { value: number }).value, 3);
+  assert.equal((snapshot.metrics.scorecardScore as { value: number }).value, 3.1);
+  assert.deepEqual(snapshot.serviceReports, SERVICE_REPORTS);
 });
 
 test("without a token the code-search metrics are unavailable, never zero", async () => {
   const snapshot = await collect("2026-10-16", async () => ({ status: 404, text: "" }), undefined);
-  for (const name of ["githubActionRepositories", "preCommitRepositories", "gitlabComponentRepositories"]) {
+  for (const name of ["githubActionRepositories", "repeatActionRepositories", "preCommitRepositories", "gitlabComponentRepositories"]) {
     assert.equal(snapshot.metrics[name]!.status, "unavailable", name);
+  }
+});
+
+test("counts repeat action repositories across consecutive months", async () => {
+  const tmp = await mkdtemp(resolve(tmpdir(), "evergreen-repeat-"));
+  try {
+    const prevSnapshot: Snapshot = {
+      schemaVersion: SCHEMA_VERSION,
+      date: "2026-09-15",
+      metrics: {
+        githubActionRepositories: {
+          status: "ok",
+          value: 2,
+          repositories: ["user/retained", "user/churned"],
+          source: "https://github.com/search?type=code&q=test",
+        },
+      },
+    };
+    await writeFile(resolve(tmp, "2026-09-15.json"), JSON.stringify(prevSnapshot));
+
+    const fetcher: Fetcher = async (url) => {
+      if (url.includes("search/code")) {
+        return {
+          status: 200,
+          text: JSON.stringify({
+            total_count: 2,
+            items: [{ repository: { full_name: "USER/RETAINED" } }, { repository: { full_name: "user/new" } }],
+          }),
+        };
+      }
+      return { status: 200, text: "{}" };
+    };
+
+    const snapshot = await collect("2026-10-15", fetcher, "token", tmp);
+    assert.equal((snapshot.metrics.githubActionRepositories as { value: number }).value, 2);
+    assert.equal((snapshot.metrics.repeatActionRepositories as { value: number }).value, 1);
+  } finally {
+    await rm(tmp, { recursive: true, force: true });
   }
 });
 
@@ -67,6 +150,12 @@ test("every committed snapshot is well formed and named after its date", async (
       assert.ok(documented.includes(`\`${metric}\``), `${metric} is not documented in docs/ADOPTION.md`);
       assert.ok(value.status === "ok" || value.reason.length > 0, metric);
       assert.match(value.source, /^https:\/\//, metric);
+    }
+    if (snapshot.serviceReports) {
+      for (const [service, url] of Object.entries(snapshot.serviceReports)) {
+        assert.ok(documented.includes(`\`${service}\``), `${service} is not documented in docs/ADOPTION.md`);
+        assert.match(url, /^https:\/\//, service);
+      }
     }
   }
 });

@@ -21,7 +21,7 @@ import { guardCommand, GuardUsageError } from "./guard.js";
 import { initAgents } from "./init-agents.js";
 import { initHooks } from "./init-hooks.js";
 import { hasPersonalConfig, initPersonal } from "./init-personal.js";
-import { planInitSetup, applyInitSetup, hasWritables, planSummary } from "./init.js";
+import { planInitSetup, applyInitSetup, hasWritables, initAgent, planSummary } from "./init.js";
 import type { InitStep } from "./init.js";
 import { renderUsageText, summarizeUsage, usageLogPath } from "./usage-log.js";
 import { applySetup, planSetup } from "./setup.js";
@@ -34,11 +34,12 @@ import { applyOnBranch } from "./fix/git.js";
 import { planFixes, renderPatches } from "./fix/index.js";
 import { renderVerification, verifyFix } from "./fix/verify.js";
 import { findRepositories, renderMultiScanText, scanProjects, scanRepository } from "./engine.js";
+import { scanDemo } from "./demo.js";
 import { createMigrationPacket } from "./migration-packet.js";
 import { readPinnedRuntimes } from "./runtime-pin.js";
 import { DiffError, diffRefs, renderDiffText } from "./diff.js";
 import { groupScanByOwner, renderOwnerGroupsText } from "./codeowners.js";
-import { RollupError, renderRollupText, rollupFiles } from "./rollup.js";
+import { RollupError, renderRollupHtml, renderRollupText, rollupFiles } from "./rollup.js";
 import { buildRenovatePreset } from "./renovate-preset.js";
 import { diagnoseEnvironment, renderDoctorText } from "./doctor.js";
 import { createIssueReport, ReportIssueError } from "./report-issue.js";
@@ -63,6 +64,7 @@ const HELP = `Evergreen — local-first deprecation intelligence
 
 Usage:
   evergreen scan [path] [--json | --format <text|json|markdown|junit|sarif|rdjson|codequality|compact|html|slack|teams|webhook>]
+  evergreen scan --demo [--json | --format <text|json|markdown|junit|sarif|rdjson|codequality|compact|html|slack|teams|webhook>]   # scan an in-memory demo project that always has findings
   evergreen scan [path] --baseline <file> [--baseline <file>...] [--baseline-warn-days <n>] [--on-expired resurface|fail] [--today <YYYY-MM-DD>] [--json]
   evergreen scan [path] --as-of <YYYY-MM-DD> [--json]   # scan as the world will look on a date; --today is an alias
   evergreen scan [path] --min-support-days <n>   # warn on lines whose support ends within n days
@@ -73,7 +75,7 @@ Usage:
   evergreen forecast [path] [--months <n>] [--as-of <YYYY-MM-DD>] [--json]   # what reaches end of life next, by month
   evergreen diff <base>..<head> [path] [--json]   # findings a change introduced or fixed; exit 1 only when it introduced some
   evergreen scan [path] --by-owner [--json]   # group findings by CODEOWNERS owner; files with no owner are listed as unowned
-  evergreen rollup <report.json>... [--owners <file>] [--json]   # merge saved scan reports by product and owner; reads files only
+  evergreen rollup <report.json>... [--owners <file>] [--json | --html]   # merge saved scan reports by product and owner; reads files only
   evergreen renovate-preset [path]   # print Renovate packageRules for replacements and runtime pins; does not edit config
   evergreen fix [path] [--dry-run]   # print patches for deterministic fixes; nothing is written
   evergreen fix [path] --branch      # apply the fixes on a local evergreen/fix branch and commit; never pushes
@@ -89,6 +91,7 @@ Usage:
   evergreen watch [run] [--weekly] [--json]   # re-scan registered projects, print only what changed
   evergreen watch list [--json]
   evergreen init [path] [--file AGENTS.md|CLAUDE.md] [--fail-on <severity>] [--yes] [--dry-run]   # ask what to set up; apply the defaults for CI, the pre-push hook, and agents
+  evergreen init agent [path] [--file AGENTS.md|CLAUDE.md] [--dry-run]   # detect agent host and write matching config
   evergreen init --agents [path] [--file AGENTS.md|CLAUDE.md] [--dry-run]
   evergreen init --hooks [path] [--fail-on <severity>] [--dry-run]   # git pre-push hook; combine with --agents
   evergreen init --personal [--fail-on <severity>] [--yes] [--dry-run]   # global config and pre-push hook for every repository
@@ -177,7 +180,39 @@ async function confirmOnTerminal(summary: string, defaultYes = false): Promise<b
 
 /** `init` with no flags asks what to set up (guided); `init --agents`, `--hooks`, and `--personal` do one thing without asking. */
 async function init(args: string[]): Promise<number> {
-  const usage = "Usage: evergreen init [--agents] [--hooks] [--personal] [path] [--file AGENTS.md|CLAUDE.md] [--fail-on <severity>] [--yes] [--dry-run]\n";
+  const usage = "Usage: evergreen init [agent] [--agents] [--hooks] [--personal] [path] [--file AGENTS.md|CLAUDE.md] [--fail-on <severity>] [--yes] [--dry-run]\n";
+  if (args[0] === "agent") {
+    const agentUsage = "Usage: evergreen init agent [path] [--file AGENTS.md|CLAUDE.md] [--dry-run]\n";
+    const agentArgs = args.slice(1);
+    const dryRun = agentArgs.includes("--dry-run");
+    const fileIndex = agentArgs.indexOf("--file");
+    const fileValue = fileIndex === -1 ? undefined : agentArgs[fileIndex + 1];
+    if (fileIndex !== -1 && fileValue !== "AGENTS.md" && fileValue !== "CLAUDE.md") {
+      return fail("usage", "--file must be AGENTS.md or CLAUDE.md.", agentUsage);
+    }
+    const flags = new Set(["--dry-run", "--file"]);
+    const positional = agentArgs.filter((argument, index) => !flags.has(argument) && (fileIndex === -1 || index !== fileIndex + 1) && !argument.startsWith("-"));
+    const unknown = agentArgs.filter((argument) => argument.startsWith("-") && !flags.has(argument));
+    if (unknown.length > 0 || positional.length > 1) {
+      return fail("usage", agentUsage.trimEnd());
+    }
+    const root = positional[0] ?? ".";
+    try {
+      const result = await initAgent({ root, dryRun, ...(fileValue ? { file: fileValue as AgentFileName } : {}) });
+      for (const entry of result.entries) {
+        if (entry.change === "unchanged") {
+          process.stdout.write(`${entry.file} already has the current Evergreen section; nothing to change.\n`);
+        } else {
+          const verb = entry.change === "created" ? "create" : entry.change === "added" ? "add the Evergreen section to" : "update the Evergreen section in";
+          process.stdout.write(dryRun ? `Would ${verb} ${entry.file}:\n\n${entry.diff}\n` : `${entry.change === "created" ? "Created" : entry.change === "added" ? "Added the Evergreen section to" : "Updated the Evergreen section in"} ${entry.file}.\n`);
+        }
+      }
+      return 0;
+    } catch (error) {
+      if (error instanceof AgentFileError) return fail("parse", error.message);
+      throw error;
+    }
+  }
   const agents = args.includes("--agents");
   const hooks = args.includes("--hooks");
   const personal = args.includes("--personal");
@@ -303,7 +338,7 @@ async function setup(args: string[]): Promise<number> {
   try {
     const plan = await planSetup(root);
     if (plan.entries.length === 0) {
-      process.stdout.write("No agent host configuration found (looked for Claude Code, Codex, Cursor, Gemini CLI, GitHub Copilot, and Kilo Code).\nRun `evergreen init --agents` to add the section to AGENTS.md or CLAUDE.md.\n");
+      process.stdout.write("No agent host configuration found (looked for Claude Code, Codex, Cursor, Gemini CLI, GitHub Copilot, Kilo Code, Windsurf, Cline, and Aider).\nRun `evergreen init --agents` to add the section to AGENTS.md or CLAUDE.md.\n");
       return 0;
     }
     process.stdout.write(`Detected: ${plan.detected.join(", ")}\n\n`);
@@ -502,8 +537,12 @@ async function main(rawArgs: string[]): Promise<number> {
   if (command === "check" && format !== undefined && format !== "json" && format !== "text") {
     return fail("usage", "check supports --json and --format text|json only.");
   }
-  if ((format === "markdown" || format === "junit" || format === "sarif" || format === "rdjson" || format === "codequality" || format === "compact" || format === "html" || format === "slack" || format === "teams" || format === "webhook") && command !== "scan") {
+  if ((format === "markdown" || format === "junit" || format === "sarif" || format === "rdjson" || format === "codequality" || format === "compact" || (format === "html" && command !== "rollup") || format === "slack" || format === "teams" || format === "webhook") && command !== "scan") {
     return fail("usage", `--format ${format} is only available for the scan command.`);
+  }
+  const demo = args.includes("--demo");
+  if (demo && command !== "scan") {
+    return fail("usage", "--demo is only available for the scan command.");
   }
   const json = args.includes("--json") || format === "json";
   if (args.includes("--write-status") && command !== "scan") {
@@ -610,9 +649,10 @@ async function main(rawArgs: string[]): Promise<number> {
     const ownersIndex = args.indexOf("--owners");
     const ownersFile = ownersIndex === -1 ? undefined : args[ownersIndex + 1];
     if (ownersIndex !== -1 && (!ownersFile || ownersFile.startsWith("-"))) return fail("usage", "--owners needs a file.");
+    const html = args.includes("--html") || format === "html";
     try {
       const result = await rollupFiles(positional.map((path) => resolve(path)), ownersFile && resolve(ownersFile));
-      process.stdout.write(`${json ? JSON.stringify(result, null, 2) : renderRollupText(result)}\n`);
+      process.stdout.write(`${json ? JSON.stringify(result, null, 2) : html ? renderRollupHtml(result) : renderRollupText(result)}\n`);
       return 0;
     } catch (error) {
       if (error instanceof RollupError) return fail("usage", error.message);
@@ -643,6 +683,15 @@ async function main(rawArgs: string[]): Promise<number> {
   if (allIndex !== -1 && (command !== "scan" || !allDirectory || allDirectory.startsWith("-"))) {
     return fail("usage", "--all needs a directory of repositories and is only available for the scan command.");
   }
+  if (demo && allIndex !== -1) {
+    return fail("usage", "--all is not available with --demo.");
+  }
+  if (demo && positional.length > 0) {
+    return fail("usage", "--demo does not take a path argument.");
+  }
+  if (demo && (args.includes("--baseline") || args.includes("--write-status"))) {
+    return fail("usage", "--baseline and --write-status are not available with --demo.");
+  }
   if (command === "scan" && (positional.length > 1 || allDirectory !== undefined)) {
     if (format !== undefined && format !== "text" && format !== "json") {
       return fail("usage", "Scanning several paths supports --json and --format text|json only.");
@@ -666,8 +715,10 @@ async function main(rawArgs: string[]): Promise<number> {
     process.stdout.write(`${json ? JSON.stringify(multi, null, 2) : renderMultiScanText(multi)}\n`);
     return 0;
   }
-  const rootProblem = await repositoryRootProblem(pathArgument);
-  if (rootProblem) return failActionable("usage", rootProblem);
+  if (!demo) {
+    const rootProblem = await repositoryRootProblem(pathArgument);
+    if (rootProblem) return failActionable("usage", rootProblem);
+  }
   const scanGate = optionValue("--fail-on") ?? "none";
   if (command === "scan" && scanGate !== "none" && !severityValues.includes(scanGate as Severity)) {
     return fail("usage", `Unknown severity for --fail-on: ${scanGate} (expected none, ${severityValues.join(", ")}).`);
@@ -711,7 +762,7 @@ async function main(rawArgs: string[]): Promise<number> {
   if (minSupportValue !== undefined && minSupportDays === undefined) {
     return fail("usage", "--min-support-days must be a whole number of days (0 to 3650).");
   }
-  let result = await scanRepository(pathArgument, builtInDetectors);
+  let result = demo ? await scanDemo(builtInDetectors) : await scanRepository(pathArgument, builtInDetectors);
   if (asOfValue !== undefined) result = await applyAsOf(result, asOfValue);
   if (minSupportDays !== undefined) result = applyMinSupport(result, minSupportDays, asOfValue ?? new Date().toISOString().slice(0, 10));
   if (command === "baseline") {
