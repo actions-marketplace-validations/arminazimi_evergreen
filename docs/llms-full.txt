@@ -237,6 +237,8 @@ Ready-to-copy setups for the dependency guardrail (an MCP entry plus the instruc
 | Cline | `cline_mcp_settings.json` (user settings) | `.clinerules/evergreen.md` |
 | Windsurf | Cascade `mcp_config.json` (user config) | `.windsurf/rules/evergreen.md` |
 
+Aider does not support MCP servers, so its setup in [`integrations/aider/`](https://github.com/arminazimi/evergreen/tree/main/integrations/aider) is a conventions file (`CONVENTIONS.md` loaded through `.aider.conf.yml` or `--read`) that tells the agent to run `npx evergreen-deprecation check <purl>` instead of calling the tool.
+
 To put the same instruction into a repository's `AGENTS.md` or `CLAUDE.md`, run `evergreen init --agents` in it: it adds a delimited section, keeps everything else byte for byte, and is safe to run again (`--dry-run` prints the diff first). `evergreen setup` does the same for every detected host at once (Claude Code, Codex, Cursor, Gemini CLI, GitHub Copilot, Kilo Code), writing each host's own instruction file such as `.cursor/rules/evergreen.mdc` after confirmation or `--yes`; it does not edit MCP server entries, which stay in the per-host setups above.
 
 Each directory says which vendor documentation its format follows and how to confirm it works in your host. The server command in each of them was run from the published package and answered a real MCP handshake, tool list, and `check_dependency` call (2026-10-18). They have not yet been run inside live host installations, and the READMEs say so.
@@ -2445,6 +2447,7 @@ Supply-chain scanners correctly report that the published package can read files
 | **CLI `guard`** | None for the check itself | Same as `check` for the preflight | After a passing check, spawns the package manager you named (`npm`, `pnpm`, `yarn`, `bun`, …) with your arguments | Only whatever that package manager does after Evergreen exits the check |
 | **CLI `fix`** | Reads the scan path. Default: prints patches to stdout (no write). `--branch`: applies and commits on a new local branch | Same data-pin and cache variables as `scan` | `--branch` runs local `git` (`checkout`, `apply`, `add`, `commit`); never `push` | None |
 | **CLI `init --agents`**, `setup` | Reads/writes agent instruction files in the scan path (`AGENTS.md`, `CLAUDE.md`, host rule files, …) | None beyond process defaults | None | None |
+| **CLI `init`** (guided, no flags) | Reads the CI provider and agent markers in the scan path; writes `.github/workflows/evergreen.yml`, `.git/hooks/pre-push`, and agent files (after confirmation unless `--yes`) | None beyond process defaults | Runs `git rev-parse` to locate hooks | None |
 | **CLI `init --hooks`** | Reads/writes `.git/hooks/pre-push` (or the path `git` reports) | None beyond process defaults | Runs `git rev-parse` to locate hooks | None |
 | **CLI `init --personal`** | Writes `~/.config/evergreen/` (or `XDG_CONFIG_HOME`) config and a global pre-push hook | `HOME` / `USERPROFILE`, `XDG_CONFIG_HOME` | Runs `git config --global core.hooksPath` (after confirmation unless `--yes`) | None |
 | **CLI `watch`** | Reads registered projects (same as `scan`); reads/writes `watch.json` under the personal config directory | `HOME` / `XDG_CONFIG_HOME` for state location; same data-pin variables when scanning | None | None |
