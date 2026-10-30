@@ -522,11 +522,45 @@ does not provide a `with` entry.
 | --- | --- | --- |
 | `report-path` | Always | Absolute runner path to the generated JSON report, whether or not `upload-report` is enabled. |
 | `finding-count` | Always | Number of findings remaining after baseline comparison, encoded as a decimal string. |
+| `has-new-findings` | Always | `true` when at least one finding remains after baseline comparison, `false` otherwise. In diff mode it covers the findings the pull request introduces. |
+| `highest-severity` | Always | The highest remaining severity (`info`, `low`, `medium`, `high`, or `critical`), or empty when there are no findings. |
+| `next-eol-date` | Always | The earliest end-of-life date among the remaining findings (`YYYY-MM-DD`), or empty when no finding carries a deadline. |
+| `findings-json` | Always | The remaining findings as one compact JSON array. Each entry has `id`, `ruleId`, `severity`, `title`, `path`, and `line` and `deadline` when known. |
 | `badge-path` | When `upload-badge` is `true` | Absolute runner path to `evergreen-badge.json`; otherwise empty. |
 | `badge-svg-path` | When `upload-badge` is `true` | Absolute runner path to `evergreen-badge.svg`, next to the JSON; otherwise empty. |
 | `sarif-path` | When `upload-sarif` is `true` | Absolute runner path to the generated SARIF file; otherwise empty. |
 
 The job summary shows how many findings there are per severity, the ten most severe findings with their location and a link to the evidence each one cites, the age of the lifecycle data, and a warning when the data is stale. When there are more than ten findings, it says how many more there are; the JSON report artifact lists them all.
+
+### Branching on results
+
+The outputs describe the findings that remain after baseline comparison, so a later step can act on them without reading the report. Every value is empty or `false` when nothing remains.
+
+| Output | Example value | Meaning |
+| --- | --- | --- |
+| `has-new-findings` | `true` | `true` when at least one finding remains, `false` otherwise. |
+| `highest-severity` | `critical` | The most severe remaining level, or empty when there are none. |
+| `next-eol-date` | `2026-09-23` | The earliest deadline among the remaining findings, or empty when none is dated. |
+| `findings-json` | `[{"id":"…","ruleId":"…","severity":"high","title":"…","path":"package.json","line":4,"deadline":"2026-09-23"}]` | The remaining findings as one compact JSON array. |
+
+The scan step must pass for the steps after it to run, so this example sets `fail-on-severity: none` and leaves the decision to the later steps:
+
+```yaml
+- uses: arminazimi/evergreen@v0
+  id: evergreen
+  with:
+    fail-on-severity: none
+- name: Note new findings
+  if: steps.evergreen.outputs.has-new-findings == 'true'
+  run: echo "Evergreen found new findings; highest severity is ${{ steps.evergreen.outputs.highest-severity }}."
+- name: Warn about the next deadline
+  if: steps.evergreen.outputs.next-eol-date != ''
+  run: echo "The next end of life is ${{ steps.evergreen.outputs.next-eol-date }}."
+- name: List finding ids
+  run: echo '${{ steps.evergreen.outputs.findings-json }}' | jq -r '.[].id'
+```
+
+In diff mode the same outputs cover only the findings the pull request introduces, so `findings-json` lists what the pull request added rather than the whole backlog.
 
 ### Monorepo paths
 
@@ -2369,7 +2403,7 @@ The same install registered the Skill with skills.sh. It is discoverable as `arm
 
 ## Evaluation
 
-Trigger evaluation cases live in `skills/evergreen-deprecation/evals/cases.json`. The versioned corpus contains 60 prompts: 30 expected triggers and 30 expected non-triggers, including 12 deliberately ambiguous requests. Each of the `agent-skills`, `codex`, and `claude` discovery lanes has 20 cases with an even positive/negative split.
+Trigger evaluation cases live in `skills/evergreen-deprecation/evals/cases.json`. The versioned corpus contains 108 prompts: 54 expected triggers and 54 expected non-triggers, including 24 deliberately ambiguous requests. Each of the `agent-skills`, `codex`, and `claude` discovery lanes has 36 cases with an even positive/negative split. Besides the original contract cases, it holds requests written the way people phrase them: support and maintenance status, container base images, lockfile and manifest declarations, and finding, migration, and verification work that does not repeat the product name.
 
 Run the deterministic metadata-selection proxy from the repository root:
 
@@ -2383,12 +2417,23 @@ Current published baseline:
 
 | Lane | Cases | Recall | False-trigger rate |
 | --- | ---: | ---: | ---: |
-| All | 60 | 100% | 0% |
-| Agent Skills | 20 | 100% | 0% |
-| Codex | 20 | 100% | 0% |
-| Claude | 20 | 100% | 0% |
+| All | 108 | 100% | 0% |
+| Agent Skills | 36 | 100% | 0% |
+| Codex | 36 | 100% | 0% |
+| Claude | 36 | 100% | 0% |
 
-This is a contract test for the concepts exposed by the skill metadata, not a claim that every model version will make an identical routing decision. Live host checks can add observations without weakening the deterministic CI gate. Generic dependency upgrades, vulnerability or security audits, deprecated application APIs, and unrelated modernization are explicit negative cases.
+### Tuning the description
+
+The first published corpus was written against the description's concepts, so it passed completely and could not show whether the wording covered everyday requests. Expanding it to 108 cases exposed both directions of the problem:
+
+| Measurement | Cases | Recall | False-trigger rate |
+| --- | ---: | ---: | ---: |
+| Previous description, expanded corpus | 108 | 79.6% | 7.4% |
+| Tuned description and proxy | 108 | 100% | 0% |
+
+Fifteen cases failed before the change. Eleven trigger requests missed because the description did not name support and maintenance status, container base images, or finding and verification work without the product name. Four non-goals falsely triggered because "deprecated" plus a manifest or a supported runtime was enough to cross the boundary, even when the request was about an npm script, a React hook, a Python function, or a Node API. The revised description states those boundaries, and the deterministic proxy that encodes it now requires a lifecycle status before a source-API or configuration request counts as a trigger. The gates are unchanged.
+
+This is a contract test for the concepts exposed by the skill metadata, not a claim that every model version will make an identical routing decision. Live host checks can add observations without weakening the deterministic CI gate. Generic dependency upgrades, vulnerability or security audits, deprecated source APIs, project scripts, configuration, and unrelated modernization are explicit negative cases.
 
 ### Dependency guard evaluation
 
