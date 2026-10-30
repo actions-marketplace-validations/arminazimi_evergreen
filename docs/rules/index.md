@@ -61,6 +61,7 @@ Every lifecycle claim Evergreen makes comes from a reviewed rule with an authori
 
 ## dart
 
+- [analysis_server_client is discontinued on pub.dev](dart.package.analysis-server-client.discontinued.html) — deprecated, `dart.package.analysis-server-client.discontinued`
 - [Dart 3.10 no longer receives security updates](dart.sdk.end-of-support-3.10.html) — end of support, `dart.sdk.end-of-support-3.10`
 - [Dart 3.11 no longer receives security updates](dart.sdk.end-of-support-3.11.html) — end of support, `dart.sdk.end-of-support-3.11`
 - [Dart 3.12 no longer receives security updates](dart.sdk.end-of-support-3.12.html) — end of support, `dart.sdk.end-of-support-3.12`
@@ -81,6 +82,7 @@ Every lifecycle claim Evergreen makes comes from a reviewed rule with an authori
 - [PostgreSQL 12 is no longer a supported major version](database.postgresql.end-of-life-12.html) — end of life, `database.postgresql.end-of-life-12`
 - [PostgreSQL 13 is no longer a supported major version](database.postgresql.end-of-life-13.html) — end of life, `database.postgresql.end-of-life-13`
 - [PostgreSQL 14 reaches the end of its support on 2026-11-12](database.postgresql.end-of-life-14.html) — scheduled end of life, `database.postgresql.end-of-life-14`
+- [Redis 7.0 is end-of-life](database.redis.end-of-life-7.0.html) — end of life, `database.redis.end-of-life-7.0`
 
 ## deno
 
@@ -558,6 +560,7 @@ Every lifecycle claim Evergreen makes comes from a reviewed rule with an authori
 ## serverless
 
 - [AWS Lambda .NET Core 3.1 runtime is end-of-life](serverless.aws-lambda.dotnetcore3.1.html) — end of life, `serverless.aws-lambda.dotnetcore3.1`
+- [AWS Lambda Node.js 12 runtime is end-of-life](serverless.aws-lambda.nodejs12.x.html) — end of life, `serverless.aws-lambda.nodejs12.x`
 - [AWS Lambda Node.js 14 runtime is end-of-life](serverless.aws-lambda.nodejs14.x.html) — end of life, `serverless.aws-lambda.nodejs14.x`
 - [AWS Lambda Python 3.7 runtime is end-of-life](serverless.aws-lambda.python3.7.html) — end of life, `serverless.aws-lambda.python3.7`
 - [AWS Lambda Python 3.8 runtime is end-of-life](serverless.aws-lambda.python3.8.html) — end of life, `serverless.aws-lambda.python3.8`
@@ -591,6 +594,7 @@ Every lifecycle claim Evergreen makes comes from a reviewed rule with an authori
 - [Terraform CLI 1.12 is no longer a supported release line](terraform.cli.end-of-support-1.12.html) — end of support, `terraform.cli.end-of-support-1.12`
 - [Terraform CLI 1.13 is no longer a supported release line](terraform.cli.end-of-support-1.13.html) — end of support, `terraform.cli.end-of-support-1.13`
 - [Terraform CLI 1.14 is no longer a supported release line](terraform.cli.end-of-support-1.14.html) — end of support, `terraform.cli.end-of-support-1.14`
+- [Terraform CLI 1.15 is no longer a supported release line](terraform.cli.end-of-support-1.15.html) — end of support, `terraform.cli.end-of-support-1.15`
 - [Amazon EKS 1.30 and earlier are past end of extended support](terraform.eks.end-of-life-1.30-and-older.html) — end of life, `terraform.eks.end-of-life-1.30-and-older`
 - [Amazon EKS 1.31 is past end of standard support](terraform.eks.end-of-support-1.31.html) — end of support, `terraform.eks.end-of-support-1.31`
 - [Amazon EKS 1.32 is past end of standard support](terraform.eks.end-of-support-1.32.html) — end of support, `terraform.eks.end-of-support-1.32`
