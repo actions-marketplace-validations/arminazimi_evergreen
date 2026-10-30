@@ -12,12 +12,16 @@ interface CommandSpec {
 const severities = "info low medium high critical none";
 
 export const COMMANDS: CommandSpec[] = [
-  { name: "scan", flags: ["--demo", "--json", "--format", "--baseline", "--baseline-warn-days", "--on-expired", "--today", "--write-status", "--interactive", "--fail-on", "--all", "--by-owner", "--data-version"], example: "evergreen scan . --fail-on high" },
+  { name: "scan", flags: ["--demo", "--json", "--format", "--baseline", "--baseline-warn-days", "--on-expired", "--today", "--write-status", "--interactive", "--fail-on", "--all", "--by-owner", "--data-version", "--only", "--exclude"], example: "evergreen scan . --fail-on high" },
   { name: "baseline", flags: ["--output", "--data-version"], example: "evergreen baseline . --output evergreen-baseline.json" },
-  { name: "forecast", flags: ["--months", "--as-of", "--today", "--json", "--data-version"], example: "evergreen forecast . --months 6" },
+  { name: "forecast", flags: ["--months", "--as-of", "--today", "--timeline", "--json", "--data-version"], example: "evergreen forecast . --months 6" },
+  { name: "status-card", flags: ["--name"], example: "evergreen status-card . --name acme/widgets" },
+  { name: "lookup", flags: ["--json"], example: "evergreen lookup node 18" },
+  { name: "badge", flags: ["--snippet", "--repo", "--branch", "--shields"], example: "evergreen badge . --snippet markdown" },
   { name: "diff", flags: ["--json", "--data-version"], example: "evergreen diff main..HEAD" },
   { name: "rollup", flags: ["--owners", "--json", "--html", "--format"], example: "evergreen rollup reports/*.json --owners owners.json --html" },
   { name: "renovate-preset", flags: ["--data-version"], example: "evergreen renovate-preset ." },
+  { name: "dependabot-config", flags: ["--data-version"], example: "evergreen dependabot-config ." },
   { name: "fix", flags: ["--dry-run", "--data-version"], example: "evergreen fix . --dry-run" },
   { name: "check", flags: ["--fail-on", "--json", "--format", "--data-version"], example: "evergreen check pkg:npm/request@2.88.2" },
   { name: "guard", flags: ["--fail-on", "--force", "--data-version"], example: "evergreen guard npm install request" },
@@ -28,6 +32,8 @@ export const COMMANDS: CommandSpec[] = [
   { name: "init", flags: ["--agents", "--hooks", "--personal", "--file", "--fail-on", "--yes", "--dry-run"], example: "evergreen init --hooks --dry-run" },
   { name: "setup", flags: ["--yes", "--dry-run"], example: "evergreen setup --dry-run" },
   { name: "new-detector", flags: ["--ecosystem"], example: "evergreen new-detector my-lang --ecosystem my-lang" },
+  { name: "new-rule", flags: ["--ecosystem"], example: "evergreen new-rule npm.package.sample.deprecated" },
+  { name: "rules", flags: [], example: "evergreen rules lint" },
   { name: "explain", flags: ["--json", "--data-version"], example: "evergreen explain <finding-id> ." },
   { name: "context", flags: ["--json", "--data-version"], example: "evergreen context <finding-id> ." },
   { name: "doctor", flags: ["--system", "--json", "--data-version"], example: "evergreen doctor --system" },

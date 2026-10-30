@@ -9,7 +9,22 @@ import { promisify } from "node:util";
 import { parse } from "yaml";
 
 import type { RegistryV2, RegistryV2Rule } from "../src/registry.js";
-import { SITE_URL, buildFiles, drift, loadRegistries, pageTitle, renderRulePage, renderSitemap, ruleUrl, write } from "../tools/build-reference-pages.js";
+import {
+  LOOKUP_PAGE,
+  SITE_URL,
+  buildFiles,
+  drift,
+  loadRegistries,
+  lookupEntries,
+  lookupUrl,
+  pageTitle,
+  renderIndex,
+  renderLookupPage,
+  renderRulePage,
+  renderSitemap,
+  ruleUrl,
+  write,
+} from "../tools/build-reference-pages.js";
 
 const temporaryRoots: string[] = [];
 
@@ -77,6 +92,8 @@ test("a page states status, versions, dates, sources, freshness, migration, and 
   assert.match(page, /1\. \*\*Change it\.\*\* Do the change\./);
   assert.match(page, /- `make test`: Run the tests\./);
   assert.match(page, /No built-in detector reads `demo` declarations yet/);
+  assert.match(page, /\]\(\.\.\/lookup\.html\)/);
+  assert.match(page, /<form action="\.\.\/lookup\.html" method="get" role="search">/);
 });
 
 test("a range with a pipe does not break the table", () => {
@@ -115,18 +132,67 @@ test("titles are unique, follow the search-friendly pattern, and every page name
   }
 });
 
-test("the sitemap lists the site, the index, and every rule once, with the review date", async () => {
+test("the sitemap lists the site, the lookup page, the index, and every rule once, with the review date", async () => {
   const registries = await loadRegistries();
   const sitemap = renderSitemap(registries);
   const locations = [...sitemap.matchAll(/<loc>([^<]+)<\/loc>/g)].map((match) => match[1]!);
   assert.equal(new Set(locations).size, locations.length);
   assert.deepEqual(locations, [...locations].sort());
   assert.ok(locations.includes(`${SITE_URL}/`));
+  assert.ok(locations.includes(lookupUrl()));
   assert.ok(locations.includes(`${SITE_URL}/rules/`));
-  assert.equal(locations.length, registries.reduce((sum, item) => sum + item.rules.length, 0) + 2);
+  assert.equal(locations.length, registries.reduce((sum, item) => sum + item.rules.length, 0) + 3);
   assert.match(sitemap, /<url><loc>[^<]+<\/loc><lastmod>\d{4}-\d{2}-\d{2}<\/lastmod><\/url>/);
   assert.match(sitemap, /^<\?xml version="1\.0" encoding="UTF-8"\?>\n<urlset xmlns="http:\/\/www\.sitemaps\.org\/schemas\/sitemap\/0\.9">/);
   assert.ok(sitemap.length < 50_000_000 && locations.length < 50_000);
+});
+
+test("the lookup page inlines every rule with sources and makes no requests", async () => {
+  const registries = await loadRegistries();
+  const page = renderLookupPage(registries);
+  const entries = lookupEntries(registries);
+  assert.ok(entries.length >= 100);
+  assert.match(page, /^<!doctype html>\n<html lang="en">/);
+  assert.match(page, /<link rel="canonical" href="https:\/\/arminazimi\.github\.io\/evergreen\/lookup\.html" \/>/);
+  assert.match(page, /<script type="application\/json" id="lookup-data">/);
+  assert.doesNotMatch(page, /\bfetch\s*\(|XMLHttpRequest|navigator\.sendBeacon/);
+  assert.match(page, /makes no network requests after it loads/);
+
+  const match = /<script type="application\/json" id="lookup-data">\n([\s\S]*?)\n\s*<\/script>/.exec(page);
+  assert.ok(match);
+  const embedded = JSON.parse(match[1]!) as Array<{ id: string; sources: Array<{ url: string }>; title: string }>;
+  assert.equal(embedded.length, entries.length);
+  assert.deepEqual(
+    embedded.map((entry) => entry.id),
+    entries.map((entry) => entry.id),
+  );
+  for (const entry of embedded) {
+    assert.ok(entry.sources.length >= 1, entry.id);
+    assert.ok(entry.sources.every((source) => /^https?:\/\//.test(source.url)), entry.id);
+  }
+  assert.match(page, /href = "rules\/" \+/);
+  assert.match(page, /sourceLink\.href = source\.url/);
+  assert.equal(buildFiles(registries).some((file) => file.path === LOOKUP_PAGE), true);
+});
+
+test("lookup data can never close the embedded JSON element", () => {
+  const page = renderLookupPage([
+    registry([
+      rule({
+        title: "A </script><script>alert(1)</script> title",
+        summary: "Bad </script><script>alert(2)</script> text",
+        sources: [{ title: "Doc </script>", url: "https://example.com/x" }],
+      }),
+    ]),
+  ]);
+  const block = page.slice(page.indexOf('<script type="application/json" id="lookup-data">'));
+  const end = block.indexOf("</script>");
+  assert.equal(block.indexOf("</"), end);
+  const embedded = JSON.parse(
+    /<script type="application\/json" id="lookup-data">\n([\s\S]*?)\n\s*<\/script>/.exec(page)![1]!,
+  ) as Array<{ title: string; summary: string }>;
+  assert.equal(embedded[0]!.title, "A </script><script>alert(1)</script> title");
+  assert.equal(embedded[0]!.summary, "Bad </script><script>alert(2)</script> text");
 });
 
 test("the site configuration gives the absolute URL the canonical links rely on", async () => {
@@ -151,15 +217,86 @@ test("drift names a changed page, a missing page, and a stale page", async () =>
 
   await writeFile(join(root, "docs/rules/demo.thing.eol-1.md"), "edited\n");
   const fewer = buildFiles([registry([rule()])]);
-  assert.deepEqual(await drift(fewer, root), ["differs: docs/rules/demo.thing.eol-1.md", "differs: docs/rules/index.md", "differs: docs/sitemap.xml", "stale: docs/rules/demo.other.eol-2.md"]);
+  assert.deepEqual(await drift(fewer, root), [
+    "differs: docs/lookup.html",
+    "differs: docs/rules/demo.thing.eol-1.md",
+    "differs: docs/rules/index.md",
+    "differs: docs/sitemap.xml",
+    "stale: docs/rules/demo.other.eol-2.md",
+  ]);
 
   await write(fewer, root);
   assert.deepEqual(await drift(fewer, root), []);
   assert.deepEqual(await drift(buildFiles([registry([rule(), rule({ id: "demo.new.eol-3" })])]), root), [
+    "differs: docs/lookup.html",
     "differs: docs/rules/index.md",
     "differs: docs/sitemap.xml",
     "missing: docs/rules/demo.new.eol-3.md",
   ]);
+});
+
+test("every rule field is rendered in its context and escaped there", () => {
+  const fixture = rule({
+    title: "Demo 1 <script>alert(1)</script> | upgrade",
+    summary: "The vendor says </script><script>alert(2)</script> & more.",
+    replacement: "Demo 2 <new> | later",
+    requires: { node: "18.0.0", python: "3.10" },
+    sources: [{ title: "Demo [lifecycle] <doc>", url: "https://example.com/demo", accessedAt: "2026-10-03" }],
+    provenance: { observedAt: "2026-10-01", reviewedAt: "2026-10-02", reviewer: "A <reviewer> | team", importer: "demo-import" },
+    migration: {
+      constraints: ["Keep <behavior>."],
+      steps: [{ id: "internal-step", title: "Change <it>", instructions: "Do <the> change.", targets: "declaration" }],
+      verification: [{ command: "make <test>", purpose: "Run <tests>." }],
+    },
+    usage: [{ kind: "import", language: "javascript", module: "internal-matcher" }],
+  });
+  const page = renderRulePage(fixture, 180);
+
+  // Front matter stays a quoted YAML scalar, and the structured data gets the unescaped facts.
+  const frontMatter = parse(page.slice(4, page.indexOf("\n---\n", 4))) as { title: string; description: string; canonical_url: string };
+  assert.equal(frontMatter.title, pageTitle(fixture));
+  assert.equal(frontMatter.description, fixture.summary);
+  assert.equal(frontMatter.canonical_url, ruleUrl(fixture.id));
+
+  // Prose is HTML-escaped, so a rule can never inject markup into the page.
+  assert.match(page, /^# Demo 1 &lt;script&gt;alert\(1\)&lt;\/script&gt; \| upgrade$/m);
+  assert.match(page, /^The vendor says &lt;\/script&gt;&lt;script&gt;alert\(2\)&lt;\/script&gt; &amp; more\.$/m);
+  assert.match(page, /\| Replacement \| Demo 2 &lt;new&gt; \\\| later \|/);
+  assert.match(page, /\| Replacement requires \| Node\.js 18\.0\.0 or newer and Python 3\.10 or newer \|/);
+  assert.match(page, /\| Reviewed \| 2026-10-02 by A &lt;reviewer&gt; \\\| team, drafted by the `demo-import` importer \|/);
+  assert.match(page, /- \[Demo \\\[lifecycle\\\] &lt;doc&gt;\]\(https:\/\/example\.com\/demo\) \(accessed 2026-10-03\)/);
+  assert.match(page, /- Keep &lt;behavior&gt;\./);
+  assert.match(page, /1\. \*\*Change &lt;it&gt;\.\*\* Do &lt;the&gt; change\./);
+  // Inside a code span entities do not decode, so `<` stays literal there.
+  assert.match(page, /- `make <test>`: Run &lt;tests&gt;\./);
+  assert.doesNotMatch(page, /internal-matcher|internal-step/);
+  assert.doesNotMatch(page, /<new>|<reviewer>|<behavior>|<the>|<tests>/);
+
+  // The index escapes link labels and links every rule.
+  assert.match(
+    renderIndex([registry([rule({ title: "Demo [1] <x>" })])]),
+    /- \[Demo \\\[1\\\] &lt;x&gt;\]\(demo\.thing\.eol-1\.html\) — end of life, `demo\.thing\.eol-1`/,
+  );
+});
+
+test("a rule without requires or an access date says nothing about them", () => {
+  const page = renderRulePage(rule(), 365);
+  assert.doesNotMatch(page, /Replacement requires/);
+  assert.doesNotMatch(page, /\(accessed /);
+});
+
+test("every registry rule appears in the index and the sitemap", async () => {
+  const registries = await loadRegistries();
+  const index = renderIndex(registries);
+  const sitemap = renderSitemap(registries);
+  for (const item of registries) {
+    for (const entry of item.rules) {
+      assert.ok(index.includes(`](${entry.id}.html)`), `${entry.id} is missing from the index`);
+      assert.ok(sitemap.includes(`<loc>${ruleUrl(entry.id)}</loc>`), `${entry.id} is missing from the sitemap`);
+    }
+  }
+  const links = [...index.matchAll(/^- \[.*\]\(([^)]+\.html)\) — /gm)];
+  assert.equal(links.length, registries.reduce((sum, item) => sum + item.rules.length, 0));
 });
 
 test("a rule id in two registries is an error", () => {

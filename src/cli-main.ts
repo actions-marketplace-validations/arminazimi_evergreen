@@ -1,9 +1,10 @@
 
+import { badgeSnippet, isBadgeSnippetFormat, renderBadgeEndpoint, repositoryFromRemote } from "./badge.js";
 import { spawnSync } from "node:child_process";
-import { stat, writeFile } from "node:fs/promises";
+import { readFile, stat, writeFile } from "node:fs/promises";
 import http from "node:http";
 import process from "node:process";
-import { resolve } from "node:path";
+import { basename, resolve } from "node:path";
 
 import { applyAsOf } from "./as-of.js";
 import { applyMinSupport, parseMinSupportDays } from "./min-support.js";
@@ -21,26 +22,32 @@ import { guardCommand, GuardUsageError } from "./guard.js";
 import { initAgents } from "./init-agents.js";
 import { initHooks } from "./init-hooks.js";
 import { hasPersonalConfig, initPersonal } from "./init-personal.js";
-import { planInitSetup, applyInitSetup, hasWritables, initAgent, planSummary } from "./init.js";
+import { planInitSetup, applyInitSetup, hasWritables, initAgent, planSummary, siteSuggestion } from "./init.js";
 import type { InitStep } from "./init.js";
 import { renderUsageText, summarizeUsage, usageLogPath } from "./usage-log.js";
-import { applySetup, planSetup } from "./setup.js";
+import { applySetup, installSetupSkills, planSetup } from "./setup.js";
 import type { AgentFileName } from "./init-agents.js";
 import { builtInDetectors } from "./detectors/index.js";
-import type { Severity } from "./domain.js";
+import type { ScanSelection, Severity } from "./domain.js";
 import { severityValues } from "./domain.js";
 import { buildForecast, DEFAULT_FORECAST_MONTHS, MAX_FORECAST_MONTHS, renderForecastText } from "./forecast.js";
+import { renderForecastTimeline } from "./forecast-timeline.js";
 import { applyOnBranch } from "./fix/git.js";
-import { planFixes, renderPatches } from "./fix/index.js";
+import { planFixReport, planFixes, renderPatches } from "./fix/index.js";
 import { renderVerification, verifyFix } from "./fix/verify.js";
-import { findRepositories, renderMultiScanText, scanProjects, scanRepository } from "./engine.js";
+import { findRepositories, renderMultiScanText, scanProjects, scanRepository, applyScanSelection } from "./engine.js";
+import { renderStatusCard } from "./status-card.js";
+import { lookupProduct, renderLookupText } from "./lookup.js";
 import { scanDemo } from "./demo.js";
 import { createMigrationPacket } from "./migration-packet.js";
 import { readPinnedRuntimes } from "./runtime-pin.js";
 import { DiffError, diffRefs, renderDiffText } from "./diff.js";
 import { groupScanByOwner, renderOwnerGroupsText } from "./codeowners.js";
 import { RollupError, renderRollupHtml, renderRollupText, rollupFiles } from "./rollup.js";
+import { defaultRuleFiles, lintRuleFiles, renderRuleLintText } from "./rule-lint.js";
+import { renderRuleTestText, RuleTestError, testRule } from "./rule-test.js";
 import { buildRenovatePreset } from "./renovate-preset.js";
+import { buildDependabotConfig } from "./dependabot-config.js";
 import { diagnoseEnvironment, renderDoctorText } from "./doctor.js";
 import { createIssueReport, ReportIssueError } from "./report-issue.js";
 import { renderCheckText, renderCodeQuality, renderCompact, renderFindingText, renderHtml, renderJson, renderJunit, renderMarkdown, renderMigrationPacketText, renderRdjson, renderSarif, renderSlack, renderTeams, renderText, renderWebhook } from "./reporters.js";
@@ -48,6 +55,7 @@ import { STATUS_FILE_NAME, writeStatusFile } from "./status-file.js";
 import { browseFindings, canBrowse } from "./tui.js";
 import { VERSION } from "./version.js";
 import { exportActiveCle } from "./export/cle.js";
+import { exportPortal, portalReportLink } from "./export/portal.js";
 import {
   invalidConfig,
   isOfflineDataUpdateFailure,
@@ -58,12 +66,14 @@ import {
   type ActionableMessage,
 } from "./errors.js";
 import { CycloneDxError, enrichCycloneDxFile } from "./sbom/cyclonedx.js";
+import { SpdxError, enrichSpdxFile } from "./sbom/spdx.js";
 import { addWatched, listWatched, removeWatched, renderWatchText, runWatch } from "./watch.js";
+import { applyIgnore, ConfigError, loadConfig } from "./config.js";
 
 const HELP = `Evergreen — local-first deprecation intelligence
 
 Usage:
-  evergreen scan [path] [--json | --format <text|json|markdown|junit|sarif|rdjson|codequality|compact|html|slack|teams|webhook>]
+  evergreen scan [path] [--no-cache] [--json | --format <text|json|markdown|junit|sarif|rdjson|codequality|compact|html|slack|teams|webhook>]
   evergreen scan --demo [--json | --format <text|json|markdown|junit|sarif|rdjson|codequality|compact|html|slack|teams|webhook>]   # scan an in-memory demo project that always has findings
   evergreen scan [path] --baseline <file> [--baseline <file>...] [--baseline-warn-days <n>] [--on-expired resurface|fail] [--today <YYYY-MM-DD>] [--json]
   evergreen scan [path] --as-of <YYYY-MM-DD> [--json]   # scan as the world will look on a date; --today is an alias
@@ -71,14 +81,23 @@ Usage:
   evergreen scan [path] --write-status
   evergreen scan [path] --interactive   # browse findings and open them in $EDITOR; plain text when not a terminal
   evergreen scan [path] --fail-on <severity|none>   # exit 1 when a finding is at or above the severity
+  evergreen scan [path] --ignore <path>   # ignore paths or glob patterns during scan
+  evergreen scan [path] --only <ecosystem|rule-prefix>   # keep only matching findings; repeatable
+  evergreen scan [path] --exclude <ecosystem|rule-prefix>   # drop matching findings; repeatable
+  evergreen scan [path] --no-cache   # bypass the scan cache and re-scan all files fresh
   evergreen scan <path> <path>... [--all <dir>] [--json]   # several projects, per-project and combined counts
-  evergreen forecast [path] [--months <n>] [--as-of <YYYY-MM-DD>] [--json]   # what reaches end of life next, by month
+  evergreen forecast [path] [--months <n>] [--as-of <YYYY-MM-DD>] [--timeline | --json]   # what reaches end of life next, by month
+  evergreen status-card [path] [--name <label>]   # print a static SVG summary of findings, next end of life, and data age
+  evergreen lookup <product> [version] [--json]   # support status, end-of-life date, and evidence for a product
+  evergreen badge [path] --snippet <markdown|html|rst> [--repo <owner/name>] [--branch <name>]   # print README markup for the published badge
+  evergreen badge [path] --shields   # print shields.io endpoint JSON for the current scan
   evergreen diff <base>..<head> [path] [--json]   # findings a change introduced or fixed; exit 1 only when it introduced some
   evergreen scan [path] --by-owner [--json]   # group findings by CODEOWNERS owner; files with no owner are listed as unowned
   evergreen rollup <report.json>... [--owners <file>] [--json | --html]   # merge saved scan reports by product and owner; reads files only
   evergreen renovate-preset [path]   # print Renovate packageRules for replacements and runtime pins; does not edit config
-  evergreen fix [path] [--dry-run]   # print patches for deterministic fixes; nothing is written
-  evergreen fix [path] --branch      # apply the fixes on a local evergreen/fix branch and commit; never pushes
+  evergreen dependabot-config [path]   # print a dependabot.yml that groups updates for deprecated packages; does not write files
+  evergreen fix [path] [--dry-run] [--json]   # print patches for deterministic fixes; nothing is written
+  evergreen fix [path] --branch               # apply the fixes on a local evergreen/fix branch and commit; never pushes
   evergreen baseline [path] [--output <file>]
   evergreen check <purl> [--fail-on <severity|none>] [--json]
   evergreen guard [--fail-on <severity|none>] [--force] npm install <package>...   # check first; flags after npm go to npm
@@ -86,7 +105,8 @@ Usage:
   evergreen mcp
   evergreen data status [--json]
   evergreen export --format cle [--data-version <version>]   # CLE 1.0 snapshots, one JSON document per line and component; skipped rules reported on stderr
-  evergreen sbom enrich <bom.json> [--data-version <version>]   # print enriched CycloneDX JSON; leaves the input unchanged
+  evergreen export --format portal [path...] [--data-version <version>] [--report-base-url <url>]   # developer-portal catalog: severity counts, next end-of-life date, and report link per scanned path
+  evergreen sbom enrich <bom.json> [--data-version <version>]   # print enriched CycloneDX or SPDX 2.3 JSON; leaves the input unchanged
   evergreen watch add|remove <path>   # register a project for the digest
   evergreen watch [run] [--weekly] [--json]   # re-scan registered projects, print only what changed
   evergreen watch list [--json]
@@ -97,6 +117,9 @@ Usage:
   evergreen init --personal [--fail-on <severity>] [--yes] [--dry-run]   # global config and pre-push hook for every repository
   evergreen setup [path] [--yes] [--dry-run]
   evergreen new-detector <id> [--ecosystem <slug>]
+  evergreen new-rule <id> [--ecosystem <slug>]   # add a rule and its match/clean fixtures to registry/<ecosystem>.json
+  evergreen rules lint [file...]   # check lifecycle rules for problems before CI does; exits 1 on any problem
+  evergreen rules test <id>   # run a rule against tests/fixtures/<id>/match and clean; exits 1 on a failed fixture
   evergreen data update [--data-version <version>] [--json]
   evergreen explain <finding-id> [path] [--json]
   evergreen context <finding-id> [path] [--json]
@@ -283,6 +306,7 @@ async function guidedInit(options: { root: string; gate: Severity; dryRun?: bool
   }
   const plan = await planInitSetup({ root: options.root, gate: options.gate, ...(options.file ? { file: options.file } : {}) });
   process.stdout.write(`Detected: ${plan.detectedCi.length > 0 ? plan.detectedCi.join(" and ") : "no CI"}; ${plan.detectedAgents.length > 0 ? plan.detectedAgents.join(", ") : "no agent hosts"}\n`);
+  if (plan.site) process.stdout.write(siteSuggestion(plan.site));
   if (options.dryRun) {
     printGuidedSteps(plan.steps, options.dryRun === true, options.gate);
     process.stdout.write("Dry run: nothing was written.\n");
@@ -326,7 +350,7 @@ function printGuidedSteps(steps: InitStep[], dryRun: boolean, gate: Severity): v
   }
 }
 
-/** `setup`: adds the Evergreen section to the instruction file of every detected agent host. */
+/** `setup`: adds the Evergreen section to the instruction file of every detected agent host, and offers the Skill. */
 async function setup(args: string[]): Promise<number> {
   const usage = "Usage: evergreen setup [path] [--yes] [--dry-run]";
   const flags = new Set(["--yes", "-y", "--dry-run"]);
@@ -347,7 +371,12 @@ async function setup(args: string[]): Promise<number> {
       process.stdout.write(`${verb === "leave unchanged" ? "Already current:" : `Would ${verb}`} ${entry.file} (${entry.hosts.join(", ")})\n`);
       if (entry.diff) process.stdout.write(`\n${entry.diff}\n\n`);
     }
-    if (plan.entries.every((entry) => entry.change === "unchanged")) {
+    if (plan.skills.length > 0) {
+      process.stdout.write("\nSkill install (supported hosts):\n");
+      for (const offer of plan.skills) process.stdout.write(`  ${offer.host}: ${offer.command}\n`);
+    }
+    const filesNeedWrite = plan.entries.some((entry) => entry.change !== "unchanged");
+    if (!filesNeedWrite && plan.skills.length === 0) {
       process.stdout.write("Nothing to change.\n");
       return 0;
     }
@@ -355,7 +384,7 @@ async function setup(args: string[]): Promise<number> {
       process.stdout.write("Dry run: nothing was written.\n");
       return 0;
     }
-    if (!yes) {
+    if (filesNeedWrite && !yes) {
       if (!process.stdin.isTTY) return fail("usage", "Confirmation needed: pass --yes to write these changes, or --dry-run to only print them.");
       const readline = await import("node:readline/promises");
       const prompt = readline.createInterface({ input: process.stdin, output: process.stdout });
@@ -366,8 +395,21 @@ async function setup(args: string[]): Promise<number> {
         return 0;
       }
     }
-    const written = await applySetup(root, plan);
-    process.stdout.write(`Updated ${written.join(", ")}.\n`);
+    if (filesNeedWrite) {
+      const written = await applySetup(root, plan);
+      process.stdout.write(`Updated ${written.join(", ")}.\n`);
+    } else {
+      process.stdout.write("Instruction files are already current.\n");
+    }
+    // Skill install uses the network; only with `--yes`, never in dry-run, never on interactive file confirm alone.
+    if (plan.skills.length > 0 && yes) {
+      const result = installSetupSkills(plan, { cwd: root });
+      if (result.installed.length > 0) process.stdout.write(`Installed the Skill for ${result.installed.join(", ")}.\n`);
+      for (const failure of result.failed) process.stderr.write(`Skill install failed for ${failure.host}: ${failure.detail}\n`);
+      if (result.failed.length > 0) return fail("internal", `Skill install failed for ${result.failed.map((item) => item.host).join(", ")}.`);
+    } else if (plan.skills.length > 0) {
+      process.stdout.write("Pass --yes to install the Skill, or run the command above.\n");
+    }
     return 0;
   } catch (error) {
     if (error instanceof AgentFileError) return fail("parse", error.message);
@@ -390,6 +432,23 @@ async function usage(args: string[]): Promise<number> {
   const summary = await summarizeUsage(file);
   process.stdout.write(`${args.includes("--json") ? JSON.stringify(summary, null, 2) : renderUsageText(summary)}\n`);
   return 0;
+}
+
+/** Valid `--only`/`--exclude` values: ecosystem ids, rule ids, and their dotted prefixes. */
+async function selectorValues(): Promise<Set<string>> {
+  const values = new Set<string>(builtInDetectors.map((detector) => detector.id));
+  for (const rule of await bundledRules()) {
+    const parts = rule.id.split(".");
+    for (let index = 1; index <= parts.length; index += 1) values.add(parts.slice(0, index).join("."));
+  }
+  return values;
+}
+
+/** Lists the ecosystems and rule-id families a selector may name, for the unknown-selector error. */
+async function selectorValuesSummary(): Promise<string> {
+  const ecosystems = builtInDetectors.map((detector) => detector.id).sort();
+  const prefixes = [...new Set((await bundledRules()).map((rule) => rule.id.split(".").slice(0, 2).join(".")))].sort((left, right) => left.localeCompare(right));
+  return `Valid ecosystems: ${ecosystems.join(", ")}. Valid rule prefixes: ${[...ecosystems, ...prefixes].filter((value, index, all) => all.indexOf(value) === index).sort((left, right) => left.localeCompare(right)).join(", ")}.`;
 }
 
 /** Creates a detector skeleton. The generator lives in the repository's tools, so this works in a checkout only. */
@@ -417,6 +476,72 @@ async function newDetector(args: string[]): Promise<number> {
     if (error instanceof scaffold.ScaffoldError) return fail("usage", error.message);
     throw error;
   }
+}
+
+/** Creates a rule skeleton and both fixtures in the registry for its ecosystem. The generator lives in tools/. */
+async function newRule(args: string[]): Promise<number> {
+  const usage = "Usage: evergreen new-rule <id> [--ecosystem <slug>]";
+  let id: string | undefined;
+  let ecosystem: string | undefined;
+  for (let index = 0; index < args.length; index += 1) {
+    const argument = args[index]!;
+    if (argument === "--ecosystem") {
+      const value = args[index + 1];
+      if (!value || value.startsWith("-")) return fail("usage", usage);
+      ecosystem = value;
+      index += 1;
+    } else if (argument.startsWith("-") || id !== undefined) {
+      return fail("usage", usage);
+    } else {
+      id = argument;
+    }
+  }
+  if (id === undefined) return fail("usage", usage);
+  let scaffold: typeof import("../tools/scaffold/index.js");
+  try {
+    scaffold = await import("../tools/scaffold/index.js");
+  } catch (error) {
+    if ((error as NodeJS.ErrnoException).code === "ERR_MODULE_NOT_FOUND") {
+      return fail("usage", "new-rule is for contributors: run it from a checkout of the Evergreen repository after npm run build.");
+    }
+    throw error;
+  }
+  try {
+    process.stdout.write(`${scaffold.renderRuleScaffoldResult(await scaffold.scaffoldRule(id, ecosystem ? { ecosystem } : {}))}\n`);
+    return 0;
+  } catch (error) {
+    if (error instanceof scaffold.ScaffoldError) return fail("usage", error.message);
+    throw error;
+  }
+}
+
+/** `rules lint` checks registry files; `rules test` runs one rule against its match and clean fixtures. */
+async function rules(args: string[]): Promise<number> {
+  const [subcommand, ...rest] = args;
+  if (subcommand === "lint") {
+    if (rest.some((argument) => argument.startsWith("-"))) return fail("usage", "Usage: evergreen rules lint [file...]");
+    let files: string[];
+    try {
+      files = rest.length > 0 ? rest : await defaultRuleFiles();
+    } catch (error) {
+      return fail("usage", `No registry directory here (${(error as Error).message}). Run evergreen rules lint from the repository root, or pass rule files.`);
+    }
+    const result = await lintRuleFiles(files);
+    process.stdout.write(`${renderRuleLintText(result)}\n`);
+    return result.issues.length === 0 ? 0 : EXIT_CODES.policy;
+  }
+  if (subcommand === "test") {
+    if (rest.length !== 1 || rest[0]!.startsWith("-")) return fail("usage", "Usage: evergreen rules test <rule-id>");
+    try {
+      const result = await testRule(rest[0]!);
+      process.stdout.write(`${renderRuleTestText(result)}\n`);
+      return result.passed ? 0 : EXIT_CODES.policy;
+    } catch (error) {
+      if (error instanceof RuleTestError) return fail("usage", error.message);
+      throw error;
+    }
+  }
+  return fail("usage", "Usage: evergreen rules <lint|test> ...");
 }
 
 /** `watch`: keeps a list of projects and prints only the findings that are new since the last digest. */
@@ -452,6 +577,106 @@ async function watch(args: string[], json: boolean): Promise<number> {
   }
 }
 
+/** `status-card`: prints a static SVG summary of one repository's scan. */
+async function statusCard(args: string[]): Promise<number> {
+  const usageText = "Usage: evergreen status-card [path] [--name <label>]";
+  const operands: string[] = [];
+  let name: string | undefined;
+  for (let index = 0; index < args.length; index += 1) {
+    const argument = args[index]!;
+    if (argument === "--name") {
+      name = args[index + 1];
+      if (name === undefined) return fail("usage", usageText);
+      index += 1;
+      continue;
+    }
+    if (argument.startsWith("-")) return fail("usage", usageText);
+    operands.push(argument);
+  }
+  if (operands.length > 1) return fail("usage", usageText);
+  const project = resolve(operands[0] ?? ".");
+  try {
+    const result = await scanRepository(project, builtInDetectors, {});
+    process.stdout.write(`${renderStatusCard(result, { repository: name ?? basename(project) })}\n`);
+    return 0;
+  } catch (error) {
+    return fail("parse", (error as Error).message);
+  }
+}
+
+/** `lookup`: resolves a product name and version against the bundled lifecycle rules. */
+async function lookup(args: string[]): Promise<number> {
+  const usageText = "Usage: evergreen lookup <product> [version] [--json]";
+    "Usage: evergreen badge [path] --snippet <markdown|html|rst> [--repo <owner/name>] [--branch <name>]\n       evergreen badge [path] --shields";
+  const operands = args.filter((argument) => argument !== "--json");
+  if (operands.length === 0 || operands.length > 3 || operands.some((argument) => argument.startsWith("-"))) return fail("usage", usageText);
+  const last = operands[operands.length - 1]!;
+  const dated = operands.length > 1 && /^v?\d/.test(last);
+  const version = dated ? last.replace(/^v/i, "") : undefined;
+  const name = (dated ? operands.slice(0, -1) : operands).join(" ");
+  try {
+    const result = await lookupProduct(name, version);
+    process.stdout.write(`${jsonErrors ? JSON.stringify(result, null, 2) : renderLookupText(result)}\n`);
+    return 0;
+  } catch (error) {
+    return fail("usage", (error as Error).message);
+  }
+}
+
+/** `badge`: prints README markup for the badge a repository publishes from its badge branch. */
+async function badge(args: string[]): Promise<number> {
+  const usageText =
+    "Usage: evergreen badge [path] --snippet <markdown|html|rst> [--repo <owner/name>] [--branch <name>]\n       evergreen badge [path] --shields";
+  const operands: string[] = [];
+  let snippet: string | undefined;
+  let repository: string | undefined;
+  let branch = "evergreen-badge";
+  let shields = false;
+  for (let index = 0; index < args.length; index += 1) {
+    const argument = args[index]!;
+    if (argument === "--shields") {
+      shields = true;
+      continue;
+    }
+    if (argument === "--snippet" || argument === "--repo" || argument === "--branch") {
+      const value = args[index + 1];
+      if (value === undefined) return fail("usage", usageText);
+      if (argument === "--snippet") snippet = value;
+      else if (argument === "--repo") repository = value;
+      else branch = value;
+      index += 1;
+      continue;
+    }
+    if (argument.startsWith("-")) return fail("usage", usageText);
+    operands.push(argument);
+  }
+  if (operands.length > 1) return fail("usage", usageText);
+  const path = operands[0] ?? ".";
+  if (shields) {
+    if (snippet !== undefined || repository !== undefined || branch !== "evergreen-badge") return fail("usage", usageText);
+    const project = resolve(path);
+    try {
+      process.stdout.write(`${renderBadgeEndpoint(await scanRepository(project, builtInDetectors, {}))}\n`);
+      return 0;
+    } catch (error) {
+      return fail("parse", (error as Error).message);
+    }
+  }
+  if (!snippet || !isBadgeSnippetFormat(snippet)) return fail("usage", usageText);
+  let owner = repository;
+  if (!owner) {
+    const remote = spawnSync("git", ["-C", path, "remote", "get-url", "origin"], { encoding: "utf8" });
+    owner = remote.status === 0 ? repositoryFromRemote(remote.stdout) : undefined;
+  }
+  if (!owner) return fail("usage", `Could not read a GitHub repository from ${path}. Pass --repo <owner/name>.`);
+  try {
+    process.stdout.write(`${badgeSnippet(owner, snippet, branch)}\n`);
+    return 0;
+  } catch (error) {
+    return fail("usage", (error as Error).message);
+  }
+}
+
 async function main(rawArgs: string[]): Promise<number> {
   debugErrors = rawArgs.includes("--debug");
   const args = rawArgs.filter((argument) => argument !== "--debug");
@@ -468,7 +693,7 @@ async function main(rawArgs: string[]): Promise<number> {
   }
 
   const [command] = args;
-  if (command !== "sbom" && command !== "export" && command !== "scan" && command !== "check" && command !== "guard" && command !== "data" && command !== "new-detector" && command !== "init" && command !== "setup" && command !== "usage" && command !== "mcp" && command !== "explain" && command !== "context" && command !== "baseline" && command !== "forecast" && command !== "diff" && command !== "rollup" && command !== "renovate-preset" && command !== "fix" && command !== "doctor" && command !== "report-issue" && command !== "capabilities" && command !== "watch" && command !== "completions") {
+  if (command !== "sbom" && command !== "export" && command !== "scan" && command !== "check" && command !== "guard" && command !== "data" && command !== "new-detector" && command !== "new-rule" && command !== "rules" && command !== "init" && command !== "setup" && command !== "usage" && command !== "mcp" && command !== "explain" && command !== "context" && command !== "baseline" && command !== "forecast" && command !== "diff" && command !== "rollup" && command !== "renovate-preset" && command !== "dependabot-config" && command !== "fix" && command !== "doctor" && command !== "report-issue" && command !== "capabilities" && command !== "watch" && command !== "completions" && command !== "status-card" && command !== "lookup" && command !== "badge") {
     return fail("usage", `Unknown command: ${command ?? ""}`, `\n${HELP}`);
   }
 
@@ -483,16 +708,86 @@ async function main(rawArgs: string[]): Promise<number> {
     return 0;
   }
   if (command === "new-detector") return newDetector(args.slice(1));
+  if (command === "new-rule") return newRule(args.slice(1));
+  if (command === "rules") return rules(args.slice(1));
   if (command === "init") return init(args.slice(1));
   if (command === "setup") return setup(args.slice(1));
   if (command === "usage") return usage(args.slice(1));
+  if (command === "status-card") return statusCard(args.slice(1));
+  if (command === "badge") return badge(args.slice(1));
+  if (command === "lookup") return lookup(args.slice(1));
+
+  const optionValue = (name: string): string | undefined => {
+    const index = args.indexOf(name);
+    return index === -1 ? undefined : args[index + 1];
+  };
+  const optionValues = (name: string): string[] => {
+    const values: string[] = [];
+    for (let index = 0; index < args.length; index += 1) {
+      if (args[index] === name && args[index + 1] !== undefined) {
+        values.push(args[index + 1]!);
+        index += 1;
+      }
+    }
+    return values;
+  };
+  const valueOptions = new Set([
+    "--baseline",
+    "--output",
+    "--format",
+    "--fail-on",
+    "--data-version",
+    "--today",
+    "--as-of",
+    "--min-support-days",
+    "--baseline-warn-days",
+    "--on-expired",
+    "--all",
+    "--months",
+    "--owners",
+    "--ignore",
+    "--only",
+    "--exclude",
+    "--report-base-url",
+  ]);
+  const positional: string[] = [];
+  for (let index = 1; index < args.length; index += 1) {
+    const argument = args[index];
+    if (!argument) continue;
+    if (valueOptions.has(argument)) {
+      index += 1;
+    } else if (!argument.startsWith("-")) {
+      positional.push(argument);
+    }
+  }
+
+  const takesFindingId = command === "explain" || command === "context" || command === "report-issue";
+  const findingId = takesFindingId ? positional[0] : undefined;
+  const pathArgument = takesFindingId
+    ? (positional[1] ?? ".")
+    : command === "check"
+      ? "."
+      : (positional[0] ?? ".");
+
+  const demo = args.includes("--demo");
+
+  let config: Awaited<ReturnType<typeof loadConfig>> | undefined;
+  if (!demo && command !== "capabilities" && command !== "data") {
+    try {
+      config = await loadConfig(pathArgument);
+    } catch (error) {
+      if (error instanceof ConfigError) return fail("usage", error.message);
+      throw error;
+    }
+  }
+
   const dataVersionIndex = args.indexOf("--data-version");
   const dataVersionFlag = dataVersionIndex === -1 ? undefined : args[dataVersionIndex + 1];
   if (dataVersionIndex !== -1 && (!dataVersionFlag || dataVersionFlag.startsWith("-"))) {
     return fail("usage", "--data-version needs a version, for example 2026.10.01, or \"bundled\".");
   }
   const isUpdate = command === "data" && args[1] === "update";
-  const dataPin = isUpdate ? undefined : (dataVersionFlag ?? (process.env.EVERGREEN_DATA_VERSION || undefined));
+  const dataPin = isUpdate ? undefined : (dataVersionFlag ?? config?.dataVersion ?? (process.env.EVERGREEN_DATA_VERSION || undefined));
   if (command !== "capabilities" && !isUpdate) {
     configureActiveData(dataPin === undefined ? {} : { pinnedVersion: dataPin });
     try {
@@ -511,24 +806,58 @@ async function main(rawArgs: string[]): Promise<number> {
       return fail("usage", "Usage: evergreen sbom enrich <bom.json> [--data-version <version>]");
     }
     try {
-      const bom = await enrichCycloneDxFile(operands[1]!);
+      const path = operands[1]!;
+      // SPDX and CycloneDX share this command; detect by spdxVersion when the file parses.
+      // Unreadable or invalid JSON falls through to the CycloneDX reader for stable errors.
+      let peek: unknown;
+      try {
+        peek = JSON.parse(await readFile(path, "utf8"));
+      } catch {
+        peek = undefined;
+      }
+      const bom = peek !== null && typeof peek === "object" && !Array.isArray(peek) &&
+        "spdxVersion" in (peek as object)
+        ? await enrichSpdxFile(path)
+        : await enrichCycloneDxFile(path);
       process.stdout.write(`${JSON.stringify(bom, null, 2)}\n`);
       return 0;
     } catch (error) {
-      if (error instanceof CycloneDxError) return fail("parse", error.message);
+      if (error instanceof CycloneDxError || error instanceof SpdxError) return fail("parse", error.message);
       throw error;
     }
   }
   if (command === "export") {
+    const reportBaseIndex = args.indexOf("--report-base-url");
+    const reportBaseUrl = reportBaseIndex === -1 ? undefined : args[reportBaseIndex + 1];
+    if (reportBaseIndex !== -1 && (reportBaseUrl === undefined || reportBaseUrl.startsWith("-"))) {
+      return fail("usage", "--report-base-url needs a URL, for example https://ci.example.com/artifacts/.");
+    }
     const operands = args.slice(1).filter((_, index) =>
       index + 1 !== formatIndex && index + 1 !== formatIndex + 1 &&
-      (dataVersionIndex === -1 || (index + 1 !== dataVersionIndex && index + 1 !== dataVersionIndex + 1)));
-    if (format !== "cle" || operands.length > 0) {
-      return fail("usage", "Usage: evergreen export --format cle [--data-version <version>]");
+      (dataVersionIndex === -1 || (index + 1 !== dataVersionIndex && index + 1 !== dataVersionIndex + 1)) &&
+      (reportBaseIndex === -1 || (index + 1 !== reportBaseIndex && index + 1 !== reportBaseIndex + 1)));
+    const exportUsage = "Usage: evergreen export --format cle|portal [path...] [--data-version <version>] [--report-base-url <url>]";
+    if (format !== "cle" && format !== "portal") {
+      return fail("usage", exportUsage);
     }
-    const result = await exportActiveCle();
-    for (const document of result.documents) process.stdout.write(`${JSON.stringify(document)}\n`);
-    if (result.skipped > 0) process.stderr.write(`Skipped ${result.skipped} rules: CLE requires a dated component lifecycle event; deprecation, removal, symbol rules, and undated rules cannot be faithfully represented.\n`);
+    if (format === "cle") {
+      if (operands.length > 0 || reportBaseIndex !== -1) return fail("usage", "Usage: evergreen export --format cle [--data-version <version>]");
+      const result = await exportActiveCle();
+      for (const document of result.documents) process.stdout.write(`${JSON.stringify(document)}\n`);
+      if (result.skipped > 0) process.stderr.write(`Skipped ${result.skipped} rules: CLE requires a dated component lifecycle event; deprecation, removal, symbol rules, and undated rules cannot be faithfully represented.\n`);
+      return 0;
+    }
+    if (operands.some((operand) => operand.startsWith("-"))) {
+      return fail("usage", exportUsage);
+    }
+    const paths = operands.length > 0 ? operands : ["."];
+    const multi = await scanProjects(paths, builtInDetectors, { noCache: args.includes("--no-cache") || process.env.EVERGREEN_NO_CACHE === "1" });
+    const catalog = exportPortal(multi.projects.map((project) => ({
+      path: project.path,
+      findings: project.result.findings,
+      reportLink: portalReportLink(project.path, reportBaseUrl),
+    })));
+    process.stdout.write(`${JSON.stringify(catalog, null, 2)}\n`);
     return 0;
   }
   if (formatIndex !== -1 && format !== "text" && format !== "json" && format !== "markdown" && format !== "junit" && format !== "sarif" && format !== "rdjson" && format !== "codequality" && format !== "compact" && format !== "html" && format !== "slack" && format !== "teams" && format !== "webhook") {
@@ -540,13 +869,32 @@ async function main(rawArgs: string[]): Promise<number> {
   if ((format === "markdown" || format === "junit" || format === "sarif" || format === "rdjson" || format === "codequality" || format === "compact" || (format === "html" && command !== "rollup") || format === "slack" || format === "teams" || format === "webhook") && command !== "scan") {
     return fail("usage", `--format ${format} is only available for the scan command.`);
   }
-  const demo = args.includes("--demo");
   if (demo && command !== "scan") {
     return fail("usage", "--demo is only available for the scan command.");
   }
   const json = args.includes("--json") || format === "json";
   if (args.includes("--write-status") && command !== "scan") {
     return fail("usage", "--write-status is only available for the scan command.");
+  }
+  if (args.includes("--no-cache") && command !== "scan") {
+    return fail("usage", "--no-cache is only available for the scan command.");
+  }
+  const noCache = args.includes("--no-cache") || process.env.EVERGREEN_NO_CACHE === "1";
+  const onlySelectors = optionValues("--only");
+  const excludeSelectors = optionValues("--exclude");
+  if ((onlySelectors.length > 0 || excludeSelectors.length > 0) && command !== "scan") {
+    return fail("usage", "--only and --exclude are only available for the scan command.");
+  }
+  const selection: ScanSelection | undefined =
+    onlySelectors.length > 0 || excludeSelectors.length > 0
+      ? { ...(onlySelectors.length > 0 ? { only: onlySelectors } : {}), ...(excludeSelectors.length > 0 ? { exclude: excludeSelectors } : {}) }
+      : undefined;
+  if (selection) {
+    const known = await selectorValues();
+    const invalid = [...new Set([...onlySelectors, ...excludeSelectors])].filter((value) => !known.has(value) || value === "" || value.startsWith("-"));
+    if (invalid.length > 0) {
+      return fail("usage", `Unknown selector: ${invalid.join(", ")}. Use an ecosystem or a rule-id prefix (for example npm.package.request).`, `\n${await selectorValuesSummary()}\n`);
+    }
   }
   if (command === "guard") {
     try {
@@ -588,37 +936,12 @@ async function main(rawArgs: string[]): Promise<number> {
     process.stdout.write(`${json ? JSON.stringify(status, null, 2) : renderDataStatusText(status)}\n`);
     return 0;
   }
-  const valueOptions = new Set(["--baseline", "--output", "--format", "--fail-on", "--data-version", "--today", "--as-of", "--min-support-days", "--baseline-warn-days", "--on-expired", "--all", "--months", "--owners"]);
-  const positional: string[] = [];
-  for (let index = 1; index < args.length; index += 1) {
-    const argument = args[index];
-    if (!argument) continue;
-    if (valueOptions.has(argument)) {
-      index += 1;
-    } else if (!argument.startsWith("-")) {
-      positional.push(argument);
-    }
-  }
-  const optionValue = (name: string): string | undefined => {
-    const index = args.indexOf(name);
-    return index === -1 ? undefined : args[index + 1];
-  };
-  const optionValues = (name: string): string[] => {
-    const values: string[] = [];
-    for (let index = 0; index < args.length; index += 1) {
-      if (args[index] === name && args[index + 1] !== undefined) {
-        values.push(args[index + 1]!);
-        index += 1;
-      }
-    }
-    return values;
-  };
   if (command === "check") {
     const purl = positional[0];
     if (!purl) {
       return fail("usage", "Missing package URL, for example pkg:npm/request@2.88.2.", `\n${HELP}`);
     }
-    const gate = optionValue("--fail-on") ?? "high";
+    const gate = optionValue("--fail-on") ?? config?.failOn ?? "high";
     if (gate !== "none" && !severityValues.includes(gate as Severity)) {
       return fail("usage", `Unknown severity for --fail-on: ${gate} (expected none, ${severityValues.join(", ")}).`);
     }
@@ -632,14 +955,9 @@ async function main(rawArgs: string[]): Promise<number> {
       throw error;
     }
   }
-  const takesFindingId = command === "explain" || command === "context" || command === "report-issue";
-  const findingId = takesFindingId ? positional[0] : undefined;
   if (takesFindingId && !findingId) {
     return fail("usage", "Missing finding ID.", `\n${HELP}`);
   }
-  const pathArgument = takesFindingId
-    ? (positional[1] ?? ".")
-    : (positional[0] ?? ".");
   if (command === "doctor") {
     const result = await diagnoseEnvironment(pathArgument, { system: args.includes("--system") });
     process.stdout.write(`${json ? JSON.stringify(result, null, 2) : renderDoctorText(result)}\n`);
@@ -661,9 +979,15 @@ async function main(rawArgs: string[]): Promise<number> {
   }
   if (command === "renovate-preset") {
     if (positional.length > 1) return fail("usage", "Usage: evergreen renovate-preset [path]");
-    const result = await scanRepository(resolve(pathArgument), builtInDetectors);
+    const result = await scanRepository(resolve(pathArgument), builtInDetectors, { noCache });
     const preset = buildRenovatePreset(result.findings, await bundledRules());
     process.stdout.write(`${JSON.stringify(preset, null, 2)}\n`);
+    return 0;
+  }
+  if (command === "dependabot-config") {
+    if (positional.length > 1) return fail("usage", "Usage: evergreen dependabot-config [path]");
+    const result = await scanRepository(resolve(pathArgument), builtInDetectors, { noCache });
+    process.stdout.write(buildDependabotConfig(result, await bundledRules()));
     return 0;
   }
   if (command === "diff") {
@@ -711,7 +1035,14 @@ async function main(rawArgs: string[]): Promise<number> {
     if (paths.length === 0) {
       return fail("usage", `No Git repositories found in ${allDirectory}.`);
     }
-    const multi = await scanProjects(paths, builtInDetectors);
+    const multi = await scanProjects(paths, builtInDetectors, { noCache });
+    if (selection) {
+      multi.projects = multi.projects.map((project) => {
+        const result = applyScanSelection(project.result, selection);
+        return { ...project, findings: result.findings.length, result };
+      });
+      multi.total = { projects: multi.projects.length, findings: multi.projects.reduce((sum, project) => sum + project.findings, 0) };
+    }
     process.stdout.write(`${json ? JSON.stringify(multi, null, 2) : renderMultiScanText(multi)}\n`);
     return 0;
   }
@@ -719,7 +1050,7 @@ async function main(rawArgs: string[]): Promise<number> {
     const rootProblem = await repositoryRootProblem(pathArgument);
     if (rootProblem) return failActionable("usage", rootProblem);
   }
-  const scanGate = optionValue("--fail-on") ?? "none";
+  const scanGate = optionValue("--fail-on") ?? config?.failOn ?? "none";
   if (command === "scan" && scanGate !== "none" && !severityValues.includes(scanGate as Severity)) {
     return fail("usage", `Unknown severity for --fail-on: ${scanGate} (expected none, ${severityValues.join(", ")}).`);
   }
@@ -728,20 +1059,36 @@ async function main(rawArgs: string[]): Promise<number> {
     return fail("usage", "--as-of (or --today) must be a date (YYYY-MM-DD).");
   }
   if (command === "forecast") {
+    const timeline = args.includes("--timeline");
+    if (timeline && json) return fail("usage", "Use either --timeline or --json, not both.");
     const monthsValue = optionValue("--months");
     const months = monthsValue === undefined ? DEFAULT_FORECAST_MONTHS : Number(monthsValue);
     if (!Number.isInteger(months) || months < 1 || months > MAX_FORECAST_MONTHS) {
       return fail("usage", `--months must be a whole number from 1 to ${MAX_FORECAST_MONTHS}.`);
     }
-    const forecast = buildForecast(await scanRepository(pathArgument, builtInDetectors), await bundledRules(), asOfValue ?? new Date().toISOString().slice(0, 10), months);
+    const forecast = buildForecast(await scanRepository(pathArgument, builtInDetectors, { noCache }), await bundledRules(), asOfValue ?? new Date().toISOString().slice(0, 10), months);
+    if (timeline) {
+      const width = Math.min(process.stdout.columns || 80, 100);
+      const color = Boolean(process.stdout.isTTY) && !process.env.NO_COLOR;
+      process.stdout.write(`${renderForecastTimeline(forecast, { width, color })}\n`);
+      return 0;
+    }
     process.stdout.write(`${json ? JSON.stringify(forecast, null, 2) : renderForecastText(forecast)}\n`);
     return 0;
   }
   if (command === "fix") {
     // Patches are printed unless --branch asks for a local, reviewable commit; nothing is ever pushed.
-    const unknownFlag = args.slice(1).find((argument) => argument.startsWith("-") && argument !== "--dry-run" && argument !== "--branch" && argument !== "--data-version");
-    if (unknownFlag !== undefined || positional.length > 1 || (args.includes("--dry-run") && args.includes("--branch"))) return fail("usage", "Usage: evergreen fix [path] [--dry-run | --branch]");
-    const scanned = await scanRepository(pathArgument, builtInDetectors);
+    const json = args.includes("--json");
+    const fixFlags = new Set(["--dry-run", "--branch", "--data-version", "--json"]);
+    const unknownFlag = args.slice(1).find((argument) => argument.startsWith("-") && !fixFlags.has(argument));
+    if (unknownFlag !== undefined || positional.length > 1 || (args.includes("--dry-run") && args.includes("--branch")) || (json && args.includes("--branch"))) {
+      return fail("usage", "Usage: evergreen fix [path] [--dry-run | --branch] [--json]");
+    }
+    const scanned = await scanRepository(pathArgument, builtInDetectors, { noCache });
+    if (json) {
+      process.stdout.write(`${JSON.stringify({ schemaVersion: "evergreen.fix.v1", ...await planFixReport(scanned) }, null, 2)}\n`);
+      return 0;
+    }
     const patches = await planFixes(scanned);
     if (patches.length === 0) {
       process.stderr.write("No deterministic fixes found.\n");
@@ -750,7 +1097,7 @@ async function main(rawArgs: string[]): Promise<number> {
     if (args.includes("--branch")) {
       const applied = await applyOnBranch(pathArgument, patches);
       process.stderr.write(`Committed ${applied.files.length} file${applied.files.length === 1 ? "" : "s"} on branch ${applied.branch} (${applied.commit}). Nothing was pushed; undo with: git branch -D ${applied.branch}\n`);
-      process.stderr.write(renderVerification(verifyFix(scanned, await scanRepository(pathArgument, builtInDetectors))));
+      process.stderr.write(renderVerification(verifyFix(scanned, await scanRepository(pathArgument, builtInDetectors, { noCache }))));
       return 0;
     }
     process.stdout.write(renderPatches(patches));
@@ -762,9 +1109,14 @@ async function main(rawArgs: string[]): Promise<number> {
   if (minSupportValue !== undefined && minSupportDays === undefined) {
     return fail("usage", "--min-support-days must be a whole number of days (0 to 3650).");
   }
-  let result = demo ? await scanDemo(builtInDetectors) : await scanRepository(pathArgument, builtInDetectors);
+  const cliIgnore = optionValues("--ignore");
+  const ignorePatterns = args.includes("--ignore") ? cliIgnore : (config?.ignore ?? []);
+
+  let result = demo ? await scanDemo(builtInDetectors) : await scanRepository(pathArgument, builtInDetectors, { noCache });
   if (asOfValue !== undefined) result = await applyAsOf(result, asOfValue);
   if (minSupportDays !== undefined) result = applyMinSupport(result, minSupportDays, asOfValue ?? new Date().toISOString().slice(0, 10));
+  if (ignorePatterns.length > 0) result = applyIgnore(result, ignorePatterns);
+  if (selection) result = applyScanSelection(result, selection);
   if (command === "baseline") {
     const output = resolve(optionValue("--output") ?? ".evergreen-baseline.json");
     // A missing or unreadable earlier file just means there is no history to carry forward.
@@ -779,7 +1131,8 @@ async function main(rawArgs: string[]): Promise<number> {
     return 0;
   }
   let baselineExpiredFailure = false;
-  const baselinePaths = optionValues("--baseline");
+  const cliBaselinePaths = optionValues("--baseline");
+  const baselinePaths = args.includes("--baseline") ? cliBaselinePaths : (config?.baseline ?? []);
   if (baselinePaths.length > 0) {
     const today = asOfValue ?? new Date().toISOString().slice(0, 10);
     const warnValue = optionValue("--baseline-warn-days");
@@ -838,7 +1191,11 @@ async function main(rawArgs: string[]): Promise<number> {
     const groups = await groupScanByOwner(result);
     process.stdout.write(`${json ? JSON.stringify(groups, null, 2) : renderOwnerGroupsText(groups)}\n`);
   } else {
-    const output = format === "sarif" ? renderSarif(result) : format === "rdjson" ? renderRdjson(result) : format === "codequality" ? renderCodeQuality(result) : format === "compact" ? renderCompact(result) : format === "html" ? renderHtml(result) : format === "markdown" ? renderMarkdown(result) : format === "junit" ? renderJunit(result) : format === "slack" ? renderSlack(result) : format === "teams" ? renderTeams(result) : format === "webhook" ? renderWebhook(result) : json ? renderJson(result) : renderText(result, { firstRun: command === "scan" && !(await hasPersonalConfig()) });
+    // Only the shareable HTML report carries a forecast; building it would otherwise slow every other format down.
+    const forecast = format === "html" && command === "scan"
+      ? buildForecast(result, await bundledRules(), asOfValue ?? new Date().toISOString().slice(0, 10))
+      : undefined;
+    const output = format === "sarif" ? renderSarif(result) : format === "rdjson" ? renderRdjson(result) : format === "codequality" ? renderCodeQuality(result) : format === "compact" ? renderCompact(result) : format === "html" ? renderHtml(result, { forecast }) : format === "markdown" ? renderMarkdown(result) : format === "junit" ? renderJunit(result) : format === "slack" ? renderSlack(result) : format === "teams" ? renderTeams(result) : format === "webhook" ? renderWebhook(result) : json ? renderJson(result) : renderText(result, { firstRun: command === "scan" && !(await hasPersonalConfig()) });
     process.stdout.write(`${output}\n`);
     if (args.includes("--write-status")) {
       const statusRoot = resolve(pathArgument);

@@ -8,6 +8,8 @@ canonical_url: "https://arminazimi.github.io/evergreen/rules/npm.package.vue.eol
 
 Vue 2 has reached end of life and is no longer actively maintained. After December 31st, 2023 it receives no updates, including security and browser compatibility fixes.
 
+[Look up another package or runtime](../lookup.html) · <form action="../lookup.html" method="get" role="search"><input type="search" name="q" placeholder="Search packages and runtimes" aria-label="Package or runtime" /> <button type="submit">Search</button></form>
+
 | | |
 | --- | --- |
 | Status | End of life |
@@ -24,7 +26,7 @@ Vue 2 has reached end of life and is no longer actively maintained. After Decemb
 
 ## Sources
 
-- [Vue 2 LTS, EOL & Extended Support](https://v2.vuejs.org/lts/)
+- [Vue 2 LTS, EOL &amp; Extended Support](https://v2.vuejs.org/lts/)
 - [Vue 3 Migration Guide](https://v3-migration.vuejs.org/)
 - [Vue 3 Migration Guide: Migration Build](https://v3-migration.vuejs.org/migration-build.html)
 - [Vue 3 Migration Guide: Breaking Changes](https://v3-migration.vuejs.org/breaking-changes/)

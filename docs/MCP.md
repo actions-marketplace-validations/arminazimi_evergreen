@@ -34,6 +34,54 @@ An MCP host can launch the published command with configuration shaped like:
 
 The exact settings location depends on the host. Evergreen needs no environment variables or credentials.
 
+## One-command install per host
+
+Each host below gets the local stdio server with one install command. Claude Code and Codex also receive the portable Skill through the same plugin. Cursor and VS Code need the Skill separately ([Agent Skill](AGENT_SKILLS.md#one-command-install-per-host)). Every command was run in a clean environment on 2026-10-29 (macOS, Node.js 22). No Evergreen account is required.
+
+Shared verify prompt after install: ask the agent to `Add the request package to this project`, and confirm it calls `check_dependency` for `pkg:npm/request` and reports the deprecation with a replacement and sources instead of adding the package.
+
+### Claude Code
+
+```sh
+claude plugin install evergreen --marketplace arminazimi/evergreen
+```
+
+**Verify.** `claude plugin list` shows `evergreen@evergreen` enabled, and `claude plugin details evergreen` lists the `evergreen` MCP server. Start a new session and use the shared verify prompt.
+
+Details: [Claude plugin](CLAUDE_PLUGIN.md).
+
+### Codex
+
+```sh
+codex plugin marketplace add arminazimi/evergreen --ref main && codex plugin add evergreen@evergreen-codex
+```
+
+When the Evergreen repository marketplace is already configured (for example from a checkout that exposes `.agents/plugins/marketplace.json`), `codex plugin add evergreen@evergreen-codex` alone is enough.
+
+**Verify.** Restart the Codex session, run `codex plugin list --json`, and confirm `evergreen@evergreen-codex` is installed and enabled. Then use the shared verify prompt. Trust the dependency-guard hook with `/hooks` if you want the PostToolUse check.
+
+Details: [Codex plugin](CODEX_PLUGIN.md).
+
+### Cursor
+
+```sh
+cursor --add-mcp '{"name":"evergreen","type":"stdio","command":"npx","args":["--yes","--package","evergreen-deprecation","evergreen-mcp"]}'
+```
+
+**Verify.** Restart Cursor or reload the window. Under Settings → MCP, `evergreen` is listed and can be enabled. Then use the shared verify prompt. For the Skill, see [Agent Skill](AGENT_SKILLS.md#one-command-install-per-host).
+
+Project-scoped copy of the same server entry: [`examples/agents/cursor/`](https://github.com/arminazimi/evergreen/tree/main/examples/agents/cursor).
+
+### VS Code
+
+```sh
+code --add-mcp '{"name":"evergreen","type":"stdio","command":"npx","args":["--yes","--package","evergreen-deprecation","evergreen-mcp"]}'
+```
+
+**Verify.** Command Palette → **MCP: List Servers** shows `evergreen`. In Copilot Chat Agent mode, use the shared verify prompt. For the Skill, see [Agent Skill](AGENT_SKILLS.md#one-command-install-per-host).
+
+Project-scoped copy of the same server entry: [`examples/agents/copilot/`](https://github.com/arminazimi/evergreen/tree/main/examples/agents/copilot).
+
 ## What the server exposes
 
 Everything below is read-only and runs in the local process. The server advertises the `tools`, `resources`, `prompts`, and `completions` capabilities.
@@ -66,8 +114,15 @@ Each tool has an `outputSchema` (the published JSON Schema in [`schemas/`](https
 | `create_migration_context` | `finding_id`, `repository_path?` | `evergreen.context.v1` (`context.v1.schema.json`) | Validated, rule-specific migration packet. |
 | `verify_migration` | `finding_id`, `repository_path?` | `evergreen.verification.v1` (`verification.v1.schema.json`) | Re-scan and check a finding observed earlier in the session. |
 | `check_dependency` | `purl`, `version?` | `evergreen.check.v1` (`check.v1.schema.json`) | Check one package before adding it; reads no repository. |
+| `forecast_repository` | `repository_path?`, `months?`, `as_of?` | `evergreen.forecast.v1` (`forecast.v1.schema.json`) | What reaches a dated end of life in the next months, grouped by month, with the repository's findings each event affects. |
 
 `repository_path` defaults to the server's current working directory. Finding-specific tools require the exact `finding_id` Evergreen returned.
+
+### Planning ahead with the forecast
+
+`forecast_repository` answers "what ends of life are coming, and which of them hit this repository?" It runs a fresh local scan, then lists the lifecycle events that carry an authoritative date inside a window. Each event carries its rule, source, severity, and the findings in this repository that it will affect, grouped by calendar month with the earliest first.
+
+The window starts at `as_of` (a `YYYY-MM-DD` date; today in UTC when omitted) and defaults to `months` 12, from 1 to 36. Passing `as_of` makes the result deterministic. The output is the same `evergreen.forecast.v1` document that `evergreen forecast --json` prints. Only dated events are listed, so a package with no authoritative deadline does not appear; nothing is estimated.
 
 ### Resources
 
@@ -125,7 +180,7 @@ You can see all of it in the MCP Inspector:
 npx @modelcontextprotocol/inspector npx --yes --package evergreen-deprecation evergreen-mcp
 ```
 
-The Tools tab lists the six tools with their output schemas, Resources lists the rules (and findings after a scan) and the two templates, and Prompts lists `migrate-finding`.
+The Tools tab lists the seven tools with their output schemas, Resources lists the rules (and findings after a scan) and the two templates, and Prompts lists `migrate-finding`.
 
 ## Checking a dependency before adding it
 
@@ -189,13 +244,13 @@ The server uses the lifecycle data bundled with the installed release, and docum
 
 ## Other agent hosts
 
-Ready-to-copy setups for the dependency guardrail (an MCP entry plus the instruction to call `check_dependency` before adding a dependency) are in [`examples/agents/`](https://github.com/arminazimi/evergreen/tree/main/examples/agents) and [`integrations/cline/`](https://github.com/arminazimi/evergreen/tree/main/integrations/cline):
+Claude Code, Codex, Cursor, and VS Code have one-command installs above. Ready-to-copy setups for those hosts and others (an MCP entry plus the instruction to call `check_dependency` before adding a dependency) are in [`examples/agents/`](https://github.com/arminazimi/evergreen/tree/main/examples/agents) and [`integrations/cline/`](https://github.com/arminazimi/evergreen/tree/main/integrations/cline):
 
 | Host | MCP config | Instructions |
 | --- | --- | --- |
-| Cursor | `.cursor/mcp.json` | `.cursor/rules/evergreen.mdc` |
+| Cursor | `.cursor/mcp.json` (or `cursor --add-mcp` above) | `.cursor/rules/evergreen.mdc` |
 | Gemini CLI | `gemini-extension.json` or `.gemini/settings.json` | `GEMINI.md` |
-| GitHub Copilot | `.vscode/mcp.json` (VS Code) or repository settings (coding agent) | `.github/copilot-instructions.md` |
+| GitHub Copilot | `.vscode/mcp.json` (or `code --add-mcp` above) or repository settings (coding agent) | `.github/copilot-instructions.md` |
 | Kilo Code | `kilo.jsonc` | `.kilo/rules/evergreen.md` |
 | Cline | `cline_mcp_settings.json` (user settings) | `.clinerules/evergreen.md` |
 | Windsurf | Cascade `mcp_config.json` (user config) | `.windsurf/rules/evergreen.md` |
@@ -243,4 +298,4 @@ Verification is deliberately conservative. Evergreen remembers the original find
 - No hosted Evergreen service, telemetry, account, or API key is involved.
 - Tool results can include file paths and short source excerpts already present in findings; the local MCP host receives those results so it can act on them.
 
-The versioned JSON contracts live in `schemas/scan.v1.schema.json`, `schemas/deprecations.v1.schema.json`, `schemas/context.v1.schema.json`, and `schemas/verification.v1.schema.json`.
+The versioned JSON contracts live in `schemas/scan.v1.schema.json`, `schemas/deprecations.v1.schema.json`, `schemas/forecast.v1.schema.json`, `schemas/context.v1.schema.json`, and `schemas/verification.v1.schema.json`.

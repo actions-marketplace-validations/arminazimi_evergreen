@@ -15,6 +15,8 @@ Evergreen has no telemetry and never will: a scan does not phone home, and nothi
 
 Repositories owned by the project (`arminazimi/*`) are left out, so dogfooding does not inflate the number. The three counts are reported separately and may overlap when one repository uses more than one integration; add them as an upper bound and compare them as a trend, not as a precise population.
 
+Teams on Azure DevOps are outside these counts by construction: their pipelines live on `dev.azure.com`, which GitHub code search cannot see. The [Azure Pipelines step template](../integrations/azure-pipelines/evergreen.yml) serves them the same scan-and-gate the other integrations provide; counting its use would need a metric of its own, not an extension of the code-search ones above.
+
 ## Measuring repeat use
 
 A repository that keeps Evergreen in CI for a month is a real user. Adding an Action once may be an experiment or a brief evaluation; continuing to run it across two consecutive calendar months reflects sustained adoption.
@@ -38,11 +40,30 @@ Each snapshot records the distinct public repositories whose `.github/workflows`
 | `npmWeeklyDownloads` | npm's public download API, last week, package `evergreen-deprecation` |
 | `mcpRegistryListed` | Whether the official MCP Registry has an entry whose repository is `arminazimi/evergreen` |
 | `skillsShInstalls` | The install count published on the skills.sh page of the Evergreen skill |
+| `docsPageViews` | Pageviews of the documentation site in the 30 days ending on the snapshot date, from its public GoatCounter visitor counter |
 | `githubStars`, `githubForks` | The GitHub repository |
 | `scorecardScore` | OpenSSF Scorecard API, overall score (0–10) for `github.com/arminazimi/evergreen` |
 | `externalContributors`, `firstTimeContributors` | External (non-owner, non-bot) contributors with merged pull requests, and first-time contributors whose earliest merged pull request was merged in the snapshot's calendar month, from merged PRs in the GitHub search API (max 1,000 results) |
 
 npm downloads include CI installs and mirrors, so they overstate unique users; the skills.sh figure only counts installs through that registry. Snapshots also link to each external service's latest report under `serviceReports` (`openSsfScorecard`, `socket`, `depsDev`, `npmsIo`, `snykAdvisor`, `starHistory`).
+
+### Docs traffic
+
+GitHub Pages exposes no traffic data, so visits to the documentation site are counted by [GoatCounter](https://www.goatcounter.com/), which sets no cookies, stores no personal data, and publishes the count at a public URL. One-time setup:
+
+1. Create a site at goatcounter.com and note its code; `<site>` below stands for that code.
+2. Enable **Allow using the visitor counter** in the site's settings. Without it the counter returns HTTP 403.
+3. Add the analytics entry to `docs/_config.yml`:
+
+   ```yaml
+   slipway:
+     analytics:
+       goatcounter: https://<site>.goatcounter.com/count
+   ```
+
+4. Set `EVERGREEN_GOATCOUNTER_SITE=<site>` when taking a snapshot.
+
+The snapshot reads `https://<site>.goatcounter.com/counter/TOTAL.json` with `start` and `end` dates covering the 30 days ending on the snapshot date, the same public endpoint anyone can open. It records pageviews, not unique visitors. GoatCounter caches its counter response for up to four hours, so a snapshot taken during a spike can lag; visits from people who block the script or disable JavaScript are not counted, and bots are excluded by GoatCounter's own filtering. Without `EVERGREEN_GOATCOUNTER_SITE` the metric is `unavailable` with that reason, never zero.
 
 ## Taking a snapshot
 
@@ -52,13 +73,15 @@ A maintainer runs the tool, about once a week:
 npm run metrics:adoption
 ```
 
-It needs the network and a GitHub token in `GITHUB_TOKEN` or `GH_TOKEN` (code search is not available anonymously) and writes `metrics/adoption/<date>.json`. Commit the file. The tool is never part of a scan, of `npm run check`, or of pull-request CI.
+It needs the network and a GitHub token in `GITHUB_TOKEN` or `GH_TOKEN` (code search is not available anonymously) and writes `metrics/adoption/<date>.json`. Set `EVERGREEN_GOATCOUNTER_SITE` to the documentation site's GoatCounter code to include docs traffic. Commit the file. The tool is never part of a scan, of `npm run check`, or of pull-request CI.
 
 Each metric is either `ok` with a `value` and its `source`, or `unavailable` with a `reason`; one failing source never stops the others. A `detail` of `lower bound` means GitHub returned fewer matching files than it reported (code search returns at most 1,000 results) or rate-limited the run, so the true number is at least the one shown. An unpublished package is `unavailable` rather than zero.
 
 ## Reading the trend
 
 Compare snapshots of the same metric over time. A change in code-search coverage on GitHub's side can move a number without any change in adoption, so look for movement across several weeks, and never mix an `unavailable` week into a trend as if it were zero.
+
+The monthly report's channel table compares the newest snapshot of the month with the newest snapshot of the previous month and shows the difference for each channel; a dash means one side is unavailable, which is never treated as zero.
 
 The first snapshot is `metrics/adoption/2026-10-16.json`. At that date the package was not yet published on npm, and no public repository outside the project used the Action.
 
@@ -127,6 +150,36 @@ node dist/src/cli.js renovate-preset .
 - **Runtime pins** become `allowedVersions` rules for Node.js (`node-version` / `node`) and Python (`docker` / `python`) so Renovate stays on a supported release line.
 - Validate the printed JSON with Renovate before merging it into config: `npx --yes --package renovate -- renovate-config-validator path/to/preset.json`.
 
+## Feeding Dependabot
+
+Repositories that run Dependabot instead get a `dependabot.yml` fragment printed to stdout. Each mapped ecosystem and directory with deprecated-package findings becomes a weekly `updates` entry whose `groups.patterns` list the deprecated packages, so their updates land in one grouped pull request per directory.
+
+```bash
+node dist/src/cli.js dependabot-config .
+```
+
+- The command prints YAML only; it never writes `.github/dependabot.yml` or any other file. Review the fragment before merging it into your existing config.
+- Package ecosystems map to their Dependabot `package-ecosystem` (npm → npm, Python → pip, .NET → nuget, Go → gomod, and so on). On the JVM the finding's build file decides: `pom.xml` → maven, and Gradle build files (`build.gradle`, `build.gradle.kts`, `gradle/libs.versions.toml`) → gradle. Workflow findings always point at `/`, because Dependabot picks the workflows up there itself. Runtime findings such as Node.js and Python end of life have no Dependabot equivalent and produce no entry.
+- Grouped `patterns` come from the deprecated packages' PURL identities; ecosystems whose findings have no usable package name get a plain weekly entry without a group. When the scan finds nothing mappable, the fragment is comments only explaining that, because Dependabot requires at least one `updates` entry and an empty `updates: []` is not accepted.
+
+## CircleCI
+
+Evergreen ships the source of a CircleCI Orb, [`integrations/circleci/orb.yml`](../integrations/circleci/orb.yml). Its `scan` command and job mirror the [GitHub Action](GITHUB_ACTION.md): `path`, `baseline`, `baseline-warn-days`, `on-expired`, `min-support-days`, and `fail-on-severity` have the same meanings and defaults, the JSON report is kept as a job artifact even when the gate fails, and the `version` parameter pins the `evergreen-deprecation` npm package the job runs. Once the Orb is published to the CircleCI registry, add the job to `.circleci/config.yml`:
+
+```yaml
+version: 2.1
+orbs:
+  evergreen: arminazimi/evergreen@<version>
+workflows:
+  evergreen:
+    jobs:
+      - evergreen/scan:
+          baseline: .evergreen-baseline.json
+          fail-on-severity: high
+```
+
+`<version>` is the Orb's published version; the `version` input then defaults to the `evergreen-deprecation` release the Orb source pins, which `tests/circleci-orb.test.ts` checks. The job needs no special permissions: it reads the files CircleCI checks out, downloads the pinned package with `npx`, and makes no network requests during the scan itself. Publishing the Orb to the CircleCI registry is a maintainer step; the source and its validation test live in this repository.
+
 ## Socket report for 0.7.1
 
 Socket scans the published version, so the 0.7.1 release (2026-10-27) is the first one whose report reflects the tarball fix from #1350 and the trimmed WASM from #1352. Its score page shows Vulnerability 100, Quality 100, License 100, Maintenance 94, and Supply Chain Security 79. Socket lists no CVE alert and no deprecation alert for the package or its dependencies. Five package alerts remain, and each is expected:
@@ -147,7 +200,7 @@ The package metadata itself has nothing to fix: the repository, homepage, bug tr
 
 | Service | Score | Top reasons |
 | --- | --- | --- |
-| OpenSSF Scorecard | 3.1 (run of 2026-10-27, published from `main` at 5bc33d0 by [scorecard.yml](../.github/workflows/scorecard.yml)) | The five low checks are the actionable part; the accepted gaps (Branch-Protection, SAST) are documented in [SECURITY.md](SECURITY.md). |
+| OpenSSF Scorecard | 3.1 (run of 2026-10-27, published from `main` at 5bc33d0 by [scorecard.yml](../.github/workflows/scorecard.yml)) | The five low checks are the actionable part; the accepted gap (Branch-Protection) is documented in [SECURITY.md](SECURITY.md). |
 | deps.dev | no score | The project page for `github.com/arminazimi/evergreen` does not exist yet, so the UI shows no Scorecard or project metrics. The version record itself is complete: 0.7.1 resolves with no OSV advisories, license `Apache-2.0`, and SLSA provenance that verifies against the GitHub source. |
 | npms.io | not indexed | The package does not appear in the index, and there is no metadata defect on our side: the index has not analyzed the modules it holds since the end of 2022 (its entry for `zod` was last analyzed 2022-12-13), so packages published in October 2026 do not get scores. Treat npms.io as unavailable until its crawler resumes. |
 | Snyk Advisor | retired | Every Snyk Advisor URL now redirects to the `security.snyk.io` package page, which publishes no health score. That page reports no direct vulnerabilities in Snyk's database for any of the eleven published versions. |
@@ -161,7 +214,7 @@ The Scorecard checks that are lowest and what they would need:
 | Maintained | 0 | The repository is newer than 90 days at the time of the run; this lifts itself as the repository ages and no action is needed. |
 | Code-Review | 0 | Approving reviews are deliberately not a merge gate so agent pull requests can merge after green checks; a policy choice, not a defect. |
 | Dependency-Update-Tool | 0 | No Dependabot or Renovate configuration exists. Tracked in #1374. |
-| SAST | 0 | No separate CodeQL analysis runs today; accepted in [SECURITY.md](SECURITY.md). Tracked in #1377. |
+| SAST | 0 | [CodeQL](../.github/workflows/codeql.yml) analyzes every push to `main` and every pull request as of #1377; the score lifts on the next run. |
 | Signed-Releases | 2 | Only the npm attestations are signed; the last four GitHub release artifacts are not. Tracked in #1376. |
 
 Security-Policy, Token-Permissions, License, Packaging, and CI-Tests all score 10. Revisit this review on the same cadence as the Socket table: at each release. Scan findings never use these services, so none of this affects a scan; it is adoption and trust context only.

@@ -6,7 +6,9 @@
 //   node dist/tools/monthly-report.js --out docs/reports/monthly-2026-10.md
 //   node dist/tools/monthly-report.js --date 2026-10
 //
-// Reads local repository files and git log only; never uses the network.
+// Reads local repository files and git log only; never uses the network. Pull-request review
+// timestamps are in neither input, so the report publishes the first-review target from
+// CONTRIBUTING.md ("Review expectations") without a measured value.
 
 import { execFileSync } from "node:child_process";
 import { mkdir, readFile, readdir, writeFile } from "node:fs/promises";
@@ -19,6 +21,15 @@ import { getCapabilityManifest } from "../src/capabilities.js";
 import { REGISTRY_V2_SCHEMA_VERSION } from "../src/registry.js";
 import type { RegistryV2, RegistryV2Rule } from "../src/registry.js";
 import { VERSION } from "../src/version.js";
+
+/**
+ * Published first-review target for a first-time contributor's pull request, in working days.
+ *
+ * The target is stated in CONTRIBUTING.md ("Review expectations") and repeated in every report so it
+ * stays visible. The report reads local files and git history, which do not record when a pull request
+ * was first reviewed, so it prints the target without a measured value instead of inventing one.
+ */
+export const FIRST_REVIEW_TARGET_WORKING_DAYS = 2;
 
 export interface RuleMetrics {
   total: number;
@@ -70,6 +81,8 @@ export interface ContributorMetrics {
 export interface AdoptionChannel {
   label: string;
   value: number | "unavailable";
+  /** The channel's value in the newest snapshot of the previous month; null when that is unavailable. */
+  previous: number | null;
   note?: string | undefined;
 }
 
@@ -399,12 +412,23 @@ export async function collectAdoptionMetrics(options: CollectAdoptionOptions = {
   const repeatNote =
     repeatRaw !== "unavailable" && typeof repeatRaw === "number" ? `${repeatRaw} recurring` : undefined;
 
+  const channel = (label: string, key: string, note?: string): AdoptionChannel => {
+    const previousValue = metricValue(previous, key);
+    return {
+      label,
+      value: metricValue(current, key),
+      previous: typeof previousValue === "number" ? previousValue : null,
+      ...(note ? { note } : {}),
+    };
+  };
+
   const channels: AdoptionChannel[] = [
-    { label: "GitHub Action repositories", value: metricValue(current, "githubActionRepositories"), note: repeatNote },
-    { label: "Pre-commit hook repositories", value: metricValue(current, "preCommitRepositories") },
-    { label: "GitLab component repositories", value: metricValue(current, "gitlabComponentRepositories") },
-    { label: "npm weekly downloads", value: metricValue(current, "npmWeeklyDownloads") },
-    { label: "skills.sh installs", value: metricValue(current, "skillsShInstalls") },
+    channel("GitHub Action repositories", "githubActionRepositories", repeatNote),
+    channel("Pre-commit hook repositories", "preCommitRepositories"),
+    channel("GitLab component repositories", "gitlabComponentRepositories"),
+    channel("npm weekly downloads", "npmWeeklyDownloads"),
+    channel("skills.sh installs", "skillsShInstalls"),
+    channel("Docs page views", "docsPageViews"),
   ];
 
   return {
@@ -453,6 +477,15 @@ export async function collectReportData(options: CollectReportOptions = {}): Pro
 /** Formats integer numbers with standard comma separators. */
 function formatNumber(value: number): string {
   return value.toLocaleString("en-US");
+}
+
+/** Signed change against the previous month, never treating a missing value as zero. */
+function formatChange(value: number | "unavailable", previous: number | null): string {
+  if (value === "unavailable") return "unavailable";
+  if (previous === null) return "—";
+  const diff = value - previous;
+  if (diff === 0) return "0";
+  return `${diff > 0 ? "+" : "-"}${formatNumber(Math.abs(diff))}`;
 }
 
 /** Generates the Markdown monthly progress report. */
@@ -605,8 +638,10 @@ export function generateMonthlyReport(data: MonthlyReportData): string {
   lines.push("");
   lines.push("### Channel breakdown");
   lines.push("");
-  lines.push("| Channel | Count |");
-  lines.push("| --- | --- |");
+  lines.push("The change compares the newest snapshot of this month with the newest snapshot of the previous month.");
+  lines.push("");
+  lines.push("| Channel | Count | Change vs last month |");
+  lines.push("| --- | --- | --- |");
   for (const channel of data.adoption.channels) {
     const countCell =
       channel.value === "unavailable"
@@ -614,7 +649,7 @@ export function generateMonthlyReport(data: MonthlyReportData): string {
         : channel.note
           ? `${formatNumber(channel.value)} (${channel.note})`
           : formatNumber(channel.value);
-    lines.push(`| ${channel.label} | ${countCell} |`);
+    lines.push(`| ${channel.label} | ${countCell} | ${formatChange(channel.value, channel.previous)} |`);
   }
   lines.push("");
   if (data.adoption.snapshotDate) {
@@ -622,6 +657,18 @@ export function generateMonthlyReport(data: MonthlyReportData): string {
   } else {
     lines.push("Methodology and sources: [docs/ADOPTION.md](docs/ADOPTION.md)");
   }
+  lines.push("");
+
+  // Review responsiveness section
+  lines.push("## Review responsiveness");
+  lines.push("");
+  lines.push(`Evergreen's published target is a first review within **${FIRST_REVIEW_TARGET_WORKING_DAYS} working days** of a first-time contributor opening a pull request; the clock starts when the pull request is opened for review, or when a draft is marked ready for review. See [CONTRIBUTING.md](CONTRIBUTING.md#review-expectations).`);
+  lines.push("");
+  lines.push("| Metric | This report | Target |");
+  lines.push("| --- | --- | --- |");
+  lines.push(`| First review of a first-time contributor's pull request | not measured | ${FIRST_REVIEW_TARGET_WORKING_DAYS} working days |`);
+  lines.push("");
+  lines.push("*This report reads local files and git history, which do not record when a pull request was first reviewed. The target is published here every month so it stays visible; the report does not print a number it cannot reproduce.*");
   lines.push("");
 
   // Contributors section

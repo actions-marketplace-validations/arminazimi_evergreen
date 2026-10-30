@@ -8,6 +8,8 @@ canonical_url: "https://arminazimi.github.io/evergreen/rules/database.azure-mysq
 
 The Azure Database for MySQL version support policy lists 2026-09-30 as the standard support end date for MySQL 5.7. Azure moves the server to paid Extended Support on 2026-10-01; the MySQL community retired 5.7 on 2023-10-31.
 
+[Look up another package or runtime](../lookup.html) · <form action="../lookup.html" method="get" role="search"><input type="search" name="q" placeholder="Search packages and runtimes" aria-label="Package or runtime" /> <button type="submit">Search</button></form>
+
 | | |
 | --- | --- |
 | Status | End of support |
@@ -24,9 +26,9 @@ The Azure Database for MySQL version support policy lists 2026-09-30 as the stan
 
 ## Sources
 
-- [Azure Database for MySQL version support policy](https://learn.microsoft.com/azure/mysql/flexible-server/concepts-supported-versions)
-- [MySQL supported platforms and lifecycle](https://www.mysql.com/support/supportedplatforms/database.html)
-- [endoflife.date: MySQL](https://endoflife.date/mysql)
+- [Azure Database for MySQL version support policy](https://learn.microsoft.com/azure/mysql/flexible-server/concepts-supported-versions) (accessed 2026-10-26)
+- [MySQL supported platforms and lifecycle](https://www.mysql.com/support/supportedplatforms/database.html) (accessed 2026-10-26)
+- [endoflife.date: MySQL](https://endoflife.date/mysql) (accessed 2026-10-26)
 
 ## Migration
 

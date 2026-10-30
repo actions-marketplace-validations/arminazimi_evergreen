@@ -11,7 +11,10 @@ hosted service.
 
 ## Start here
 
+- [Five-step quickstart](QUICKSTART.md)
 - [90-second demo](DEMO.md)
+- [Start contributing](CONTRIBUTE.md)
+- [Evergreen compared with Renovate, Dependabot, and endoflife.date](compare/index.md)
 - [v0.1 validation results](VALIDATION.md)
 - [Environment doctor and compatibility matrix](COMPATIBILITY.md)
 - [Capability manifest and auto-discovery contract](CAPABILITIES.md)
@@ -30,6 +33,7 @@ hosted service.
 - [Terms](TERMS.md)
 - [Cross-host plugin evaluation and security boundaries](PLUGIN_EVALS.md)
 - [GitHub Action](GITHUB_ACTION.md)
+- [Organization rollout](ORG_ROLLOUT.md)
 - [Detector SDK](DETECTORS.md)
 - [Architecture and trust boundaries](ARCHITECTURE.md)
 - [Roadmap](ROADMAP.md)

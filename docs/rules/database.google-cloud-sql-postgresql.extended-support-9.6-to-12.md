@@ -8,6 +8,8 @@ canonical_url: "https://arminazimi.github.io/evergreen/rules/database.google-clo
 
 The Cloud SQL for PostgreSQL version policy lists PostgreSQL 9.6, 10, 11, and 12 with extended support starting 2025-02-01 and deprecation on 2028-02-01. The PostgreSQL community no longer supports those majors, and Cloud SQL charges for extended support.
 
+[Look up another package or runtime](../lookup.html) · <form action="../lookup.html" method="get" role="search"><input type="search" name="q" placeholder="Search packages and runtimes" aria-label="Package or runtime" /> <button type="submit">Search</button></form>
+
 | | |
 | --- | --- |
 | Status | End of support |
@@ -24,8 +26,8 @@ The Cloud SQL for PostgreSQL version policy lists PostgreSQL 9.6, 10, 11, and 12
 
 ## Sources
 
-- [Cloud SQL for PostgreSQL database versions and version policies](https://cloud.google.com/sql/docs/postgres/db-versions)
-- [PostgreSQL versioning policy](https://www.postgresql.org/support/versioning/)
+- [Cloud SQL for PostgreSQL database versions and version policies](https://cloud.google.com/sql/docs/postgres/db-versions) (accessed 2026-10-26)
+- [PostgreSQL versioning policy](https://www.postgresql.org/support/versioning/) (accessed 2026-10-26)
 
 ## Migration
 

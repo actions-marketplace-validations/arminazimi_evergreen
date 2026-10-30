@@ -8,6 +8,8 @@ canonical_url: "https://arminazimi.github.io/evergreen/rules/database.azure-post
 
 The Azure Database for PostgreSQL version policy lists 2026-07-31 as the standard support end date for PostgreSQL 11, 12, and 13. After that date Azure offers only time-boxed Extended Support, and it does not allow new servers on those major versions.
 
+[Look up another package or runtime](../lookup.html) · <form action="../lookup.html" method="get" role="search"><input type="search" name="q" placeholder="Search packages and runtimes" aria-label="Package or runtime" /> <button type="submit">Search</button></form>
+
 | | |
 | --- | --- |
 | Status | End of support |
@@ -24,8 +26,8 @@ The Azure Database for PostgreSQL version policy lists 2026-07-31 as the standar
 
 ## Sources
 
-- [Azure Database for PostgreSQL version policy](https://learn.microsoft.com/azure/postgresql/flexible-server/concepts-version-policy)
-- [PostgreSQL versioning policy](https://www.postgresql.org/support/versioning/)
+- [Azure Database for PostgreSQL version policy](https://learn.microsoft.com/azure/postgresql/flexible-server/concepts-version-policy) (accessed 2026-10-26)
+- [PostgreSQL versioning policy](https://www.postgresql.org/support/versioning/) (accessed 2026-10-26)
 
 ## Migration
 

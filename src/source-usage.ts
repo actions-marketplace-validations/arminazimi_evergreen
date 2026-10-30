@@ -33,6 +33,9 @@ const ignoredDirectories = new Set([
 
 const maximumFileBytes = 1_000_000;
 
+/** Directory read errors that skip the subtree instead of failing every finding in the scan. */
+const skippedReadCodes = new Set(["EACCES", "ENOENT", "ENOTDIR", "EPERM"]);
+
 interface SourceFile {
   absolutePath: string;
   path: string;
@@ -80,16 +83,27 @@ function languageFor(path: string): SourceLanguage | undefined {
 async function sourceFiles(root: string): Promise<SourceFile[]> {
   const files: SourceFile[] = [];
   const walk = async (directory: string): Promise<void> => {
-    const entries = await readdir(directory, { withFileTypes: true });
-    for (const entry of entries.sort((left, right) => left.name.localeCompare(right.name))) {
-      const path = resolve(directory, entry.name);
+    let entries;
+    try {
+      entries = await readdir(directory, { withFileTypes: true });
+    } catch (error) {
+      const code = (error as NodeJS.ErrnoException).code;
+      if (code && skippedReadCodes.has(code)) return;
+      throw error;
+    }
+    // Do not sort directory entries here: usages are sorted by path at the end of analyzeSourceUsage.
+    // Skipping localeCompare on huge non-source trees is the large-monorepo win.
+    for (const entry of entries) {
       if (entry.isDirectory()) {
-        if (!ignoredDirectories.has(entry.name)) await walk(path);
+        if (!ignoredDirectories.has(entry.name)) await walk(resolve(directory, entry.name));
         continue;
       }
       if (!entry.isFile()) continue;
-      const language = languageFor(path);
-      if (!language || (await stat(path)).size > maximumFileBytes) continue;
+      // Extension check on the basename avoids joining/statting every filler file in a monorepo.
+      const language = languageFor(entry.name);
+      if (!language) continue;
+      const path = resolve(directory, entry.name);
+      if ((await stat(path)).size > maximumFileBytes) continue;
       files.push({ absolutePath: path, path: relativePosix(root, path), language });
     }
   };

@@ -8,6 +8,8 @@ canonical_url: "https://arminazimi.github.io/evergreen/rules/nodejs.symbol.util.
 
 Node.js removed util.isObject (DEP0053: documentation-only since v4.0.0, runtime deprecation since v22.0.0, end-of-life since v23.0.0).
 
+[Look up another package or runtime](../lookup.html) · <form action="../lookup.html" method="get" role="search"><input type="search" name="q" placeholder="Search packages and runtimes" aria-label="Package or runtime" /> <button type="submit">Search</button></form>
+
 | | |
 | --- | --- |
 | Status | Removed |
@@ -16,7 +18,7 @@ Node.js removed util.isObject (DEP0053: documentation-only since v4.0.0, runtime
 | Component | `pkg:generic/nodejs` |
 | Affected versions | `vers:semver/>=23.0.0` |
 | Date from the source | The source gives no day |
-| Replacement | arg && typeof arg === 'object' |
+| Replacement | arg &amp;&amp; typeof arg === 'object' |
 | Evidence last seen | 2026-10-21 |
 | Reviewed | 2026-10-21 by arminazimi |
 | Review due | 2027-10-21 (365 days after the last review) |
@@ -34,7 +36,7 @@ Node.js removed util.isObject (DEP0053: documentation-only since v4.0.0, runtime
 
 **Steps**
 
-1. **Replace the usage.** Replace each reported use of util.isObject with arg && typeof arg === 'object'.
+1. **Replace the usage.** Replace each reported use of util.isObject with arg &amp;&amp; typeof arg === 'object'.
 
 **Verification**
 

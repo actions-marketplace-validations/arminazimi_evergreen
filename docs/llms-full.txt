@@ -31,6 +31,52 @@ The context packet identifies `package.json` and `src/client.js`, preserves HTTP
 
 For an agent-driven version of the same flow, start `evergreen-mcp` and use `scan_repository`, `explain_deprecation`, `create_migration_context`, and `verify_migration` in one local session.
 
+## Example gallery
+
+`examples/gallery` holds one minimal repository per detector, each with the exact findings a scan must return in `expected.json`. They exist to show each detector working in thirty seconds; they are deliberately outdated, so do not copy them into a real project.
+
+| Ecosystem | Directory | What it declares |
+|---|---|---|
+| Android | `examples/gallery/android` | Play Billing 5 in a Groovy and a Kotlin build script |
+| CI images | `examples/gallery/ci-images` | Ubuntu 20.04 and Windows 2019 agents in Azure Pipelines |
+| Containers | `examples/gallery/container` | Old Node, Python, Debian, Ubuntu, Alpine, Redis, and PostgreSQL base images across Dockerfiles, Compose, and a devcontainer |
+| C++ | `examples/gallery/cpp` | `cmake_minimum_required` below the policy floor |
+| Dart | `examples/gallery/dart` | A `pubspec.yaml` SDK constraint on an unsupported Dart release |
+| Databases | `examples/gallery/database` | MySQL 5.7 and PostgreSQL 12 in Compose and Terraform |
+| Deno | `examples/gallery/deno` | A Deno 1.x project and a Bun 1.0 pin |
+| .NET | `examples/gallery/dotnet` | .NET 3.1, 5.0, 6.0, and 8.0 targets, + `global.json`, `Directory.Build.props`, central package versions, and a deprecated Azure storage package |
+| Elixir | `examples/gallery/elixir` | Elixir 1.14 and Erlang 25, plus a retired package in `mix.exs` and `mix.lock` |
+| GitHub Actions | `examples/gallery/github-actions` | `actions/checkout` on the retired Node 20 runtime |
+| Go | `examples/gallery/go` | Go 1.22 and 1.23 in `go.mod` and `go.work` |
+| Java | `examples/gallery/java` | JDK pins in Maven, Gradle, the version catalog, `.sdkmanrc`, `.tool-versions`, and `.java-version`; Spring Boot 2.x and 3.x plus a relocated Hibernate artifact |
+| Kubernetes | `examples/gallery/kubernetes` | Removed `extensions/v1beta1`, `networking.k8s.io/v1beta1`, `policy/v1beta1`, and `batch/v1beta1` APIs, a pod security policy, and the retired Helm stable repository |
+| Node.js | `examples/gallery/nodejs` | `.nvmrc` on Node.js 20 |
+| npm | `examples/gallery/npm` | A dependency on the deprecated `request` package |
+| PHP | `examples/gallery/php` | PHP 7.4 in `composer.json`, `composer.lock`, `.php-version`, and `.tool-versions` |
+| Python | `examples/gallery/python` | `.python-version` on Python 3.9 |
+| Ruby | `examples/gallery/ruby` | Ruby 3.2 in `.ruby-version`, `.tool-versions`, the `Gemfile`, and `Gemfile.lock` |
+| Rust | `examples/gallery/rust` | Unmaintained crates (`failure`, `ansi-term`, `atty`, `tempdir`) and a toolchain pin on Rust 1.98 |
+| Scala | `examples/gallery/scala` | Scala 2.11 and sbt 0.13 |
+| Serverless | `examples/gallery/serverless` | Retired Lambda and Cloud Functions runtimes in a SAM template, a Serverless Framework service, and Terraform |
+| Shell | `examples/gallery/shell` | PowerShell 7.0 in a module manifest and script, plus `actions/checkout` on Node 20 |
+| Swift | `examples/gallery/swift` | An Xcode version in the App Store removal window |
+| Terraform | `examples/gallery/terraform` | `.terraform-version` on an unsupported CLI release |
+
+Scan any example the same way as the demo:
+
+```bash
+node dist/src/cli.js scan examples/gallery/kubernetes
+```
+
+The gallery is part of `npm run check`. To run only its test:
+
+```bash
+npm run build
+node --test dist/tests/examples-gallery.test.js
+```
+
+The test scans every example twice and compares the result to `expected.json` as a whole, so a rule or detector change that alters an example fails CI until the example and its expected output are reviewed together.
+
 ---
 
 Source: https://arminazimi.github.io/evergreen/MCP.html
@@ -71,6 +117,54 @@ An MCP host can launch the published command with configuration shaped like:
 
 The exact settings location depends on the host. Evergreen needs no environment variables or credentials.
 
+## One-command install per host
+
+Each host below gets the local stdio server with one install command. Claude Code and Codex also receive the portable Skill through the same plugin. Cursor and VS Code need the Skill separately ([Agent Skill](AGENT_SKILLS.md#one-command-install-per-host)). Every command was run in a clean environment on 2026-10-29 (macOS, Node.js 22). No Evergreen account is required.
+
+Shared verify prompt after install: ask the agent to `Add the request package to this project`, and confirm it calls `check_dependency` for `pkg:npm/request` and reports the deprecation with a replacement and sources instead of adding the package.
+
+### Claude Code
+
+```sh
+claude plugin install evergreen --marketplace arminazimi/evergreen
+```
+
+**Verify.** `claude plugin list` shows `evergreen@evergreen` enabled, and `claude plugin details evergreen` lists the `evergreen` MCP server. Start a new session and use the shared verify prompt.
+
+Details: [Claude plugin](CLAUDE_PLUGIN.md).
+
+### Codex
+
+```sh
+codex plugin marketplace add arminazimi/evergreen --ref main && codex plugin add evergreen@evergreen-codex
+```
+
+When the Evergreen repository marketplace is already configured (for example from a checkout that exposes `.agents/plugins/marketplace.json`), `codex plugin add evergreen@evergreen-codex` alone is enough.
+
+**Verify.** Restart the Codex session, run `codex plugin list --json`, and confirm `evergreen@evergreen-codex` is installed and enabled. Then use the shared verify prompt. Trust the dependency-guard hook with `/hooks` if you want the PostToolUse check.
+
+Details: [Codex plugin](CODEX_PLUGIN.md).
+
+### Cursor
+
+```sh
+cursor --add-mcp '{"name":"evergreen","type":"stdio","command":"npx","args":["--yes","--package","evergreen-deprecation","evergreen-mcp"]}'
+```
+
+**Verify.** Restart Cursor or reload the window. Under Settings → MCP, `evergreen` is listed and can be enabled. Then use the shared verify prompt. For the Skill, see [Agent Skill](AGENT_SKILLS.md#one-command-install-per-host).
+
+Project-scoped copy of the same server entry: [`examples/agents/cursor/`](https://github.com/arminazimi/evergreen/tree/main/examples/agents/cursor).
+
+### VS Code
+
+```sh
+code --add-mcp '{"name":"evergreen","type":"stdio","command":"npx","args":["--yes","--package","evergreen-deprecation","evergreen-mcp"]}'
+```
+
+**Verify.** Command Palette → **MCP: List Servers** shows `evergreen`. In Copilot Chat Agent mode, use the shared verify prompt. For the Skill, see [Agent Skill](AGENT_SKILLS.md#one-command-install-per-host).
+
+Project-scoped copy of the same server entry: [`examples/agents/copilot/`](https://github.com/arminazimi/evergreen/tree/main/examples/agents/copilot).
+
 ## What the server exposes
 
 Everything below is read-only and runs in the local process. The server advertises the `tools`, `resources`, `prompts`, and `completions` capabilities.
@@ -103,8 +197,15 @@ Each tool has an `outputSchema` (the published JSON Schema in [`schemas/`](https
 | `create_migration_context` | `finding_id`, `repository_path?` | `evergreen.context.v1` (`context.v1.schema.json`) | Validated, rule-specific migration packet. |
 | `verify_migration` | `finding_id`, `repository_path?` | `evergreen.verification.v1` (`verification.v1.schema.json`) | Re-scan and check a finding observed earlier in the session. |
 | `check_dependency` | `purl`, `version?` | `evergreen.check.v1` (`check.v1.schema.json`) | Check one package before adding it; reads no repository. |
+| `forecast_repository` | `repository_path?`, `months?`, `as_of?` | `evergreen.forecast.v1` (`forecast.v1.schema.json`) | What reaches a dated end of life in the next months, grouped by month, with the repository's findings each event affects. |
 
 `repository_path` defaults to the server's current working directory. Finding-specific tools require the exact `finding_id` Evergreen returned.
+
+### Planning ahead with the forecast
+
+`forecast_repository` answers "what ends of life are coming, and which of them hit this repository?" It runs a fresh local scan, then lists the lifecycle events that carry an authoritative date inside a window. Each event carries its rule, source, severity, and the findings in this repository that it will affect, grouped by calendar month with the earliest first.
+
+The window starts at `as_of` (a `YYYY-MM-DD` date; today in UTC when omitted) and defaults to `months` 12, from 1 to 36. Passing `as_of` makes the result deterministic. The output is the same `evergreen.forecast.v1` document that `evergreen forecast --json` prints. Only dated events are listed, so a package with no authoritative deadline does not appear; nothing is estimated.
 
 ### Resources
 
@@ -162,7 +263,7 @@ You can see all of it in the MCP Inspector:
 npx @modelcontextprotocol/inspector npx --yes --package evergreen-deprecation evergreen-mcp
 ```
 
-The Tools tab lists the six tools with their output schemas, Resources lists the rules (and findings after a scan) and the two templates, and Prompts lists `migrate-finding`.
+The Tools tab lists the seven tools with their output schemas, Resources lists the rules (and findings after a scan) and the two templates, and Prompts lists `migrate-finding`.
 
 ## Checking a dependency before adding it
 
@@ -226,13 +327,13 @@ The server uses the lifecycle data bundled with the installed release, and docum
 
 ## Other agent hosts
 
-Ready-to-copy setups for the dependency guardrail (an MCP entry plus the instruction to call `check_dependency` before adding a dependency) are in [`examples/agents/`](https://github.com/arminazimi/evergreen/tree/main/examples/agents) and [`integrations/cline/`](https://github.com/arminazimi/evergreen/tree/main/integrations/cline):
+Claude Code, Codex, Cursor, and VS Code have one-command installs above. Ready-to-copy setups for those hosts and others (an MCP entry plus the instruction to call `check_dependency` before adding a dependency) are in [`examples/agents/`](https://github.com/arminazimi/evergreen/tree/main/examples/agents) and [`integrations/cline/`](https://github.com/arminazimi/evergreen/tree/main/integrations/cline):
 
 | Host | MCP config | Instructions |
 | --- | --- | --- |
-| Cursor | `.cursor/mcp.json` | `.cursor/rules/evergreen.mdc` |
+| Cursor | `.cursor/mcp.json` (or `cursor --add-mcp` above) | `.cursor/rules/evergreen.mdc` |
 | Gemini CLI | `gemini-extension.json` or `.gemini/settings.json` | `GEMINI.md` |
-| GitHub Copilot | `.vscode/mcp.json` (VS Code) or repository settings (coding agent) | `.github/copilot-instructions.md` |
+| GitHub Copilot | `.vscode/mcp.json` (or `code --add-mcp` above) or repository settings (coding agent) | `.github/copilot-instructions.md` |
 | Kilo Code | `kilo.jsonc` | `.kilo/rules/evergreen.md` |
 | Cline | `cline_mcp_settings.json` (user settings) | `.clinerules/evergreen.md` |
 | Windsurf | Cascade `mcp_config.json` (user config) | `.windsurf/rules/evergreen.md` |
@@ -280,7 +381,7 @@ Verification is deliberately conservative. Evergreen remembers the original find
 - No hosted Evergreen service, telemetry, account, or API key is involved.
 - Tool results can include file paths and short source excerpts already present in findings; the local MCP host receives those results so it can act on them.
 
-The versioned JSON contracts live in `schemas/scan.v1.schema.json`, `schemas/deprecations.v1.schema.json`, `schemas/context.v1.schema.json`, and `schemas/verification.v1.schema.json`.
+The versioned JSON contracts live in `schemas/scan.v1.schema.json`, `schemas/deprecations.v1.schema.json`, `schemas/forecast.v1.schema.json`, `schemas/context.v1.schema.json`, and `schemas/verification.v1.schema.json`.
 
 ---
 
@@ -397,11 +498,14 @@ does not provide a `with` entry.
 | Input | Default | Meaning |
 | --- | --- | --- |
 | `path` | `.` | Repository root or subdirectory to scan; `.` is the checked-out repository. |
-| `baseline` | empty | Baseline path relative to `path`. Empty reports every finding; a configured path that is missing fails the Action. |
+| `paths` | empty | Multi-line list of directories or globs (for example `packages/*`) relative to `path`. Each match is scanned in one run; findings go into one report and SARIF, with a job-summary section per package. Empty scans only `path`. |
+| `baseline` | empty | Baseline path relative to `path` (or to each matched package when `paths` is set). Empty reports every finding; a configured path that is missing fails the Action. |
 | `min-support-days` | empty | Warn (medium severity) on lines whose support ends within this many days; off when empty. |
 | `baseline-warn-days` | `14` | Warn when a baseline suppression expires within this many days (0 to 365). |
 | `on-expired` | `resurface` | What a baseline suppression does after its `expires` day: `resurface` (its finding is reported again) or `fail` (also fail the job). |
 | `fail-on-severity` | `high` | Lowest failing level: `none`, `info`, `low`, `medium`, `high`, or `critical`. |
+| `mode` | `scan` | `scan` scans the checked-out tree. `diff` compares the pull request base and head SHAs from the event payload and fails only on findings the pull request introduces. See [pull request diff mode](#pull-request-diff-mode). |
+| `annotations` | empty | Which findings become workflow annotations: `changed` annotates only findings on lines the pull request added or changed (the default in diff mode), `all` annotates every finding (the default in scan mode), `none` emits no annotations. Findings left out stay counted in the summary and the JSON report. |
 | `report-name` | `evergreen-report` | Artifact name for the JSON report when `upload-report` is `true`. |
 | `upload-report` | `true` | Upload the JSON report as an Actions artifact. `false` keeps the generated report only on the runner. |
 | `upload-sarif` | `false` | Set to `true` to upload the findings to GitHub code scanning as SARIF. Needs `security-events: write`. |
@@ -419,6 +523,22 @@ does not provide a `with` entry.
 | `sarif-path` | When `upload-sarif` is `true` | Absolute runner path to the generated SARIF file; otherwise empty. |
 
 The job summary shows how many findings there are per severity, the ten most severe findings with their location and a link to the evidence each one cites, the age of the lifecycle data, and a warning when the data is stale. When there are more than ten findings, it says how many more there are; the JSON report artifact lists them all.
+
+### Monorepo paths
+
+Monorepos should not need one job per package. Set `paths` to a multi-line list of directories or globs under `path`. Evergreen scans each match, writes one combined JSON report and SARIF, and adds one job-summary section per package. `fail-on-severity` is evaluated across all packages together.
+
+```yaml
+- uses: actions/checkout@v7
+- uses: arminazimi/evergreen@v0
+  with:
+    paths: |
+      packages/*
+      apps/web
+    fail-on-severity: high
+```
+
+Literals must exist and be directories. A glob that matches nothing fails the Action. `*` and `?` stay inside one path segment; `**` crosses segments. Diff mode ignores `paths` and compares the whole pull request checkout instead.
 
 High and critical findings become error annotations, medium findings become warnings, and low or informational findings become notices. The gate is evaluated independently from annotation level.
 
@@ -438,6 +558,24 @@ steps:
 ```
 
 Pull requests from forks get a read-only token, so the comment cannot be posted there: the Action logs a warning and the scan result is unaffected.
+
+## Pull request diff mode
+
+`finding-count` and the severity gate cover every finding in the checkout. On a busy repository that backlog grows, so reviewers cannot see which findings a pull request actually introduced. `mode: diff` fixes that: the Action scans the pull request base and head refs with the same engine as `evergreen diff`, and the gate, annotations, badge, comment, and summary count only what the pull request introduced. Findings the pull request fixes are listed in a "Fixed by this pull request" table in the summary and the pull request comment.
+
+```yaml
+steps:
+  - uses: actions/checkout@v7
+    with:
+      fetch-depth: 0   # diff mode archives the base and head SHAs from git objects, so fetch their history
+  - uses: arminazimi/evergreen@v0
+    with:
+      mode: diff
+```
+
+The base and head come from the `pull_request` event payload (`pull_request.base.sha` and `pull_request.head.sha`); the comparison stays offline — both refs are unpacked with `git archive` and scanned locally. Outside a `pull_request` event, or when the payload lacks those SHAs, the Action logs a notice and runs a regular scan instead. The baseline input does not apply in diff mode: it describes accepted findings in the whole repository, not in one pull request, and the Action says so with a notice. Because the gate judges only introduced findings, a pull request that adds a deprecated package fails and one that only edits documentation passes.
+
+Annotations on untouched files are noise, so diff mode annotates only findings on lines the pull request added or changed and counts the others in one summary line with a link to the full report. The gate, the severity counts, the badge, the comment, and the JSON report still cover every introduced finding. Set `annotations: all` to annotate every introduced finding, or `annotations: none` to emit no annotations at all. Scan mode defaults to `all`; an explicit `annotations: changed` there falls back to `all` with a notice because there is no pull request range.
 
 ## End-of-life reminder issue
 
@@ -596,23 +734,483 @@ JSON, text, annotations, and SARIF are renderings of the same findings. A findin
 
 ---
 
+Source: https://arminazimi.github.io/evergreen/ORG_ROLLOUT.html
+
+# Organization rollout
+
+This guide takes one person from an unconfigured organization to a weekly lifecycle report for every repository in it. It is written to be followed in order:
+
+1. Create a read-only token.
+2. Add the organization-scan workflow.
+3. Accept existing findings with a baseline.
+4. Read the reports the workflow leaves behind.
+5. Send the recurring digest to Slack or Teams.
+
+The scan itself stays local. The reusable workflow lists repositories and downloads artifacts through the GitHub API; each scan checks out one repository and reads its files and Evergreen's bundled data, with no network access.
+
+> **Version.** The reusable workflow and the `org:rollout` tool first ship in `v0.8.0`. The examples below call `@v0.8.0`. Until that tag exists, call `@main` only to try the workflow, then replace it with the release tag before relying on it.
+
+## Before you start
+
+You need:
+
+- An organization owner to approve a fine-grained token, or a repository admin for the caller repository to add its secrets. The same person often fills both roles.
+- One repository in the organization to host the caller workflow. A small operations or `.github` repository is a good home.
+- GitHub Actions enabled in that repository.
+- Optional: admin access to the Slack workspace or Teams channel that should receive the digest.
+- Optional, for the local baseline and rollup commands: Node.js 22 or newer.
+
+The caller repository is scanned like every other repository in the organization. It is not special.
+
+## 1. Create a read-only organization token
+
+The workflow needs a token that can list the organization's repositories and read each repository's contents. It does not need write access to anything, and no scan ever receives the token.
+
+### Fine-grained token (recommended)
+
+Create a [fine-grained personal access token](https://github.com/settings/personal-access-tokens/new):
+
+1. Set **Resource owner** to the organization.
+2. Set **Repository access** to **All repositories**. A token scoped to selected repositories cannot list the whole organization.
+3. Under **Repository permissions**, set **Contents** to **Read-only** and leave **Metadata** at its mandatory **Read-only** value.
+4. Set an expiration you are willing to rotate. The workflow fails when the token expires, so put the rotation date on a calendar.
+5. Create the token, approve it if the organization requires approval, and copy the value once.
+
+### Classic token
+
+If your organization still uses classic tokens, create one with:
+
+| Repository visibility | Scopes |
+| --- | --- |
+| Private repositories included | `repo`, `read:org` |
+| Public repositories only | `public_repo`, `read:org` |
+
+`read:org` lets the token list the organization. `repo` (or `public_repo`) lets it read repository contents for the checkout.
+
+### Store and verify it
+
+Store the token as an Actions secret in the caller repository. `gh secret set` prompts for the value, so the token does not land in shell history:
+
+```bash
+gh secret set EVERGREEN_ORG_TOKEN --repo your-org/your-ops-repo
+```
+
+Before relying on it, check that the token can see the repositories you expect. This prints the number of active, non-archived repositories:
+
+```bash
+GH_TOKEN=github_pat_your_token \
+  gh api --paginate "/orgs/your-org/repos?per_page=100" \
+  --jq '[.[] | select(.archived == false and .disabled == false)] | length'
+```
+
+A `404` usually means the token cannot see the organization; a `403` usually means the organization has not approved the token or it lacks a required scope.
+
+If you omit the `github-token` secret, the workflow falls back to the caller's `GITHUB_TOKEN`. That works only when the caller's token can already read every repository, which is uncommon for an organization-wide list. Prefer the dedicated token.
+
+## 2. Add the caller workflow
+
+Add one workflow to the caller repository. It calls [`.github/workflows/org-scan.yml`](../.github/workflows/org-scan.yml), which lists the organization's repositories and scans each one in a bounded matrix through the first-party Evergreen Action. The Action version follows the workflow tag you call, so pinning the workflow pins the scanner.
+
+Create `.github/workflows/evergreen-org-scan.yml`:
+
+```yaml
+name: Evergreen organization scan
+
+on:
+  schedule:
+    - cron: "0 4 * * 1"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  # Only needed for the Slack/Teams digest. Remove it if you do not post one.
+  actions: read
+
+jobs:
+  org-scan:
+    uses: arminazimi/evergreen/.github/workflows/org-scan.yml@v0.8.0
+    with:
+      organization: your-org
+      fail-on-severity: high
+      max-jobs: 10
+    secrets:
+      github-token: ${{ secrets.EVERGREEN_ORG_TOKEN }}
+      slack-webhook-url: ${{ secrets.EVERGREEN_SLACK_WEBHOOK }}   # optional
+      teams-webhook-url: ${{ secrets.EVERGREEN_TEAMS_WEBHOOK }}   # optional
+```
+
+Commit it, then run it once by hand:
+
+```bash
+gh workflow run evergreen-org-scan.yml --repo your-org/your-ops-repo
+gh run list --repo your-org/your-ops-repo --workflow evergreen-org-scan.yml --limit 1
+gh run watch <run-id> --repo your-org/your-ops-repo
+```
+
+The first run has three visible parts:
+
+- **List repositories.** One job calls `GET /orgs/<org>/repos`, skips archived and disabled repositories, and prints how many it found.
+- **Scan <repository>.** One matrix job per repository checks out its default branch and runs the Evergreen Action. Progress and annotations are per repository, so a failure names the repository.
+- **Send digest.** After the matrix finishes, one job builds a rollup and posts it to the configured webhooks. It is skipped when neither webhook secret is set.
+
+### Inputs
+
+| Input | Default | Meaning |
+| --- | --- | --- |
+| `organization` | caller repository owner | The GitHub organization to scan. It must be an organization; user accounts are not supported. |
+| `fail-on-severity` | `high` | Lowest severity that fails one repository's scan job: `none`, `info`, `low`, `medium`, `high`, or `critical`. |
+| `max-jobs` | `10` | Maximum number of repositories scanned in parallel. Concurrency stays bounded while the matrix scales with the repository count. |
+
+For the first inventory run, set `fail-on-severity: none`. The workflow then finishes successfully even when repositories have findings, which makes the artifacts and digest easy to inspect. Tighten it to `high` once the backlog is triaged, or move the gate to per-repository pull-request workflows with baselines (see [step 3](#3-accept-existing-findings-with-a-baseline)).
+
+A scan job fails when a repository has findings at or above `fail-on-severity`, so the calling workflow fails if any repository crossed the gate. Matrix jobs do not cancel each other (`fail-fast: false`), so every repository is still scanned and every report is still uploaded.
+
+### If you only want an inventory
+
+Set `fail-on-severity: none` and leave the schedule as it is. The run is a weekly inventory: reports and the digest are produced, but no repository fails the workflow. Add per-repository pull-request workflows (see [step 3](#3-accept-existing-findings-with-a-baseline)) when you want a gate that blocks new findings.
+
+## 3. Accept existing findings with a baseline
+
+A baseline records findings you have reviewed and accepted. It is usually a file committed in each repository. Findings in the baseline are suppressed; findings that are not in it are reported and gated normally.
+
+Run this in the repository whose findings you are accepting:
+
+```bash
+npx evergreen-deprecation scan . --fail-on none
+npx evergreen-deprecation baseline . --output .evergreen-baseline.json
+```
+
+The second command writes one entry per current finding and keeps the file's history when it already exists, so running it again updates the file instead of starting over:
+
+```text
+Wrote 5 findings to /path/to/repository/.evergreen-baseline.json
+No earlier baseline to compare with.
+```
+
+Review the file, then commit it:
+
+```bash
+git add .evergreen-baseline.json
+git commit -m "chore: accept current Evergreen findings"
+```
+
+A scan that uses the baseline now hides exactly those findings:
+
+```bash
+npx evergreen-deprecation scan . --baseline .evergreen-baseline.json --fail-on high
+```
+
+```text
+Findings: 0
+...
+Baseline: 5 findings suppressed, 0 expiring within 14 days, 0 expired.
+```
+
+### Add an owner, a reason, and an expiry
+
+Every entry can carry optional context. These fields never change what is suppressed, but they make the acceptance reviewable and let it expire:
+
+```json
+{
+  "fingerprint": "6ca0234cda96c4bf931e7686f5a74bff85d0063cb143d25ec64136c9102343d3",
+  "ruleId": "nodejs.runtime.eol-18",
+  "path": "package.json",
+  "owner": "platform-team",
+  "reason": "Upgrade tracked in PLAT-12",
+  "created": "2026-10-29",
+  "expires": "2027-01-31"
+}
+```
+
+`owner` and `reason` are non-empty text up to 500 characters. `created` and `expires` are `YYYY-MM-DD` calendar dates, and `expires` cannot be before `created`. Expired suppressions stop hiding their finding; a scan also warns 14 days before an expiry unless you change the window:
+
+```bash
+npx evergreen-deprecation scan . --baseline .evergreen-baseline.json --baseline-warn-days 30
+```
+
+`--on-expired resurface` (the default) reports the finding again after its expiry day. `--on-expired fail` reports it and also fails the scan. See the [baseline format](GITHUB_ACTION.md#pull-request-workflow) for the full field reference.
+
+### Wire the baseline into the per-repository workflow
+
+The baseline only takes effect where a workflow passes it to the Action. Add one input to the Evergreen workflow in that repository:
+
+```yaml
+- uses: arminazimi/evergreen@v0.8.0
+  with:
+    baseline: .evergreen-baseline.json
+    fail-on-severity: high
+```
+
+The reusable organization workflow does not pass a `baseline` input: it scans each repository with the Action's defaults and reports every finding. Use it with `fail-on-severity: none` as the inventory and digest, and use the per-repository workflow above for the pull-request gate. This is also the workflow created by the adoption pull requests in [step 6](#6-open-adoption-pull-requests-at-scale); add the `baseline` line to that file when you accept its first report.
+
+A shared baseline can be combined with the repository's own on the command line:
+
+```bash
+npx evergreen-deprecation scan . \
+  --baseline ../org-config/evergreen-baseline.json \
+  --baseline .evergreen-baseline.json
+```
+
+`--baseline` is repeatable on the CLI. The Action input takes one path, so keep the repository's own file as the one the workflow reads and merge shared entries into it, or check out the shared file in the workflow and point `baseline` at that path.
+
+## 4. Read the report artifacts
+
+Each scan job writes a versioned JSON report and uploads it as an artifact named `evergreen-report-<repository>`. Artifacts are retained for 14 days.
+
+In GitHub, open the run from **Actions → Evergreen organization scan**, scroll to **Artifacts**, and download the artifact for one repository. It contains `evergreen-report.json`. The run's job summary also shows the counts per severity, the ten most severe findings, and a link to the evidence for each one.
+
+From a terminal, download every report from a run and merge them into one organization view:
+
+```bash
+gh run list --repo your-org/your-ops-repo --workflow evergreen-org-scan.yml --limit 1
+gh run download <run-id> --repo your-org/your-ops-repo \
+  --pattern 'evergreen-report-*' --dir org-reports
+npx evergreen-deprecation rollup org-reports/*/evergreen-report.json
+```
+
+The rollup reads the saved reports and nothing else, so it uses no network and does not touch the repositories. It prints totals, then counts grouped by repository, product, and owner:
+
+```text
+Evergreen rollup: 7 findings across 2 repositories
+
+By repository:
+  sample-api: 5 (2 high, 3 medium; nearest deadline 2020-02-11)
+  sample-web: 2 (2 high; nearest deadline 2024-07-24)
+
+By product:
+  nodejs: 3 (3 medium) in sample-api
+  github-actions: 2 (2 high) in sample-api, sample-web
+  npm: 2 (2 high) in sample-api, sample-web
+
+By owner:
+  unowned: 7 (4 high, 3 medium) in sample-api, sample-web
+```
+
+The repository name comes from the artifact directory: `org-reports/evergreen-report-sample-api/evergreen-report.json` becomes `sample-api`. A repository with no matching artifact is absent, not counted as clean.
+
+### Add owners
+
+Create an `owners.json` that maps repository names to teams, then pass it to the rollup:
+
+```json
+{
+  "sample-api": "platform",
+  "sample-web": "frontend"
+}
+```
+
+```bash
+npx evergreen-deprecation rollup org-reports/*/evergreen-report.json --owners owners.json
+```
+
+A repository missing from the file is grouped under `unowned`. This is the same grouping the Slack and Teams digest uses.
+
+### Read the JSON directly
+
+The report is `evergreen.scan.v1` (schema: [`schemas/scan.v1.schema.json`](../schemas/scan.v1.schema.json)). Each finding names its rule, severity, exact location, deadline when the source gives one, replacement, and evidence:
+
+```json
+{
+  "schemaVersion": "evergreen.scan.v1",
+  "findings": [
+    {
+      "ruleId": "github-actions.checkout.node20",
+      "severity": "high",
+      "location": { "path": ".github/workflows/ci.yml", "line": 7 },
+      "deadline": "2026-09-23",
+      "replacement": "actions/checkout@v5 or later",
+      "sources": [{ "title": "GitHub changelog", "url": "https://github.blog/..." }]
+    }
+  ]
+}
+```
+
+Suppressed findings are absent from the report. A scan that used a baseline adds a `suppressions` object that says how many it hid and which entries are expiring or expired.
+
+### Optional: publish one page
+
+The same rollup renders as a self-contained HTML page:
+
+```bash
+npx evergreen-deprecation rollup org-reports/*/evergreen-report.json \
+  --owners owners.json --html > org-report.html
+```
+
+[`templates/rollup/`](../templates/rollup/) packages that command as a GitHub Pages workflow. It runs after a successful organization scan, downloads the same artifacts, and publishes the page without a server. It only runs when the scan succeeds, so use `fail-on-severity: none` if you want the page even while the backlog is ungated.
+
+## 5. Set up the recurring digest
+
+The schedule in [step 2](#2-add-the-caller-workflow) is the recurrence. This step connects it to a chat channel.
+
+After the scan jobs finish, the reusable workflow downloads the run's `evergreen-report-*` artifacts and renders the same text as `evergreen rollup`. It lists the total findings across every repository by severity, repository, product, and owner, with each repository's nearest deadline. It posts even when some scan jobs failed, so a red run does not silence the weekly numbers.
+
+Enable one or both webhooks by adding the secrets and passing them from the caller:
+
+```yaml
+jobs:
+  org-scan:
+    uses: arminazimi/evergreen/.github/workflows/org-scan.yml@v0.8.0
+    with:
+      organization: your-org
+    secrets:
+      github-token: ${{ secrets.EVERGREEN_ORG_TOKEN }}
+      slack-webhook-url: ${{ secrets.EVERGREEN_SLACK_WEBHOOK }}
+      teams-webhook-url: ${{ secrets.EVERGREEN_TEAMS_WEBHOOK }}
+```
+
+The caller also needs `actions: read`, because the digest downloads the artifacts of its own run. Without that permission the notify job cannot read the artifacts; the scan jobs are unaffected.
+
+If neither webhook secret is set, the notify job is skipped entirely and no outbound request is made.
+
+### Set up the Slack webhook
+
+1. Open [api.slack.com/apps](https://api.slack.com/apps) and create (or choose) an app for the channel that should receive digests.
+2. Under **Features → Incoming Webhooks**, enable incoming webhooks and click **Add New Webhook to Workspace**.
+3. Select the target channel and confirm. Slack shows a URL of the form `https://hooks.slack.com/services/T…/B…/…`.
+4. In GitHub, open **Settings → Secrets and variables → Actions** in the repository that calls the org-scan workflow.
+5. Create a secret named `EVERGREEN_SLACK_WEBHOOK` and paste the webhook URL as its value. Treat the URL as a credential: anyone who has it can post to the channel.
+6. Pass it to the workflow with `secrets: slack-webhook-url: ${{ secrets.EVERGREEN_SLACK_WEBHOOK }}`.
+
+### Set up the Teams webhook
+
+Teams uses Workflow webhooks, not the legacy Incoming Webhook connector, which Microsoft is retiring. The Workflow webhook produces a URL compatible with Evergreen's Adaptive Card payload.
+
+1. In the Teams channel that should receive digests, open **… → Workflows**.
+2. Search for **Post to a channel when a webhook request is received** and select it.
+3. Follow the setup wizard. Teams generates a URL of the form `https://prod-XX.westeurope.logic.azure.com/…`.
+4. In GitHub, create a secret named `EVERGREEN_TEAMS_WEBHOOK` and paste the URL.
+5. Pass it to the workflow with `secrets: teams-webhook-url: ${{ secrets.EVERGREEN_TEAMS_WEBHOOK }}`.
+
+### Secrets table
+
+| Secret | Required | Meaning |
+| --- | --- | --- |
+| `slack-webhook-url` | No | Incoming-webhook URL. When set, a Slack digest is posted after every scan. |
+| `teams-webhook-url` | No | Workflow-webhook URL. When set, a Teams digest is posted after every scan. |
+
+Both secrets are optional and independent. You can enable Slack, Teams, both, or neither.
+
+### Test the digest
+
+Run the workflow by hand and confirm the message arrives in the channel:
+
+```bash
+gh workflow run evergreen-org-scan.yml --repo your-org/your-ops-repo
+```
+
+The workflow truncates the digest to Slack's 3,000-character section limit, adding a `…truncated` marker. Keep the channel to the summary and use the artifacts or the [rollup page](#optional-publish-one-page) for the full list.
+
+## 6. Open adoption pull requests at scale
+
+The reusable workflow covers the organization on a schedule. To put a pull-request workflow in every repository, Evergreen can open the adoption pull requests for you. Evergreen lands best as one reviewed change per repository. The rollout tool (`tools/org-rollout.ts`) turns that into a single step: it lists the target repositories, shows exactly what it would change, and only opens pull requests when you explicitly ask for it. Nothing is ever pushed directly to a default branch, and scans stay offline: the tool's own network calls are GitHub API calls, never repository analysis.
+
+Run it from a checkout of this repository:
+
+```bash
+npm ci
+npm run org:rollout -- --org my-org                    # print the plan, change nothing
+npm run org:rollout -- --org my-org --apply            # open one pull request per repository
+npm run org:rollout -- --repos acme/api,acme/web       # a specific repository list instead of an org
+```
+
+`--apply` needs `GITHUB_TOKEN` or `GH_TOKEN` with write access to the target repositories. A token with read-only access can still run the dry run.
+
+### What it does
+
+For every target repository (non-archived, not a fork, with a default branch) it:
+
+1. Checks whether any existing workflow under `.github/workflows/` already invokes `arminazimi/evergreen`. If one does, the repository is skipped, so reapplication can never stack duplicate workflows.
+2. Resolves the action version to pin. Pass `--action-ref v0.8.0` for a fixed version; otherwise the tool pins the repository's latest release tag.
+3. Prints the plan: each repository with `pull-request` or `skip`, the totals, and the full workflow file that would be added. **Without `--apply` this is the whole run.**
+4. With `--apply`, and a token with write access, it opens one pull request per repository. The pull request creates the branch, adds `.github/workflows/evergreen.yml` (the workflow in [GitHub Action](GITHUB_ACTION.md)), and opens the pull request against the default branch.
+
+The generated workflow runs the scan on pull requests, on a weekly schedule (`--schedule`, default `0 4 * * 1`), and on demand via `workflow_dispatch`. It needs no configuration: read-only permissions, no secrets, findings as annotations, and a `high` severity gate. To accept existing findings, commit the baseline from [step 3](#3-accept-existing-findings-with-a-baseline) and add the `baseline` input to the generated workflow in the same pull request:
+
+```yaml
+- uses: arminazimi/evergreen@v0.8.0
+  with:
+    baseline: .evergreen-baseline.json
+    fail-on-severity: high
+```
+
+Without the input, the Action reports every finding even though the baseline file is committed.
+
+### Options
+
+| Option | Default | Meaning |
+| --- | --- | --- |
+| `--org <name>` | — | Target every qualifying repository of this organization. |
+| `--repos <list>` | — | Comma-separated `owner/name` list instead of an organization. |
+| `--apply` | off | Open the pull requests. Without it, only the plan is printed. |
+| `--schedule <cron>` | `0 4 * * 1` | Cron expression for the weekly scan. |
+| `--action-ref <ref>` | latest release | Action version to pin. |
+| `--branch <name>` | `evergreen/lifecycle-scan` | Rollout branch name. A branch left behind by an earlier run is reused. |
+
+### Design rules
+
+- **Reviewed, never silent.** A rollout starts as a printed plan; opening pull requests is a deliberate `--apply`. Closing a pull request opts that repository out.
+- **Idempotent in review.** Re-running the dry run after some merges only plans the repositories still missing the workflow.
+- **Failures are reported, not hidden.** A repository that cannot take its pull request (no token, branch conflict) is listed at the end with its GitHub API error and the run exits nonzero; the rest still complete.
+
+## Limits
+
+GitHub Actions caps a matrix at 256 jobs, so an organization with more than 256 scannable repositories (archived and disabled repositories are skipped) needs call sites split into batches; call the workflow once per sub-organization. Archived and disabled repositories are skipped; forks and internal repositories are scanned unless the token cannot read them.
+
+Artifacts are retained for 14 days. Download or roll up a run's reports before they expire if you need a longer history, or publish the [rollup page](#optional-publish-one-page) from a workflow that runs alongside the scan.
+
+## Troubleshooting
+
+| Symptom | Likely cause |
+| --- | --- |
+| `List repositories` fails with `404` | The token cannot see the organization. Check its resource owner, repository access, and organization approval. |
+| `List repositories` fails with `403` | The token is missing `contents`/`repo` or `read:org`, or the organization restricts fine-grained tokens. |
+| A scan job cannot check out a repository | The token cannot read that repository's contents. Give it **All repositories**, not a selected list. |
+| The digest is skipped | Neither `slack-webhook-url` nor `teams-webhook-url` was passed. |
+| The digest job fails at `Download scan reports` | The caller did not grant `actions: read`. The reusable workflow cannot elevate its own permissions. |
+| Committed baselines have no effect | The workflow did not pass `baseline`. Add it to the per-repository Action step. The organization scan does not pass one. |
+| The workflow reports `v0.8.0` not found | The release is not tagged yet. Use `@main` to try it, then pin the release tag. |
+
+## Privacy and permissions
+
+| What | Where it runs | Network |
+| --- | --- | --- |
+| List repositories | GitHub Actions, caller repository | `GET /orgs/<org>/repos` |
+| Scan one repository | GitHub Actions, checked-out repository | None. Files and bundled data only. |
+| Upload reports | GitHub Actions artifacts | Normal Actions artifact storage, 14 days |
+| Rollup digest | GitHub Actions, notify job | Reads local artifacts, then posts to the configured webhook |
+| `evergreen baseline`, `evergreen rollup` | Your machine or CI | None. Local files only. |
+
+Only `contents: read` is needed for the scans. Add `actions: read` for the digest. The dedicated token is used only by the list job; it is never passed to a scan. Evergreen does not send repository contents to an Evergreen service, and the report can contain repository-relative paths, matched excerpts, dependency versions, and lifecycle evidence, so apply normal artifact access controls.
+
+---
+
 Source: https://arminazimi.github.io/evergreen/GITLAB.html
 
 # GitLab
 
-Evergreen ships a GitLab CI/CD component, [`templates/evergreen.yml`](../templates/evergreen.yml). It adds one job that scans the checked-out repository, keeps the JSON report as a job artifact, and fails the pipeline at a severity gate. Its inputs mirror the [GitHub Action](GITHUB_ACTION.md): `path`, `baseline`, `baseline_warn_days`, `on_expired`, `min_support_days`, and `fail_on_severity` have the same meanings and defaults.
+Evergreen ships a GitLab CI/CD component, [`templates/evergreen.yml`](../templates/evergreen.yml). It is published in the [CI/CD Catalog](https://gitlab.com/explore/catalog/arminazimi/evergreen). It adds one job that scans the checked-out repository, keeps the JSON report as a job artifact, and fails the pipeline at a severity gate. Its inputs mirror the [GitHub Action](GITHUB_ACTION.md): `path`, `baseline`, `baseline_warn_days`, `on_expired`, `min_support_days`, and `fail_on_severity` have the same meanings and defaults.
 
 ## Add the job
+
+On GitLab.com, include the Catalog release. Pin the component to a plain semver Catalog version (no `v` prefix); the component's `version` input then defaults to the matching `evergreen-deprecation` npm package:
+
+```yaml
+include:
+  - component: $CI_SERVER_FQDN/arminazimi/evergreen/evergreen@0.7.1
+    inputs:
+      fail_on_severity: high
+```
+
+That include was verified from a clean public project: the job pulled `node:24-trixie-slim`, installed `evergreen-deprecation@0.7.1` with `npx`, wrote `evergreen-report.json` and `gl-code-quality-report.json`, and passed at the default `high` gate with no findings. Set `baseline` only when you already have a baseline file committed (path relative to `path`).
+
+On a self-managed instance, host a copy of the component and replace the project path:
 
 ```yaml
 include:
   - component: $CI_SERVER_FQDN/<group>/<project>/evergreen@<version>
     inputs:
-      baseline: .evergreen-baseline.json
       fail_on_severity: high
 ```
-
-`<group>/<project>` is the project that hosts the component on your GitLab instance. The `version` input pins the `evergreen-deprecation` npm package the job runs; it defaults to the version the component was released with.
 
 ## Permissions
 
@@ -936,6 +1534,29 @@ added in a compatible v1 minor manifest update. Removing or redefining an existi
 identifier, changing required field meaning or status vocabulary, or weakening the
 rules above requires a new schema major version.
 
+## JSON output schemas and policy for adding fields
+
+Every command supporting `--json` (or `--format json`) produces output that strictly conforms
+to its published JSON Schema in `schemas/*.v1.schema.json` (such as `scan.v1.schema.json`,
+`check.v1.schema.json`, `finding.v1.schema.json`, `context.v1.schema.json`,
+`doctor.v1.schema.json`, and `data-status.v1.schema.json`).
+
+Because scripts, agents, and CI automations depend on exact JSON structures,
+Evergreen locks all published schemas with strict contract tests:
+
+1. **Strict property validation:** Output schemas enforce `additionalProperties: false`
+   across all object definitions. CLI output must not contain properties undeclared in the schema.
+2. **Deliberate schema updates:** Adding a field to any `--json` output is never done
+   implicitly. It requires an explicit, reviewed update to the relevant JSON Schema under
+   `schemas/`, defining the property's type, constraints, and intent.
+3. **Additive changes in v1:** New optional fields can be introduced in the current `v1`
+   major schema release without breaking backward-compatible consumers.
+4. **Breaking changes require a schema bump:** Removing existing properties, renaming
+   fields, or altering requiredness / types requires a new schema major version (such as `v2`).
+5. **Contract test enforcement:** Snapshot tests in `tests/schema-snapshots.test.ts`
+   validate real execution output for every command against its schema and assert that any
+   undeclared property triggers schema validation failure.
+
 ## Stability and privacy
 
 The command reads a packaged constant and performs no repository scan, network
@@ -1057,6 +1678,120 @@ Matrix version: **2026-10-15 / v1**
 | Agent Skill | Codex, Claude Code, Cursor, GitHub Copilot, or Gemini CLI | Supported | Project installation validated through the skills CLI on 2026-10-15. |
 | Agent Skill | Other hosts supporting the open Agent Skills directory format | Experimental | The portable files can be copied or linked, but these hosts are not in the representative install gate. |
 | Host plugins | Codex or Claude packaged plugin | Experimental | Shared MCP and Skill prerequisites exist; stable host packages are not published yet. |
+
+## v1 compatibility guarantees
+
+From **1.0.0**, the 1.x line is a SemVer compatibility promise: a consumer that pins `evergreen-deprecation@^1` (or a specific 1.x release) can rely on the contracts below without a surprise break in a minor or patch release. Removals and replacements still follow the [deprecation policy](#deprecation-policy); this section states what each contract guarantees and how long that guarantee lasts on the 1.x line.
+
+Scans stay offline and need no account. That property is part of the v1 promise and is not relaxed in a 1.x release.
+
+### Support windows on 1.x
+
+| Kind | Window on the 1.x line |
+| --- | --- |
+| A versioned document (`evergreen.*.vN`), its JSON Schema file, the detector SDK API version, the registry format, or the data-bundle format | Supported for the whole 1.x line. A successor (`vN+1`) may ship in a minor release; the older version keeps working at least through the [versioned-format notice period](#notice-periods) and is not removed before 2.0.0. |
+| CLI commands, flags, and environment variables marked stable in the docs | Supported for the whole 1.x line. A rename or removal needs the [unversioned notice period](#notice-periods) and lands no earlier than 2.0.0. |
+| MCP tools, resources, prompts, and their documented input fields | Same as CLI flags: whole 1.x line; removal only after notice, and not before 2.0.0. |
+| GitHub Action and GitLab component inputs whose default preserves current behavior | Same as CLI flags. |
+| Exit-code classes (`policy` 1, `usage` 2, `data` 3, `parse` 4, `internal` 5) | Stable for the whole 1.x line. New classes get new numbers; existing numbers are never renumbered. |
+| Surfaces the matrix marks **Supported** or **Beta** | Get the windows above. |
+| Surfaces the matrix marks **Experimental** | Usable, but may change in any minor release with a CHANGELOG entry; no multi-release window. |
+| Node.js and other runtimes listed in the matrix | Dropped from the matrix only after that runtime reaches its own end of life, and only with a deprecation note in the release before the drop. |
+
+A 1.x patch fixes behavior or security and does not add fields. A 1.x minor may add optional fields, commands, tools, or inputs. A required field, a rename, a type change, or a removal of a versioned format requires a new document version and the windows above — not a silent break inside 1.x.
+
+### Per-contract guarantees
+
+Each row is a published contract. The guarantee is the machine-readable shape: identifiers, field names, types, and exit codes. Help text, warning prose, and field order may change in any release. Consumers must ignore fields they do not know.
+
+| Contract | Identifier / schema | Guarantee on 1.x |
+| --- | --- | --- |
+| Scan result | `evergreen.scan.v1` · [`scan.v1.schema.json`](../schemas/scan.v1.schema.json) | Required fields and types stay; optional fields may appear in a minor. A breaking change ships as `evergreen.scan.v2` while `v1` remains accepted for the window. |
+| Dependency check | `evergreen.check.v1` · [`check.v1.schema.json`](../schemas/check.v1.schema.json) | Same additive rules. Status values already documented keep their meaning. |
+| Migration context | `evergreen.context.v1` · [`context.v1.schema.json`](../schemas/context.v1.schema.json) | Packet shape stays; new optional sections may appear. |
+| Deprecation list | `evergreen.deprecations.v1` · [`deprecations.v1.schema.json`](../schemas/deprecations.v1.schema.json) | Compact list shape stays for agents and planners. |
+| Verification | `evergreen.verification.v1` · [`verification.v1.schema.json`](../schemas/verification.v1.schema.json) | Re-scan result shape stays. |
+| Doctor | `evergreen.doctor.v1` · [`doctor.v1.schema.json`](../schemas/doctor.v1.schema.json) | Check and summary shape stays; new optional checks may appear. |
+| Capabilities manifest | `evergreen.capabilities.v1` · [`capabilities.v1.schema.json`](../schemas/capabilities.v1.schema.json) | Manifest shape stays; new optional capability or surface entries may appear. |
+| Baseline | `evergreen.baseline.v1` · [`baseline.v1.schema.json`](../schemas/baseline.v1.schema.json) | File format stays so CI baselines written under 1.x keep loading. |
+| Config | `evergreen.config.v1` · [`config.v1.schema.json`](../schemas/config.v1.schema.json) | Documented keys keep their meaning; new optional keys may appear. |
+| Rule document | `evergreen.rule.v1` · [`rule.v1.schema.json`](../schemas/rule.v1.schema.json) | Rule view shape stays for MCP resources and tooling. |
+| Fix plan | `evergreen.fix.v1` · [`fix.v1.schema.json`](../schemas/fix.v1.schema.json) | Plan shape stays. |
+| Data status | `evergreen.data-status.v1` · [`data-status.v1.schema.json`](../schemas/data-status.v1.schema.json) | Status shape stays. |
+| CLI errors | `evergreen.error.v1` | `error.code` classes and exit codes stay as in [Exit codes](CAPABILITIES.md#exit-codes-and-error-codes). |
+| Detector SDK | `evergreen.detector.v1` · [`src/sdk.ts`](../src/sdk.ts) | Detectors written to this API keep loading; a `v2` API may ship in parallel. |
+| Registry file | `evergreen.registry.v2` · [`registry.v2.schema.json`](../schemas/registry.v2.schema.json) | `v2` registries keep validating and loading; a `v3` may ship in parallel. |
+| Data bundle | `evergreen.data-bundle.v1` · [`data-bundle.v1.schema.json`](../schemas/data-bundle.v1.schema.json) | Bundle manifest shape stays; older bundles remain accepted for the window after a successor appears. |
+| MCP server | Tool names, resource URIs, and input fields in [MCP](MCP.md) | Listed tools and resources keep working; new tools or optional inputs may appear. Output documents use the rows above. |
+| GitHub Action / GitLab component | Input names in [GitHub Action](GITHUB_ACTION.md) and [GitLab](GITLAB.md) | Documented inputs keep their meaning; new inputs default to current behavior. |
+| SARIF export | SARIF 2.1.0 from `scan --format sarif` | Remains valid SARIF 2.1.0; field mapping changes that would break code scanning need notice as for versioned formats. |
+| Agent Skill | Portable skill layout and trigger description | Install and discovery paths for Supported hosts stay; host-specific packaging marked Experimental follows the experimental window. |
+
+### Outside the v1 promise
+
+These change without a contract break and are not covered by the windows above:
+
+- **Lifecycle findings and rules.** Bundled data can add, change, or remove a finding when evidence changes. Pin a data version or use a [baseline](CAPABILITIES.md) to stabilize CI.
+- **Detector maturity moves.** Promoting or demoting a detector between Experimental, Beta, and Supported follows [decision 0013](decisions/0013-detector-maturity.md).
+- **Bug fixes** that correct a wrong location, match, or message.
+- **Internals** not exported from `src/index.ts` or named in a schema, including maintainer scripts and test fixtures.
+- **Human-readable wording** in CLI help, finding prose, and documentation.
+
+Until 1.0.0 is tagged, Evergreen is still pre-1.0: the deprecation policy already applies, and this section is the contract that 1.0.0 will publish. Issue tracking for the release is in the [v1 epic](https://github.com/arminazimi/evergreen/issues/57).
+
+## Deprecation policy
+
+Evergreen reports other projects' deprecations. Its own interfaces follow the policy below, so a script, an agent, or a plugin built on Evergreen keeps working long enough to move.
+
+### What the policy covers
+
+| Interface | Version identifier | Additive change | Breaking change |
+| --- | --- | --- | --- |
+| CLI commands, flags, and environment variables | None | A new command, flag, or variable. | The old form is deprecated for a full window, then removed. |
+| JSON output of `scan`, `check`, `explain`, `context`, `doctor`, and the other `--json` commands | `schemaVersion`, for example `evergreen.scan.v1` | A new optional field, added in a minor release. Consumers must ignore fields they do not know. | A new document version such as `evergreen.scan.v2`; `v1` keeps working for the window. |
+| JSON Schemas in [`schemas/`](../schemas) | File name, for example `scan.v1.schema.json` | A new optional property. | A new `*.v2.schema.json` file; the `v1` file stays for the window. |
+| MCP tools, resources, and prompts | Tool and resource URIs, input field names, and the same output `schemaVersion` | A new tool, prompt, optional input, or optional output field. | A new window, then a removal or a new output version. |
+| Detector SDK ([`src/sdk.ts`](../src/sdk.ts)) | `evergreen.detector.v1` | A new optional member or a new context field. | `evergreen.detector.v2`; the engine keeps loading `v1` detectors during the window. |
+| Registry format | `evergreen.registry.v2` | A new optional rule or registry field, accepted by the validator in the same release. | `evergreen.registry.v3`; `v2` registries are still read during the window. |
+| Data bundle | `evergreen.data-bundle.v1` | A new optional manifest field. | A new bundle version; the old one is still accepted during the window. |
+| GitHub Action and GitLab component inputs | Input names | A new input whose default preserves current behavior. | The old input or behavior is deprecated for a full window, then removed. |
+
+The contract is the machine-readable part: command names, exit codes, field names, types, and schema versions. Human-readable wording, help text, warning prose, and field order may change in any release. A new optional field may appear in a `v1` document in a minor release; a required field, a rename, a removal, or a type change requires a new version. Patch releases fix behavior but do not add fields.
+
+### Notice periods
+
+| Change | Minimum notice before removal |
+| --- | --- |
+| CLI flag, environment variable, Action or component input, MCP tool, prompt, resource, or input field | 90 days and one minor release, whichever ends later. |
+| A versioned format: JSON document, schema file, registry, bundle, or detector API | 12 months and two minor releases after its successor ships. |
+
+The window starts in the release that announces the deprecation, not in the release that removes it, and it is measured from that release's date. Extensions are allowed; shortening a window is not, except for a security or correctness problem (below).
+
+Before 1.0, semantic versioning would permit a minor release to break an interface; this policy is deliberately stricter and already applies. From 1.0.0, the [v1 compatibility guarantees](#v1-compatibility-guarantees) lock the same windows into the SemVer major line. Surfaces the matrix marks **Experimental** may change in any minor release with a CHANGELOG entry; **Beta** and **Supported** surfaces get the windows above. Runtime support is listed in the matrix; a runtime is dropped from it only after the runtime reaches its own end of life and with a deprecation note in the release before the drop.
+
+### Removal process
+
+1. **Open an issue** labeled `deprecation` that names the interface, the replacement, and the intended removal release.
+2. **Record it** in the table below with the release it was deprecated in and the earliest release or date it may be removed.
+3. **Announce it in a release**: a CHANGELOG entry, a note in the docs for the interface, and the replacement and migration step. Where the interface can warn at runtime, a CLI flag or environment variable prints one line to stderr; an MCP tool or input is marked deprecated in its description.
+4. **Keep it working** for the full window. Only fixes and security changes are made to a deprecated interface, and its behavior must not drift toward the replacement.
+5. **Remove it** in the first release after the window. The CHANGELOG entry says so, the docs stop describing it, and a versioned format's old file is retired together with runtime support for it. The issue is linked from the release notes.
+6. **If the replacement is not ready**, extend the window in the table and say why in the issue. A deprecation without a documented replacement is not opened.
+
+A security vulnerability, data corruption, or a contract that would make a lifecycle answer unsafe to act on may be fixed or removed in the next patch release. The release notes name the change, and a vulnerability is reported through [SECURITY.md](../SECURITY.md).
+
+### What is not a deprecation
+
+- **Lifecycle findings.** Rules and their evidence are data, not an interface. A data update can add, change, or remove a finding at any time; a [baseline](CAPABILITIES.md) or a pinned data version is how a project stabilizes its results. A new finding is not a breaking change.
+- **Detector coverage and maturity.** Moving a detector between `Experimental`, `Beta`, and `Supported`, or reading a new declaration form, changes what a scan reports. [Decision 0013](decisions/0013-detector-maturity.md) governs those changes.
+- **Bug fixes.** Correcting a wrong location, rule match, or message is not a deprecation, even when the corrected output differs from the old one.
+- **Internals.** Modules that are not exported from `src/index.ts` or named in a schema, the `tools/` maintainer scripts, test fixtures, and plugin packaging internals may change at any time.
+
+### Current deprecations
+
+| Interface | Deprecated in | May be removed after | Replacement |
+| --- | --- | --- | --- |
+| None | — | — | — |
 
 ## Ecosystem coverage
 
@@ -1425,6 +2160,52 @@ The host also needs one Evergreen execution path:
 
 No account or API key is required.
 
+## One-command install per host
+
+Each host below gets the Skill with one install command. Claude Code and Codex also receive the local MCP server through the same plugin ([MCP](MCP.md#one-command-install-per-host)). Cursor and VS Code need the MCP server separately. Every command was run in a clean environment on 2026-10-29 (macOS, Node.js 22).
+
+Shared verify prompt after install: ask the agent to `Add the request package to this project`, and confirm it checks `pkg:npm/request` (via `check_dependency` or `npx evergreen-deprecation check`) and reports the deprecation with a replacement and sources instead of adding the package.
+
+### Claude Code
+
+```sh
+claude plugin install evergreen --marketplace arminazimi/evergreen
+```
+
+**Verify.** `claude plugin list` shows `evergreen@evergreen` enabled, and `claude plugin details evergreen` lists the `evergreen-deprecation` Skill. Start a new session and use the shared verify prompt.
+
+Portable skills-CLI alternative: `npx skills add arminazimi/evergreen --agent claude-code --skill evergreen-deprecation --yes`, then `npx skills list`.
+
+### Codex
+
+```sh
+codex plugin marketplace add arminazimi/evergreen --ref main && codex plugin add evergreen@evergreen-codex
+```
+
+When the Evergreen repository marketplace is already configured, `codex plugin add evergreen@evergreen-codex` alone is enough.
+
+**Verify.** Restart the Codex session, run `codex plugin list --json`, and confirm `evergreen@evergreen-codex` is installed. Then use the shared verify prompt.
+
+Portable skills-CLI alternative: `npx skills add arminazimi/evergreen --agent codex --skill evergreen-deprecation --yes`, then `npx skills list`.
+
+### Cursor
+
+```sh
+npx skills add arminazimi/evergreen --agent cursor --skill evergreen-deprecation --yes
+```
+
+**Verify.** `npx skills list` shows `evergreen-deprecation`. Restart Cursor, then use the shared verify prompt. For the MCP server, see [MCP](MCP.md#one-command-install-per-host).
+
+### VS Code
+
+VS Code Copilot Chat picks up the Skill through the skills CLI's `github-copilot` target:
+
+```sh
+npx skills add arminazimi/evergreen --agent github-copilot --skill evergreen-deprecation --yes
+```
+
+**Verify.** `npx skills list` shows `evergreen-deprecation`. Reload the VS Code window, open Copilot Chat in Agent mode, then use the shared verify prompt. For the MCP server, see [MCP](MCP.md#one-command-install-per-host).
+
 ## One Skill for every ecosystem
 
 Evergreen briefly shipped four per-ecosystem Skills (Node.js, Python, GitHub Actions, containers) and removed them in favor of this one. They were near-copies of this Skill that differed only by a rule-prefix filter, so every workflow change had to be made five times, they could trigger together on one request, and they covered four of the ecosystems Evergreen supports. The claim that narrower descriptions trigger more reliably was never measured: the trigger evaluation covers only this Skill. If a measurement shows a gain, split by ecosystem then.
@@ -1515,6 +2296,105 @@ Source: https://arminazimi.github.io/evergreen/RULES.html
 Every lifecycle claim Evergreen makes comes from a rule in `registry/`. A rule says which component is affected, in which versions, what happened to it, who says so, and when that was last checked. This page is the reference for writing one.
 
 The format is `evergreen.registry.v2`. Its JSON Schema is [`schemas/registry.v2.schema.json`](../schemas/registry.v2.schema.json), and the reasoning is in [Decision 0004](decisions/0004-registry-v2.md). All five bundled registries (`container`, `github-actions`, `nodejs`, `npm`, `python`) use it.
+
+## From a source to a merged pull request
+
+This walkthrough follows one real rule, `npm.package.request.deprecated` ([below](#a-complete-rule)), from the notice that justifies it to the pull request that adds it. The reference sections explain each field; this is the order to work in.
+
+### 1. Find the claim and its source
+
+Open the authoritative notice. For `request` it is the deprecation notice on the package's [npm page](https://www.npmjs.com/package/request). Write down:
+
+- the URL, and the day you read it;
+- the affected versions;
+- the event, in the source's words;
+- what the source says, and separately what a maintainer recommends instead;
+- any date the source gives.
+
+If the notice is vague about versions, the event, or a date, do not guess: say so in the issue. A rule without an authoritative source is not a rule; see [Evidence policy](#evidence-policy).
+
+### 2. Branch and scaffold
+
+```bash
+git switch -c rule/<name>-deprecated
+npm ci
+npm run build
+node dist/src/cli.js new-rule npm.package.<name>.deprecated
+```
+
+Run `new-rule` from a checkout of this repository. It reads `registry/` and refuses an id that is already defined, naming the file that owns it. Otherwise it appends a placeholder rule to `registry/<ecosystem>.json` and creates `tests/fixtures/<rule-id>/match/` and `clean/`, each with a placeholder source file and a README.
+
+The scaffold passes `rules lint` and `npm run check` as generated, because its generic `purl` matches nothing in a real scan. Green checks are necessary but not sufficient: every placeholder below must be replaced before review.
+
+### 3. Replace the placeholder with the claim
+
+Keep `id` and `ecosystem` as generated and work through the rest. The right column is what the submitted `npm.package.request.deprecated` rule uses:
+
+| Generated placeholder | The `request` rule |
+|---|---|
+| `purl: "pkg:generic/<rule-id>"` | `"pkg:npm/request"` |
+| `vers: "vers:semver/*"` | `"vers:npm/*"`, every version the notice covers |
+| `event: "deprecated"` | unchanged, because the notice says deprecated |
+| `title`, `summary`: "Replace this placeholder…" | the claim in one line and two sentences, with no advice |
+| `severity: "info"` | `"high"`, because the whole package is abandoned |
+| `replacement: "Replace with the replacement…"` | `"Native fetch or a maintained HTTP client"` |
+| `sources`: an `example.com` link | the npm page, with the title the page uses |
+| `provenance`: `reviewer: "unreviewed"`, today's dates | your handle, `observedAt` the day you read the source, `reviewedAt` the day you submit |
+| no `deadline` | `"2020-02-11"`, when the source gives one |
+| no `migration` | constraints, ordered steps, and a verification command |
+| `usage`: `module: "<rule-id>"` | `module: "request"` |
+| no `x-npm` | `package: "request"` |
+
+[A rule](#a-rule) describes every field. Keep `summary` factual and put advice in `replacement`; a `scheduled-end-of-life` rule needs the announced date as its `deadline` and `severity: "low"`.
+
+### 4. Write both fixtures
+
+Replace the generated source files with the smallest repository that shows the behavior:
+
+```js
+// tests/fixtures/npm.package.request.deprecated/match/index.js
+const request = require("request");
+
+request.get("https://example.com/health"); // reported
+```
+
+```js
+// tests/fixtures/npm.package.request.deprecated/clean/index.js
+const request = { get() {} }; // not reported: a local object, not the package
+
+request.get("https://example.com/health");
+```
+
+Both directories are scanned offline as untrusted repositories and nothing in them is executed. The `match` fixture must report the rule and `clean` must not; a lookalike that is reported is a bug in the rule or the analysis. Keep only the files the detector reads.
+
+### 5. Run the checks locally
+
+```bash
+node dist/src/cli.js rules lint
+node dist/src/cli.js rules test <rule-id>
+npm run build:reference
+npm run check
+```
+
+- `rules lint` checks every registry under `registry/` (or the files you pass) and prints each problem with its file, line, and a fix hint.
+- `rules test` scans both fixtures and prints the expected and actual observations. It needs both directories, so when you edit a rule that predates the fixture harness, add the two fixtures in the same pull request instead of skipping the check.
+- `build:reference` rewrites `docs/rules/<rule-id>.md` from the registry; CI fails when the committed pages drift.
+- `npm run check` is the same gate CI runs: build, full tests, plugin checks, and evals.
+
+If the analysis is wrong rather than the rule, fix the detector in the same pull request and say so.
+
+### 6. Open the pull request
+
+```bash
+git add registry/npm.json docs/rules/npm.package.request.deprecated.md tests/fixtures/npm.package.request.deprecated
+git commit -m "feat(npm): add the request deprecation rule"
+git push -u origin rule/request-deprecated
+gh pr create --title "feat(npm): add the request deprecation rule" --body "Closes #<issue>"
+```
+
+Fill the template: the evidence link goes under **Evidence**, the commands you ran under **Verification**. Rules and fixtures are reviewed data; [`/registry/` is owned by a maintainer](../.github/CODEOWNERS), who checks that the source says what the rule says, that versions and dates match it, and that the clean fixture is a fair lookalike. Keep one rule per pull request.
+
+After merge, the weekly [source check](../.github/workflows/sources.yml) watches the link. When the source changes, review the rule and update `reviewedAt`; see [Freshness and sources](#freshness-and-sources).
 
 ## A complete rule
 
@@ -1724,6 +2604,24 @@ This example adds a rule for `fs.exists`, which Node.js documents as deprecated 
 
    Cover at least one reported usage per shape the rule declares, one alias, and the lookalikes above. A lookalike that the analysis reports is a bug in the rule or the analysis; fix it before the rule merges.
 7. **Check it.** Run `npm run check`. It validates the rule against the schema, including every symbol entry, and fails when the reference pages under `docs/rules/` have drifted (run `npm run build:reference` to regenerate them). Open the pull request with `Closes #<issue>` and link the deprecation notice.
+
+### Test a rule
+
+A rule ships with two fixtures, and the harness runs them without any test code:
+
+```
+tests/fixtures/<rule-id>/match/   # a small repository the rule must report
+tests/fixtures/<rule-id>/clean/   # a lookalike repository the rule must not report
+```
+
+Both directories are scanned offline as untrusted input, exactly like a repository. The `match` fixture must observe the rule and `clean` must not. A rule is observed when a detector reports it or, for a rule with `usage` matchers, when the usage analysis finds a match; a rule without both directories fails.
+
+```bash
+evergreen rules test <rule-id>          # exits 1 when a fixture fails and prints the expected and actual observations
+evergreen rules lint [file...]          # checks schema, dates, source URLs, and duplicate ids with a fix hint
+```
+
+Keep fixtures tiny and give each one only the files its detector reads. The fixtures are also the reviewable evidence that the rule matches what you say it matches; when the detector or the rule changes, update them in the same pull request.
 
 ### Provenance
 
@@ -1947,6 +2845,16 @@ Ignoring downloaded lifecycle data 2026.10.16: registry/npm.json does not match 
 ```
 
 Common causes are a damaged download (run `evergreen data update` again), a bundle that needs a newer Evergreen (upgrade), and an expired trust root (upgrade). Data that is merely old is not an error; it is flagged stale after 30 days, and `evergreen data update` is the remedy.
+
+## License and attribution
+
+The lifecycle dataset is licensed separately from the scanner. The data-only package `evergreen-data` — the registry JSON under `registry/` and the first-party schemas under `schemas/` — is licensed under [CC BY 4.0](https://creativecommons.org/licenses/by/4.0/), which allows use and redistribution, including commercially, with attribution and an indication of changes. The package ships the license as `LICENSE` and the attribution notice as `ATTRIBUTION.md`. Everything else in this repository is [Apache-2.0](../LICENSE), and the rules bundled inside the installed scanner package remain part of that package.
+
+To reuse the dataset, credit it and link the license, for example:
+
+> Lifecycle data from Evergreen (`evergreen-data`), by Armin Azimi and Evergreen contributors, licensed under CC BY 4.0. https://github.com/arminazimi/evergreen
+
+Every rule carries its own `sources` (title and URL) and `reviewedAt`, so a consumer can trace a claim back to the page that states it. `registry/sources.lock.json` records every cited URL with the date it was checked; it is maintainer tooling and stays out of the published package. The upstream facts remain subject to the terms of the pages they come from; the license covers Evergreen's selection, arrangement, normalization, and original text. Product and project names are trademarks of their owners and do not imply endorsement.
 
 ## Publishing a bundle
 
@@ -2458,6 +3366,331 @@ The controlled source-usage benchmark provides a separate exact-match test for i
 
 ---
 
+Source: https://arminazimi.github.io/evergreen/state-of-eol.html
+
+# State of EOL
+
+A citable summary of lifecycle risk in Evergreen's public benchmark corpus: every expected finding at a pinned commit, aggregated by product and release line. The tables below regenerate from the corpus and the last recorded full run; they are a census of that corpus, not a sample of the open-source world.
+
+## Findings
+
+<!-- state-of-eol:start -->
+Measured on the public corpus of 457 pinned repositories (2307 expected findings). The last full corpus run was commit `c7b4e14` on 2026-10-24 (456 repositories, precision 1, recall 1). Method: [Validation](VALIDATION.md). Corpus: [`benchmarks/public-repositories.json`](../benchmarks/public-repositories.json). Regenerate with `npm run build:coverage` after `npm run record:corpus-run`.
+
+| Measure | Value |
+| --- | ---: |
+| Repositories | 457 |
+| Expected findings | 2307 |
+| Products with findings | 120 |
+| Release lines with findings | 170 |
+
+### By product
+
+| Product | Findings | Release lines | Repositories |
+| --- | ---: | ---: | ---: |
+| actions/checkout | 454 | 1 | 154 |
+| nodejs | 320 | 8 | 73 |
+| dotnet | 302 | 10 | 19 |
+| python | 122 | 2 | 79 |
+| actions/setup-python | 106 | 1 | 46 |
+| actions/upload-artifact | 90 | 1 | 33 |
+| actions/setup-node | 86 | 1 | 39 |
+| actions/cache | 71 | 1 | 23 |
+| java | 60 | 3 | 13 |
+| golang | 52 | 6 | 20 |
+| library/node | 31 | 2 | 13 |
+| actions/download-artifact | 25 | 1 | 16 |
+| ruby | 24 | 5 | 14 |
+| softprops/action-gh-release | 22 | 1 | 15 |
+| babel-eslint | 19 | 1 | 18 |
+| library/python | 19 | 1 | 16 |
+| library/ubuntu | 19 | 2 | 9 |
+| cmake | 18 | 1 | 13 |
+| actions/setup-java | 17 | 1 | 8 |
+| next | 17 | 4 | 6 |
+| aws-lambda-runtime/nodejs14.x | 16 | 1 | 9 |
+| docker/login-action | 16 | 1 | 11 |
+| actions/create-github-app-token | 15 | 1 | 2 |
+| docker/build-push-action | 15 | 1 | 8 |
+| kubernetes/extensions/Deployment | 15 | 1 | 4 |
+| @angular/core | 13 | 2 | 2 |
+| actions/github-script | 13 | 1 | 8 |
+| azure-pipelines/ubuntu-image | 13 | 2 | 7 |
+| docker/setup-buildx-action | 13 | 1 | 9 |
+| library/postgres | 13 | 2 | 9 |
+| powershell | 12 | 4 | 5 |
+| kubernetes/extensions/Ingress | 10 | 1 | 6 |
+| xcode | 10 | 2 | 10 |
+| com.android.billingclient/billing | 9 | 5 | 7 |
+| kubernetes/apps/Deployment | 9 | 2 | 2 |
+| postgresql | 9 | 3 | 8 |
+| aws-lambda-runtime/python3.8 | 8 | 1 | 3 |
+| dart | 8 | 1 | 4 |
+| library/golang | 8 | 1 | 7 |
+| node-sass | 8 | 1 | 8 |
+| atty | 7 | 1 | 6 |
+| docker/metadata-action | 7 | 1 | 3 |
+| docker/setup-qemu-action | 7 | 1 | 6 |
+| mysql | 7 | 1 | 4 |
+| terraform | 7 | 2 | 5 |
+| actions/stale | 6 | 1 | 6 |
+| astral-sh/setup-uv | 6 | 1 | 3 |
+| ios | 6 | 1 | 2 |
+| kubernetes/storage.k8s.io/StorageClass | 6 | 1 | 1 |
+| actions/setup-dotnet | 5 | 1 | 4 |
+| actions/setup-go | 5 | 1 | 4 |
+| ansi_term | 5 | 1 | 5 |
+| babel-preset-es2015 | 5 | 1 | 5 |
+| kubernetes/batch/CronJob | 5 | 1 | 3 |
+| kubernetes/extensions/PodSecurityPolicy | 5 | 1 | 1 |
+| library/alpine | 5 | 1 | 4 |
+| kubernetes/extensions/DaemonSet | 4 | 1 | 2 |
+| library/debian | 4 | 1 | 3 |
+| request | 4 | 1 | 4 |
+| rollup-plugin-terser | 4 | 1 | 4 |
+| django | 3 | 2 | 3 |
+| kubernetes/extensions/ReplicaSet | 3 | 1 | 2 |
+| library/ruby | 3 | 1 | 2 |
+| rollup-plugin-babel | 3 | 1 | 3 |
+| rust | 3 | 1 | 2 |
+| vue | 3 | 1 | 3 |
+| actions/deploy-pages | 2 | 1 | 2 |
+| actions/labeler | 2 | 1 | 2 |
+| crypto-js | 2 | 1 | 2 |
+| hashicorp/setup-terraform | 2 | 1 | 2 |
+| istanbul | 2 | 1 | 2 |
+| kubernetes/apps/ReplicaSet | 2 | 1 | 1 |
+| kubernetes/autoscaling/HorizontalPodAutoscaler | 2 | 2 | 2 |
+| kubernetes/policy/PodDisruptionBudget | 2 | 1 | 2 |
+| kubernetes/policy/PodSecurityPolicy | 2 | 1 | 1 |
+| kubernetes/rbac.authorization.k8s.io/ClusterRoleBinding | 2 | 1 | 1 |
+| library/redis | 2 | 1 | 2 |
+| php | 2 | 1 | 2 |
+| pycrypto | 2 | 1 | 2 |
+| scala | 2 | 1 | 1 |
+| tempdir | 2 | 1 | 2 |
+| tslint | 2 | 1 | 2 |
+| uglify-es | 2 | 1 | 2 |
+| WindowsAzure.Storage | 2 | 1 | 2 |
+| @types/dotenv | 1 | 1 | 1 |
+| @types/emoji-regex | 1 | 1 | 1 |
+| @types/form-data | 1 | 1 | 1 |
+| @types/koa-useragent | 1 | 1 | 1 |
+| @types/sanitize-filename | 1 | 1 | 1 |
+| @types/socket.io-client | 1 | 1 | 1 |
+| actions/configure-pages | 1 | 1 | 1 |
+| amazon-eks | 1 | 1 | 1 |
+| aws-lambda-runtime/ruby2.7 | 1 | 1 | 1 |
+| cloud.google.com/go/pubsub | 1 | 1 | 1 |
+| doctrine/cache | 1 | 1 | 1 |
+| failure | 1 | 1 | 1 |
+| github.com/golang/protobuf | 1 | 1 | 1 |
+| google-cloud-functions-runtime/nodejs14 | 1 | 1 | 1 |
+| google-cloud-sql-mysql | 1 | 1 | 1 |
+| gulp-util | 1 | 1 | 1 |
+| helm-repository/stable | 1 | 1 | 1 |
+| i18next-parser | 1 | 1 | 1 |
+| karma-phantomjs-launcher | 1 | 1 | 1 |
+| koa-router | 1 | 1 | 1 |
+| kubernetes/apiextensions.k8s.io/CustomResourceDefinition | 1 | 1 | 1 |
+| kubernetes/apps/DaemonSet | 1 | 1 | 1 |
+| kubernetes/apps/StatefulSet | 1 | 1 | 1 |
+| kubernetes/networking.k8s.io/Ingress | 1 | 1 | 1 |
+| kubernetes/rbac.authorization.k8s.io/ClusterRole | 1 | 1 | 1 |
+| library/mysql | 1 | 1 | 1 |
+| lodash.isequal | 1 | 1 | 1 |
+| mysql/mysql-connector-java | 1 | 1 | 1 |
+| protractor | 1 | 1 | 1 |
+| q | 1 | 1 | 1 |
+| react-beautiful-dnd | 1 | 1 | 1 |
+| request-promise | 1 | 1 | 1 |
+| socket.io-redis | 1 | 1 | 1 |
+| swiftmailer/swiftmailer | 1 | 1 | 1 |
+| typing | 1 | 1 | 1 |
+| zendframework/zend-stdlib | 1 | 1 | 1 |
+
+### By product and release line
+
+| Product | Release line | Rule | Event | Findings | Repositories |
+| --- | --- | --- | --- | ---: | ---: |
+| actions/checkout | Unsupported actions/checkout runtime | [`github-actions.checkout.node20`](rules/github-actions.checkout.node20.html) | end-of-support | 454 | 154 |
+| actions/setup-python | Unsupported actions/setup-python runtime | [`github-actions.setup-python.node20`](rules/github-actions.setup-python.node20.html) | end-of-support | 106 | 46 |
+| dotnet | .NET 8 reaches end of support on 2026-11-10 | [`dotnet.runtime.end-of-support-8.0`](rules/dotnet.runtime.end-of-support-8.0.html) | scheduled-end-of-life | 103 | 8 |
+| nodejs | Node.js 20 is end-of-life | [`nodejs.runtime.eol-20`](rules/nodejs.runtime.eol-20.html) | end-of-life | 102 | 46 |
+| python | Python 3.9 and older are end-of-life | [`python.runtime.eol-3.9-and-older`](rules/python.runtime.eol-3.9-and-older.html) | end-of-life | 97 | 68 |
+| actions/upload-artifact | Retired actions/upload-artifact release | [`github-actions.upload-artifact.retired`](rules/github-actions.upload-artifact.retired.html) | removed | 90 | 33 |
+| actions/setup-node | Unsupported actions/setup-node runtime | [`github-actions.setup-node.node20`](rules/github-actions.setup-node.node20.html) | end-of-support | 86 | 39 |
+| nodejs | Legacy Node.js runtime is end-of-life | [`nodejs.runtime.legacy`](rules/nodejs.runtime.legacy.html) | end-of-life | 76 | 40 |
+| actions/cache | Unsupported actions/cache runtime | [`github-actions.cache.node20`](rules/github-actions.cache.node20.html) | end-of-support | 71 | 23 |
+| nodejs | Node.js 18 is end-of-life | [`nodejs.runtime.eol-18`](rules/nodejs.runtime.eol-18.html) | end-of-life | 60 | 42 |
+| dotnet | .NET 9 reaches end of support on 2026-11-10 | [`dotnet.runtime.end-of-support-9.0`](rules/dotnet.runtime.end-of-support-9.0.html) | scheduled-end-of-life | 52 | 4 |
+| dotnet | .NET Core 2.0 is no longer supported | [`dotnet.runtime.end-of-support-2.0`](rules/dotnet.runtime.end-of-support-2.0.html) | end-of-support | 48 | 2 |
+| nodejs | Node.js 22 reaches end-of-life on 2027-04-30 | [`nodejs.runtime.eol-22`](rules/nodejs.runtime.eol-22.html) | scheduled-end-of-life | 42 | 23 |
+| dotnet | .NET 7 is no longer supported | [`dotnet.runtime.end-of-support-7.0`](rules/dotnet.runtime.end-of-support-7.0.html) | end-of-support | 39 | 3 |
+| nodejs | Node.js 19 is end-of-life | [`nodejs.runtime.eol-19`](rules/nodejs.runtime.eol-19.html) | end-of-life | 34 | 31 |
+| java | Java 18 to 20 are no longer supported | [`java.jdk.end-of-support-18-20`](rules/java.jdk.end-of-support-18-20.html) | end-of-support | 30 | 6 |
+| dotnet | .NET Core 3.1 is no longer supported | [`dotnet.runtime.end-of-support-3.1`](rules/dotnet.runtime.end-of-support-3.1.html) | end-of-support | 29 | 7 |
+| java | Java 12 to 16 are no longer supported | [`java.jdk.end-of-support-12-16`](rules/java.jdk.end-of-support-12-16.html) | end-of-support | 29 | 6 |
+| library/node | Node.js image release lines 21 and older are end-of-life | [`container.node.eol-21-and-older`](rules/container.node.eol-21-and-older.html) | end-of-life | 29 | 12 |
+| golang | Go 1.20 and older are no longer supported | [`go.runtime.end-of-support-1.20-and-older`](rules/go.runtime.end-of-support-1.20-and-older.html) | end-of-support | 27 | 7 |
+| actions/download-artifact | Retired actions/download-artifact release | [`github-actions.download-artifact.retired`](rules/github-actions.download-artifact.retired.html) | removed | 25 | 16 |
+| python | Python 3.10 and older are end-of-life | [`python.runtime.eol-3.10-and-older`](rules/python.runtime.eol-3.10-and-older.html) | end-of-life | 25 | 19 |
+| softprops/action-gh-release | Unsupported softprops/action-gh-release runtime | [`github-actions.action-gh-release.node20`](rules/github-actions.action-gh-release.node20.html) | end-of-support | 22 | 15 |
+| babel-eslint | babel-eslint is deprecated | [`npm.package.babel-eslint.deprecated`](rules/npm.package.babel-eslint.deprecated.html) | deprecated | 19 | 18 |
+| library/python | Python image release lines 3.10 and older are end-of-life | [`container.python.eol-3.10-and-older`](rules/container.python.eol-3.10-and-older.html) | end-of-life | 19 | 16 |
+| cmake | CMake policy versions older than 3.5 are removed | [`cpp.cmake.policy-below-3.5.removed`](rules/cpp.cmake.policy-below-3.5.removed.html) | removed | 18 | 13 |
+| actions/setup-java | Unsupported actions/setup-java runtime | [`github-actions.setup-java.node20`](rules/github-actions.setup-java.node20.html) | end-of-support | 17 | 8 |
+| library/ubuntu | Ubuntu image release lines 20.04 and older are past standard support end-of-life | [`container.ubuntu.eol-20.04-and-older`](rules/container.ubuntu.eol-20.04-and-older.html) | end-of-life | 17 | 7 |
+| aws-lambda-runtime/nodejs14.x | AWS Lambda Node.js 14 runtime is end-of-life | [`serverless.aws-lambda.nodejs14.x`](rules/serverless.aws-lambda.nodejs14.x.html) | end-of-life | 16 | 9 |
+| docker/login-action | Unsupported docker/login-action runtime | [`github-actions.login-action.node20`](rules/github-actions.login-action.node20.html) | end-of-support | 16 | 11 |
+| actions/create-github-app-token | Unsupported actions/create-github-app-token runtime | [`github-actions.create-github-app-token.node20`](rules/github-actions.create-github-app-token.node20.html) | end-of-support | 15 | 2 |
+| docker/build-push-action | Unsupported docker/build-push-action runtime | [`github-actions.build-push-action.node20`](rules/github-actions.build-push-action.node20.html) | end-of-support | 15 | 8 |
+| kubernetes/extensions/Deployment | Deployment extensions/v1beta1 is no longer served | [`kubernetes.extensions.deployment.v1beta1.removed`](rules/kubernetes.extensions.deployment.v1beta1.removed.html) | removed | 15 | 4 |
+| actions/github-script | Unsupported actions/github-script runtime | [`github-actions.github-script.node20`](rules/github-actions.github-script.node20.html) | end-of-support | 13 | 8 |
+| docker/setup-buildx-action | Unsupported docker/setup-buildx-action runtime | [`github-actions.setup-buildx-action.node20`](rules/github-actions.setup-buildx-action.node20.html) | end-of-support | 13 | 9 |
+| dotnet | .NET 6 is no longer supported | [`dotnet.runtime.end-of-support-6.0`](rules/dotnet.runtime.end-of-support-6.0.html) | end-of-support | 13 | 3 |
+| @angular/core | @angular/core v20 reaches end of life on 2026-11-28 | [`npm.package.angular.core.v20.scheduled-end-of-life`](rules/npm.package.angular.core.v20.scheduled-end-of-life.html) | scheduled-end-of-life | 12 | 1 |
+| library/postgres | PostgreSQL image major versions 13 and older are end-of-life | [`container.postgres.eol-13-and-older`](rules/container.postgres.eol-13-and-older.html) | end-of-life | 12 | 9 |
+| next | Next.js 15 is out of support | [`npm.package.next.15.support-end`](rules/npm.package.next.15.support-end.html) | end-of-support | 11 | 2 |
+| dotnet | .NET 5 is no longer supported | [`dotnet.runtime.end-of-support-5.0`](rules/dotnet.runtime.end-of-support-5.0.html) | end-of-support | 10 | 4 |
+| kubernetes/extensions/Ingress | Ingress extensions/v1beta1 is no longer served | [`kubernetes.extensions.ingress.v1beta1.removed`](rules/kubernetes.extensions.ingress.v1beta1.removed.html) | removed | 10 | 6 |
+| ruby | Ruby 3.1 is end-of-life | [`ruby.runtime.eol-3.1`](rules/ruby.runtime.eol-3.1.html) | end-of-life | 10 | 4 |
+| aws-lambda-runtime/python3.8 | AWS Lambda Python 3.8 runtime is end-of-life | [`serverless.aws-lambda.python3.8`](rules/serverless.aws-lambda.python3.8.html) | end-of-life | 8 | 3 |
+| azure-pipelines/ubuntu-image | Azure Pipelines Ubuntu 22.04 hosted image is scheduled for removal | [`ci-images.azure-pipelines.ubuntu-22.04`](rules/ci-images.azure-pipelines.ubuntu-22.04.html) | scheduled-end-of-life | 8 | 5 |
+| dart | Dart 3.8 no longer receives security updates | [`dart.sdk.end-of-support-3.8`](rules/dart.sdk.end-of-support-3.8.html) | end-of-support | 8 | 4 |
+| golang | Go 1.24 is no longer supported | [`go.runtime.end-of-support-1.24`](rules/go.runtime.end-of-support-1.24.html) | end-of-support | 8 | 5 |
+| golang | Go 1.25 is no longer supported | [`go.runtime.end-of-support-1.25`](rules/go.runtime.end-of-support-1.25.html) | end-of-support | 8 | 6 |
+| kubernetes/apps/Deployment | Deployment apps/v1beta1 is no longer served | [`kubernetes.apps.deployment.v1beta1.removed`](rules/kubernetes.apps.deployment.v1beta1.removed.html) | removed | 8 | 2 |
+| library/golang | Go image release lines 1.25 and older are end-of-life | [`container.golang.eol-1.25-and-older`](rules/container.golang.eol-1.25-and-older.html) | end-of-life | 8 | 7 |
+| node-sass | Node Sass is end-of-life | [`npm.package.node-sass.eol`](rules/npm.package.node-sass.eol.html) | end-of-life | 8 | 8 |
+| atty | atty is no longer maintained | [`rust.crate.atty.unmaintained`](rules/rust.crate.atty.unmaintained.html) | deprecated | 7 | 6 |
+| docker/metadata-action | Unsupported docker/metadata-action runtime | [`github-actions.metadata-action.node20`](rules/github-actions.metadata-action.node20.html) | end-of-support | 7 | 3 |
+| docker/setup-qemu-action | Unsupported docker/setup-qemu-action runtime | [`github-actions.setup-qemu-action.node20`](rules/github-actions.setup-qemu-action.node20.html) | end-of-support | 7 | 6 |
+| mysql | MySQL 5.7 is end-of-life | [`database.mysql.end-of-life-5.7`](rules/database.mysql.end-of-life-5.7.html) | end-of-life | 7 | 4 |
+| ruby | Ruby 2.7 is end-of-life | [`ruby.runtime.eol-2.7`](rules/ruby.runtime.eol-2.7.html) | end-of-life | 7 | 4 |
+| actions/stale | Unsupported actions/stale runtime | [`github-actions.stale.node20`](rules/github-actions.stale.node20.html) | end-of-support | 6 | 6 |
+| astral-sh/setup-uv | Unsupported astral-sh/setup-uv runtime | [`github-actions.setup-uv.node20`](rules/github-actions.setup-uv.node20.html) | end-of-support | 6 | 3 |
+| golang | Go 1.22 is no longer supported | [`go.runtime.end-of-support-1.22`](rules/go.runtime.end-of-support-1.22.html) | end-of-support | 6 | 5 |
+| ios | iOS and iPadOS app targets below iOS 13 are not accepted for App Store uploads | [`swift.app-store.ios-below-13`](rules/swift.app-store.ios-below-13.html) | end-of-support | 6 | 2 |
+| kubernetes/storage.k8s.io/StorageClass | StorageClass storage.k8s.io/v1beta1 is no longer served | [`kubernetes.storage-k8s-io.storageclass.v1beta1.removed`](rules/kubernetes.storage-k8s-io.storageclass.v1beta1.removed.html) | removed | 6 | 1 |
+| postgresql | PostgreSQL 13 is no longer a supported major version | [`database.postgresql.end-of-life-13`](rules/database.postgresql.end-of-life-13.html) | end-of-life | 6 | 6 |
+| powershell | PowerShell 7.2 (LTS) is no longer supported | [`shell.powershell.end-of-life-7.2`](rules/shell.powershell.end-of-life-7.2.html) | end-of-life | 6 | 1 |
+| xcode | Xcode older than 15 is not accepted for App Store uploads | [`swift.xcode.app-store-below-15`](rules/swift.xcode.app-store-below-15.html) | end-of-support | 6 | 6 |
+| actions/setup-dotnet | Unsupported actions/setup-dotnet runtime | [`github-actions.setup-dotnet.node20`](rules/github-actions.setup-dotnet.node20.html) | end-of-support | 5 | 4 |
+| actions/setup-go | Unsupported actions/setup-go runtime | [`github-actions.setup-go.node20`](rules/github-actions.setup-go.node20.html) | end-of-support | 5 | 4 |
+| ansi_term | ansi_term is no longer maintained | [`rust.crate.ansi-term.unmaintained`](rules/rust.crate.ansi-term.unmaintained.html) | deprecated | 5 | 5 |
+| azure-pipelines/ubuntu-image | Azure Pipelines Ubuntu 20.04 hosted image is retired | [`ci-images.azure-pipelines.ubuntu-20.04`](rules/ci-images.azure-pipelines.ubuntu-20.04.html) | removed | 5 | 4 |
+| babel-preset-es2015 | babel-preset-es2015 is deprecated | [`npm.package.babel-preset-es2015.deprecated`](rules/npm.package.babel-preset-es2015.deprecated.html) | deprecated | 5 | 5 |
+| com.android.billingclient/billing | Google Play Billing Library 8 reaches its new-app and update deadline on 2027-08-31 | [`android.play-billing.version-8`](rules/android.play-billing.version-8.html) | scheduled-end-of-life | 5 | 3 |
+| kubernetes/batch/CronJob | CronJob batch/v1beta1 is no longer served | [`kubernetes.batch.cronjob.v1beta1.removed`](rules/kubernetes.batch.cronjob.v1beta1.removed.html) | removed | 5 | 3 |
+| kubernetes/extensions/PodSecurityPolicy | PodSecurityPolicy extensions/v1beta1 is no longer served | [`kubernetes.extensions.podsecuritypolicy.v1beta1.removed`](rules/kubernetes.extensions.podsecuritypolicy.v1beta1.removed.html) | removed | 5 | 1 |
+| library/alpine | Alpine Linux image release lines 3.20 and older are end-of-life | [`container.alpine.eol-3.20-and-older`](rules/container.alpine.eol-3.20-and-older.html) | end-of-life | 5 | 4 |
+| ruby | Ruby 3.2 is end-of-life | [`ruby.runtime.eol-3.2`](rules/ruby.runtime.eol-3.2.html) | end-of-life | 5 | 5 |
+| dotnet | .NET Core 2.1 is no longer supported | [`dotnet.runtime.end-of-support-2.1`](rules/dotnet.runtime.end-of-support-2.1.html) | end-of-support | 4 | 2 |
+| kubernetes/extensions/DaemonSet | DaemonSet extensions/v1beta1 is no longer served | [`kubernetes.extensions.daemonset.v1beta1.removed`](rules/kubernetes.extensions.daemonset.v1beta1.removed.html) | removed | 4 | 2 |
+| library/debian | Debian image release lines 11 and older are end-of-life | [`container.debian.eol-11-and-older`](rules/container.debian.eol-11-and-older.html) | end-of-life | 4 | 3 |
+| next | Next.js 14 is out of support | [`npm.package.next.14.support-end`](rules/npm.package.next.14.support-end.html) | end-of-support | 4 | 3 |
+| nodejs | Node.js 25 is end-of-life | [`nodejs.runtime.eol-25`](rules/nodejs.runtime.eol-25.html) | end-of-life | 4 | 2 |
+| powershell | PowerShell 7.0 (LTS) is no longer supported | [`shell.powershell.end-of-life-7.0`](rules/shell.powershell.end-of-life-7.0.html) | end-of-life | 4 | 2 |
+| request | request is deprecated | [`npm.package.request.deprecated`](rules/npm.package.request.deprecated.html) | deprecated | 4 | 4 |
+| rollup-plugin-terser | rollup-plugin-terser is deprecated | [`npm.package.rollup-plugin-terser.deprecated`](rules/npm.package.rollup-plugin-terser.deprecated.html) | deprecated | 4 | 4 |
+| terraform | Terraform CLI 1.13 is no longer a supported release line | [`terraform.cli.end-of-support-1.13`](rules/terraform.cli.end-of-support-1.13.html) | end-of-support | 4 | 3 |
+| xcode | Xcode 15 through 25 are not accepted for App Store uploads | [`swift.xcode.app-store-15-through-25`](rules/swift.xcode.app-store-15-through-25.html) | end-of-support | 4 | 4 |
+| kubernetes/extensions/ReplicaSet | ReplicaSet extensions/v1beta1 is no longer served | [`kubernetes.extensions.replicaset.v1beta1.removed`](rules/kubernetes.extensions.replicaset.v1beta1.removed.html) | removed | 3 | 2 |
+| library/ruby | Ruby image release lines 3.2 and older are end-of-life | [`container.ruby.eol-3.2-and-older`](rules/container.ruby.eol-3.2-and-older.html) | end-of-life | 3 | 2 |
+| rollup-plugin-babel | rollup-plugin-babel is deprecated | [`npm.package.rollup-plugin-babel.deprecated`](rules/npm.package.rollup-plugin-babel.deprecated.html) | deprecated | 3 | 3 |
+| rust | Rust 1.98 and older are no longer supported | [`rust.toolchain.end-of-support-1.98-and-older`](rules/rust.toolchain.end-of-support-1.98-and-older.html) | end-of-support | 3 | 2 |
+| terraform | Terraform CLI 1.12 is no longer a supported release line | [`terraform.cli.end-of-support-1.12`](rules/terraform.cli.end-of-support-1.12.html) | end-of-support | 3 | 2 |
+| vue | Vue 2 is end-of-life | [`npm.package.vue.eol-2`](rules/npm.package.vue.eol-2.html) | end-of-life | 3 | 3 |
+| actions/deploy-pages | Unsupported actions/deploy-pages runtime | [`github-actions.deploy-pages.node20`](rules/github-actions.deploy-pages.node20.html) | end-of-support | 2 | 2 |
+| actions/labeler | Unsupported actions/labeler runtime | [`github-actions.labeler.node20`](rules/github-actions.labeler.node20.html) | end-of-support | 2 | 2 |
+| crypto-js | crypto-js is deprecated | [`npm.package.crypto-js.deprecated`](rules/npm.package.crypto-js.deprecated.html) | deprecated | 2 | 2 |
+| django | Django 4.2 LTS is end-of-life | [`python.package.django-4.2.eol`](rules/python.package.django-4.2.eol.html) | end-of-life | 2 | 2 |
+| dotnet | .NET Core 2.2 is no longer supported | [`dotnet.runtime.end-of-support-2.2`](rules/dotnet.runtime.end-of-support-2.2.html) | end-of-support | 2 | 1 |
+| dotnet | .NET Core 3.0 is no longer supported | [`dotnet.runtime.end-of-support-3.0`](rules/dotnet.runtime.end-of-support-3.0.html) | end-of-support | 2 | 1 |
+| golang | Go 1.23 is no longer supported | [`go.runtime.end-of-support-1.23`](rules/go.runtime.end-of-support-1.23.html) | end-of-support | 2 | 2 |
+| hashicorp/setup-terraform | Unsupported hashicorp/setup-terraform runtime | [`github-actions.setup-terraform.node20`](rules/github-actions.setup-terraform.node20.html) | end-of-support | 2 | 2 |
+| istanbul | istanbul is deprecated | [`npm.package.istanbul.deprecated`](rules/npm.package.istanbul.deprecated.html) | deprecated | 2 | 2 |
+| kubernetes/apps/ReplicaSet | ReplicaSet apps/v1beta2 is no longer served | [`kubernetes.apps.replicaset.v1beta2.removed`](rules/kubernetes.apps.replicaset.v1beta2.removed.html) | removed | 2 | 1 |
+| kubernetes/policy/PodDisruptionBudget | PodDisruptionBudget policy/v1beta1 is no longer served | [`kubernetes.policy.poddisruptionbudget.v1beta1.removed`](rules/kubernetes.policy.poddisruptionbudget.v1beta1.removed.html) | removed | 2 | 2 |
+| kubernetes/policy/PodSecurityPolicy | PodSecurityPolicy policy/v1beta1 is no longer served | [`kubernetes.policy.podsecuritypolicy.v1beta1.removed`](rules/kubernetes.policy.podsecuritypolicy.v1beta1.removed.html) | removed | 2 | 1 |
+| kubernetes/rbac.authorization.k8s.io/ClusterRoleBinding | ClusterRoleBinding rbac.authorization.k8s.io/v1beta1 is no longer served | [`kubernetes.rbac-authorization-k8s-io.clusterrolebinding.v1beta1.removed`](rules/kubernetes.rbac-authorization-k8s-io.clusterrolebinding.v1beta1.removed.html) | removed | 2 | 1 |
+| library/node | Node.js image release line 22 reaches end-of-life on 2027-04-30 | [`container.node.eol-22-and-older`](rules/container.node.eol-22-and-older.html) | scheduled-end-of-life | 2 | 1 |
+| library/redis | Redis image release lines 6.0 and older are end-of-life | [`container.redis.eol-6.0-and-older`](rules/container.redis.eol-6.0-and-older.html) | end-of-life | 2 | 2 |
+| library/ubuntu | Ubuntu image release line 22.04 reaches standard support end-of-life on 2027-06-01 | [`container.ubuntu.eol-22.04`](rules/container.ubuntu.eol-22.04.html) | scheduled-end-of-life | 2 | 2 |
+| php | PHP 7.4 is end-of-life | [`php.runtime.eol-7.4`](rules/php.runtime.eol-7.4.html) | end-of-life | 2 | 2 |
+| postgresql | PostgreSQL 12 is no longer a supported major version | [`database.postgresql.end-of-life-12`](rules/database.postgresql.end-of-life-12.html) | end-of-life | 2 | 2 |
+| pycrypto | PyCrypto is obsolete and vulnerable | [`python.package.pycrypto.obsolete`](rules/python.package.pycrypto.obsolete.html) | end-of-life | 2 | 2 |
+| scala | Scala 2.11 reached end of life | [`scala.runtime.eol-2.11`](rules/scala.runtime.eol-2.11.html) | end-of-life | 2 | 1 |
+| tempdir | tempdir is no longer maintained | [`rust.crate.tempdir.unmaintained`](rules/rust.crate.tempdir.unmaintained.html) | deprecated | 2 | 2 |
+| tslint | tslint is deprecated | [`npm.package.tslint.deprecated`](rules/npm.package.tslint.deprecated.html) | deprecated | 2 | 2 |
+| uglify-es | uglify-es is deprecated | [`npm.package.uglify-es.deprecated`](rules/npm.package.uglify-es.deprecated.html) | deprecated | 2 | 2 |
+| WindowsAzure.Storage | WindowsAzure.Storage is deprecated on NuGet | [`dotnet.package.windowsazure-storage.deprecated`](rules/dotnet.package.windowsazure-storage.deprecated.html) | deprecated | 2 | 2 |
+| @angular/core | @angular/core v18 and older are no longer supported | [`npm.package.angular.core.v18-and-older.end-of-support`](rules/npm.package.angular.core.v18-and-older.end-of-support.html) | end-of-support | 1 | 1 |
+| @types/dotenv | @types/dotenv is deprecated | [`npm.package.types.dotenv.deprecated`](rules/npm.package.types.dotenv.deprecated.html) | deprecated | 1 | 1 |
+| @types/emoji-regex | @types/emoji-regex is deprecated | [`npm.package.types.emoji-regex.deprecated`](rules/npm.package.types.emoji-regex.deprecated.html) | deprecated | 1 | 1 |
+| @types/form-data | @types/form-data is deprecated | [`npm.package.types.form-data.deprecated`](rules/npm.package.types.form-data.deprecated.html) | deprecated | 1 | 1 |
+| @types/koa-useragent | @types/koa-useragent is deprecated | [`npm.package.types.koa-useragent.deprecated`](rules/npm.package.types.koa-useragent.deprecated.html) | deprecated | 1 | 1 |
+| @types/sanitize-filename | @types/sanitize-filename is deprecated | [`npm.package.types.sanitize-filename.deprecated`](rules/npm.package.types.sanitize-filename.deprecated.html) | deprecated | 1 | 1 |
+| @types/socket.io-client | @types/socket.io-client is deprecated | [`npm.package.types.socket.io-client.deprecated`](rules/npm.package.types.socket.io-client.deprecated.html) | deprecated | 1 | 1 |
+| actions/configure-pages | Unsupported actions/configure-pages runtime | [`github-actions.configure-pages.node20`](rules/github-actions.configure-pages.node20.html) | end-of-support | 1 | 1 |
+| amazon-eks | Amazon EKS 1.30 and earlier are past end of extended support | [`terraform.eks.end-of-life-1.30-and-older`](rules/terraform.eks.end-of-life-1.30-and-older.html) | end-of-life | 1 | 1 |
+| aws-lambda-runtime/ruby2.7 | AWS Lambda Ruby 2.7 runtime is end-of-life | [`serverless.aws-lambda.ruby2.7`](rules/serverless.aws-lambda.ruby2.7.html) | end-of-life | 1 | 1 |
+| cloud.google.com/go/pubsub | cloud.google.com/go/pubsub is deprecated | [`go.module.cloud.google.com.go.pubsub.deprecated`](rules/go.module.cloud.google.com.go.pubsub.deprecated.html) | deprecated | 1 | 1 |
+| com.android.billingclient/billing | Google Play Billing Library 5 is past its deprecation deadline | [`android.play-billing.version-5`](rules/android.play-billing.version-5.html) | deprecated | 1 | 1 |
+| com.android.billingclient/billing | Google Play Billing Library 6 is past its deprecation deadline | [`android.play-billing.version-6`](rules/android.play-billing.version-6.html) | deprecated | 1 | 1 |
+| com.android.billingclient/billing | Google Play Billing Library 7 is past its deprecation deadline | [`android.play-billing.version-7`](rules/android.play-billing.version-7.html) | deprecated | 1 | 1 |
+| com.android.billingclient/billing | Google Play Billing Library 9 reaches its new-app and update deadline on 2028-08-31 | [`android.play-billing.version-9`](rules/android.play-billing.version-9.html) | scheduled-end-of-life | 1 | 1 |
+| django | Django 2.2 LTS is end-of-life | [`python.package.django-2.2.eol`](rules/python.package.django-2.2.eol.html) | end-of-life | 1 | 1 |
+| doctrine/cache | doctrine/cache is abandoned | [`php.package.doctrine.cache.abandoned`](rules/php.package.doctrine.cache.abandoned.html) | deprecated | 1 | 1 |
+| failure | failure is no longer maintained | [`rust.crate.failure.unmaintained`](rules/rust.crate.failure.unmaintained.html) | deprecated | 1 | 1 |
+| github.com/golang/protobuf | github.com/golang/protobuf is deprecated | [`go.module.github.com.golang.protobuf.deprecated`](rules/go.module.github.com.golang.protobuf.deprecated.html) | deprecated | 1 | 1 |
+| golang | Go 1.21 is no longer supported | [`go.runtime.end-of-support-1.21`](rules/go.runtime.end-of-support-1.21.html) | end-of-support | 1 | 1 |
+| google-cloud-functions-runtime/nodejs14 | Google Cloud Functions Node.js 14 runtime is end-of-life | [`serverless.google-cloud-functions.nodejs14`](rules/serverless.google-cloud-functions.nodejs14.html) | end-of-life | 1 | 1 |
+| google-cloud-sql-mysql | Cloud SQL for MySQL 5.6 and 5.7 are in extended support | [`database.google-cloud-sql-mysql.extended-support-5.6-to-5.7`](rules/database.google-cloud-sql-mysql.extended-support-5.6-to-5.7.html) | end-of-support | 1 | 1 |
+| gulp-util | gulp-util is deprecated | [`npm.package.gulp-util.deprecated`](rules/npm.package.gulp-util.deprecated.html) | deprecated | 1 | 1 |
+| helm-repository/stable | Helm stable chart repository is end of life | [`kubernetes.helm.repository.stable.end-of-life`](rules/kubernetes.helm.repository.stable.end-of-life.html) | end-of-life | 1 | 1 |
+| i18next-parser | i18next-parser is deprecated | [`npm.package.i18next-parser.deprecated`](rules/npm.package.i18next-parser.deprecated.html) | deprecated | 1 | 1 |
+| java | Java 22 to 24 are no longer supported | [`java.jdk.end-of-support-22-24`](rules/java.jdk.end-of-support-22-24.html) | end-of-support | 1 | 1 |
+| karma-phantomjs-launcher | karma-phantomjs-launcher is deprecated | [`npm.package.karma-phantomjs-launcher.deprecated`](rules/npm.package.karma-phantomjs-launcher.deprecated.html) | deprecated | 1 | 1 |
+| koa-router | koa-router is deprecated | [`npm.package.koa-router.deprecated`](rules/npm.package.koa-router.deprecated.html) | deprecated | 1 | 1 |
+| kubernetes/apiextensions.k8s.io/CustomResourceDefinition | CustomResourceDefinition apiextensions.k8s.io/v1beta1 is no longer served | [`kubernetes.apiextensions-k8s-io.customresourcedefinition.v1beta1.removed`](rules/kubernetes.apiextensions-k8s-io.customresourcedefinition.v1beta1.removed.html) | removed | 1 | 1 |
+| kubernetes/apps/DaemonSet | DaemonSet apps/v1beta2 is no longer served | [`kubernetes.apps.daemonset.v1beta2.removed`](rules/kubernetes.apps.daemonset.v1beta2.removed.html) | removed | 1 | 1 |
+| kubernetes/apps/Deployment | Deployment apps/v1beta2 is no longer served | [`kubernetes.apps.deployment.v1beta2.removed`](rules/kubernetes.apps.deployment.v1beta2.removed.html) | removed | 1 | 1 |
+| kubernetes/apps/StatefulSet | StatefulSet apps/v1beta1 is no longer served | [`kubernetes.apps.statefulset.v1beta1.removed`](rules/kubernetes.apps.statefulset.v1beta1.removed.html) | removed | 1 | 1 |
+| kubernetes/autoscaling/HorizontalPodAutoscaler | HorizontalPodAutoscaler autoscaling/v2beta1 is no longer served | [`kubernetes.autoscaling.horizontalpodautoscaler.v2beta1.removed`](rules/kubernetes.autoscaling.horizontalpodautoscaler.v2beta1.removed.html) | removed | 1 | 1 |
+| kubernetes/autoscaling/HorizontalPodAutoscaler | HorizontalPodAutoscaler autoscaling/v2beta2 is no longer served | [`kubernetes.autoscaling.horizontalpodautoscaler.v2beta2.removed`](rules/kubernetes.autoscaling.horizontalpodautoscaler.v2beta2.removed.html) | removed | 1 | 1 |
+| kubernetes/networking.k8s.io/Ingress | Ingress networking.k8s.io/v1beta1 is no longer served | [`kubernetes.networking-k8s-io.ingress.v1beta1.removed`](rules/kubernetes.networking-k8s-io.ingress.v1beta1.removed.html) | removed | 1 | 1 |
+| kubernetes/rbac.authorization.k8s.io/ClusterRole | ClusterRole rbac.authorization.k8s.io/v1beta1 is no longer served | [`kubernetes.rbac-authorization-k8s-io.clusterrole.v1beta1.removed`](rules/kubernetes.rbac-authorization-k8s-io.clusterrole.v1beta1.removed.html) | removed | 1 | 1 |
+| library/mysql | MySQL image release lines 8.0 and older are past end-of-life | [`container.mysql.eol-8.0-and-older`](rules/container.mysql.eol-8.0-and-older.html) | end-of-life | 1 | 1 |
+| library/postgres | PostgreSQL image release line 14 reaches end-of-life on 2026-11-12 | [`container.postgres.eol-14-and-older`](rules/container.postgres.eol-14-and-older.html) | scheduled-end-of-life | 1 | 1 |
+| lodash.isequal | lodash.isequal is deprecated | [`npm.package.lodash-isequal.deprecated`](rules/npm.package.lodash-isequal.deprecated.html) | deprecated | 1 | 1 |
+| mysql/mysql-connector-java | mysql:mysql-connector-java has moved to com.mysql:mysql-connector-j | [`java.maven.mysql.mysql-connector-java.relocated`](rules/java.maven.mysql.mysql-connector-java.relocated.html) | deprecated | 1 | 1 |
+| next | Next.js 12 is out of support | [`npm.package.next.12.support-end`](rules/npm.package.next.12.support-end.html) | end-of-support | 1 | 1 |
+| next | Next.js 13 is out of support | [`npm.package.next.13.support-end`](rules/npm.package.next.13.support-end.html) | end-of-support | 1 | 1 |
+| nodejs | Node.js 21 is end-of-life | [`nodejs.runtime.eol-21`](rules/nodejs.runtime.eol-21.html) | end-of-life | 1 | 1 |
+| nodejs | Node.js 23 is end-of-life | [`nodejs.runtime.eol-23`](rules/nodejs.runtime.eol-23.html) | end-of-life | 1 | 1 |
+| postgresql | PostgreSQL 11 is no longer a supported major version | [`database.postgresql.end-of-life-11`](rules/database.postgresql.end-of-life-11.html) | end-of-life | 1 | 1 |
+| powershell | PowerShell 6.x is no longer supported | [`shell.powershell.end-of-life-6`](rules/shell.powershell.end-of-life-6.html) | end-of-life | 1 | 1 |
+| powershell | PowerShell 7.1 is no longer supported | [`shell.powershell.end-of-life-7.1`](rules/shell.powershell.end-of-life-7.1.html) | end-of-life | 1 | 1 |
+| protractor | Protractor is deprecated | [`npm.package.protractor.deprecated`](rules/npm.package.protractor.deprecated.html) | deprecated | 1 | 1 |
+| q | q is deprecated | [`npm.package.q.deprecated`](rules/npm.package.q.deprecated.html) | deprecated | 1 | 1 |
+| react-beautiful-dnd | react-beautiful-dnd is deprecated | [`npm.package.react-beautiful-dnd.deprecated`](rules/npm.package.react-beautiful-dnd.deprecated.html) | deprecated | 1 | 1 |
+| request-promise | request-promise is deprecated | [`npm.package.request-promise.deprecated`](rules/npm.package.request-promise.deprecated.html) | deprecated | 1 | 1 |
+| ruby | Ruby 2.6 is end-of-life | [`ruby.runtime.eol-2.6`](rules/ruby.runtime.eol-2.6.html) | end-of-life | 1 | 1 |
+| ruby | Ruby 3.0 is end-of-life | [`ruby.runtime.eol-3.0`](rules/ruby.runtime.eol-3.0.html) | end-of-life | 1 | 1 |
+| socket.io-redis | socket.io-redis is deprecated | [`npm.package.socket.io-redis.deprecated`](rules/npm.package.socket.io-redis.deprecated.html) | deprecated | 1 | 1 |
+| swiftmailer/swiftmailer | swiftmailer/swiftmailer is abandoned | [`php.package.swiftmailer.swiftmailer.abandoned`](rules/php.package.swiftmailer.swiftmailer.abandoned.html) | deprecated | 1 | 1 |
+| typing | typing is archived on PyPI | [`python.package.typing.archived`](rules/python.package.typing.archived.html) | end-of-life | 1 | 1 |
+| zendframework/zend-stdlib | zendframework/zend-stdlib is abandoned | [`php.package.zendframework.zend-stdlib.abandoned`](rules/php.package.zendframework.zend-stdlib.abandoned.html) | deprecated | 1 | 1 |
+<!-- state-of-eol:end -->
+
+## Limits
+
+Counts come from expected findings in `benchmarks/public-repositories.json`, joined to bundled rules in `registry/`. Scans never use the network. A product with no corpus finding does not appear here.
+
+---
+
 Source: https://arminazimi.github.io/evergreen/PRIVACY.html
 
 # Evergreen privacy
@@ -2468,7 +3701,9 @@ The local tools read supported manifests, lockfiles, workflow files, runtime-ver
 
 The plugin launches the exact published `evergreen-deprecation` npm version recorded in its manifest. The package manager may contact the configured npm registry to obtain that package. Lifecycle evidence links are returned as references; Evergreen does not open them automatically.
 
-Scans use no network. The one exception is `evergreen data update`, which you run yourself to fetch newer, signed lifecycle rules from the project's public GitHub releases. It sends nothing about you or your repository (a request for a public release list and two public files, which the host can see as it can any download), verifies the signature before using the data, and falls back to the rules shipped with the release if verification fails. See [Lifecycle data](DATA.md).
+## Lifecycle data channel
+
+Scans use no network. The one exception is `evergreen data update`, which you run yourself to fetch newer lifecycle rules between releases. Rules ship inside each release; that command downloads a public release list and two public files (the signed bundle and its signature) from the project's GitHub releases, verifies the Sigstore signature offline against a trusted root that ships in the package, and activates the new rules only after verification succeeds. If verification fails, Evergreen keeps the rules bundled with the installed release and reports why. Pinning with `--data-version` or `EVERGREEN_DATA_VERSION` makes CI use an exact verified bundle (or `bundled`). It sends nothing about you or your repository. See [Lifecycle data](DATA.md).
 
 ## Command and surface access
 
@@ -2476,13 +3711,14 @@ Supply-chain scanners correctly report that the published package can read files
 
 | Surface / command | Filesystem | Environment | Child process | Network |
 | --- | --- | --- | --- | --- |
-| **CLI `scan`**, `forecast`, `explain`, `context`, `renovate-preset` | Reads the scan path (manifests, lockfiles, workflows, source). Optional writes only when you ask: `--write-status` → `EVERGREEN_STATUS.md`; `--baseline` reads a baseline file | `EVERGREEN_DATA_VERSION` (pin bundled/cached rules); `EVERGREEN_DATA_DIR` / `XDG_CACHE_HOME` / `HOME` for cached data; `--interactive` uses `VISUAL` or `EDITOR` to open a finding | `--interactive` may spawn your editor. No `git`, no package manager | None |
-| **CLI `check`** | None (rules from the package or local data cache) | Same data-pin and cache variables as `scan`; optional `EVERGREEN_USAGE_LOG` appends one local line | None | None |
+| **CLI `scan`**, `forecast`, `status-card`, `explain`, `context`, `renovate-preset`, `dependabot-config` | Reads the scan path (manifests, lockfiles, workflows, source). Optional writes only when you ask: `--write-status` → `EVERGREEN_STATUS.md`; `--baseline` reads a baseline file. `status-card`, `renovate-preset`, and `dependabot-config` print to stdout only | `EVERGREEN_DATA_VERSION` (pin bundled/cached rules); `EVERGREEN_DATA_DIR` / `XDG_CACHE_HOME` / `HOME` for cached data; `--interactive` uses `VISUAL` or `EDITOR` to open a finding | `--interactive` may spawn your editor. No `git`, no package manager | None |
+| **CLI `lookup`**, `check` | None for the rules themselves (package or local data cache). `check` takes a Package URL; `lookup` takes a product name | Same data-pin and cache variables as `scan`; optional `EVERGREEN_USAGE_LOG` appends one local line for `check` | None | None |
+| **CLI `badge`** | `--shields` reads the scan path and prints Shields endpoint JSON. `--snippet` prints README markup only | None beyond process defaults for `--snippet`; data-pin variables when `--shields` scans | Without `--repo`, `--snippet` may run local `git remote get-url origin` (no remotes fetched) | None (image URLs in the markup are references; Evergreen does not fetch them) |
 | **CLI `usage`** | Reads the local usage-log file when logging was enabled | `EVERGREEN_USAGE_LOG`, or `--file` | None | None |
 | **CLI `baseline`** | Reads the scan path; writes `.evergreen-baseline.json` (or `--output`) | Same data-pin and cache variables as `scan` | None | None |
 | **CLI `report-issue`** | Reads the scan path and a few lines of the declaring file; optional `--output` write | Same data-pin and cache variables as `scan` | None | None (prints Markdown; never opens an issue) |
 | **CLI `rollup`** | Reads the saved report JSON files you name (and optional `--owners` file) | None beyond process defaults | None | None |
-| **CLI `sbom enrich`**, `export` | Reads the SBOM or bundled/cached lifecycle data; prints to stdout | Data-pin and cache variables as above | None | None |
+| **CLI `sbom enrich`**, `export` | Reads the SBOM (CycloneDX or SPDX 2.3) or bundled/cached lifecycle data; prints enriched JSON or CLE snapshots to stdout; leaves the input unchanged | Data-pin and cache variables as above | None | None |
 | **CLI `capabilities`**, `completions`, `--help`, `--version` | None (packaged constants / scripts) | None | None | None |
 | **CLI `data status`** | Reads the local data cache and bundled rules | `EVERGREEN_DATA_DIR` / cache home variables | None | None |
 | **CLI `data update`** | Writes verified bundles under the local data cache | `EVERGREEN_DATA_URL` (optional mirror); `HTTP(S)_PROXY` / `http(s)_proxy`; cache home variables. May relaunch Node with `NODE_USE_ENV_PROXY` when a proxy is set | May re-exec the same Node process so proxy env is honored | **Yes** — public GitHub release list plus the signed bundle and signature only. Sends no repository data |
@@ -2495,11 +3731,12 @@ Supply-chain scanners correctly report that the published package can read files
 | **CLI `init --hooks`** | Reads/writes `.git/hooks/pre-push` (or the path `git` reports) | None beyond process defaults | Runs `git rev-parse` to locate hooks | None |
 | **CLI `init --personal`** | Writes `~/.config/evergreen/` (or `XDG_CONFIG_HOME`) config and a global pre-push hook | `HOME` / `USERPROFILE`, `XDG_CONFIG_HOME` | Runs `git config --global core.hooksPath` (after confirmation unless `--yes`) | None |
 | **CLI `watch`** | Reads registered projects (same as `scan`); reads/writes `watch.json` under the personal config directory | `HOME` / `XDG_CONFIG_HOME` for state location; same data-pin variables when scanning | None | None |
-| **CLI `new-detector`** | Contributor checkout only: scaffolds detector files under the repo | None | None | None |
+| **CLI `new-detector`**, `new-rule`, `rules lint`, `rules test` | Contributor checkout only: scaffolds detector or rule fixtures, or reads registry fixtures under the repo | None | None | None |
 | **CLI `mcp`** / **`evergreen-mcp`** | Same reads as the tools below; no repository writes | Optional `EVERGREEN_USAGE_LOG` for `check_dependency`; data-pin and cache variables | None (stdio only; no shell for migrations) | None |
 | **MCP tools** (`scan_repository`, `list_deprecations`, `explain_deprecation`, `create_migration_context`, `verify_migration`, `check_dependency`) | Read the authorized repository path (except `check_dependency`, which reads no repository). Session findings stay in memory | Same as MCP process above | None — `verify_migration` returns suggested commands and does not run them | None |
 | **`evergreen-lsp`** | Reads/scans workspace folders; may write open buffer text into a private temp directory for analysis | None beyond process defaults | None | None (stdio language server) |
 | **GitHub Action** | Reads `path` (default workspace); may write report/SARIF/badge under `RUNNER_TEMP` when upload inputs are on; reads `GITHUB_EVENT_PATH` for PR metadata | Action inputs as `INPUT_*`, plus `GITHUB_WORKSPACE`, `GITHUB_OUTPUT`, `GITHUB_STEP_SUMMARY`, `GITHUB_REPOSITORY`, `GITHUB_API_URL`, `RUNNER_TEMP`, and `INPUT_GITHUB-TOKEN` when commenting | None from Evergreen itself | **Only when `pr-comment: true`**: GitHub API upsert of one PR comment after the scan. The scan itself uses no network |
+| **GitLab CI/CD component** | Reads the checked-out path; writes the JSON report and Code Quality report as job artifacts | Component inputs and standard GitLab CI variables; no access token required | None from Evergreen itself (`npx` runs the pinned package) | **None for the scan.** Before the scan, the runner may pull the job image and `npx` may fetch the pinned package from the configured npm registry. No GitLab API call; see [GitLab](GITLAB.md#network-behavior) |
 | **Agent Skill / Codex & Claude plugins** | No direct I/O: they launch the local MCP server or tell the host to run CLI commands under the host's permission model | Host may set env when spawning MCP/CLI | Host may spawn `npx` / Node to start MCP | Package install may hit the npm registry; analysis stays local |
 
 Notes that apply across rows:
@@ -2514,6 +3751,109 @@ Notes that apply across rows:
 By default Evergreen records nothing about what you or an agent checked. If you set `EVERGREEN_USAGE_LOG=1` (or to a file path), each `evergreen check` and each `check_dependency` call appends one line to a file on your machine: the time, the package URL and version checked, the result, its severity, and the matching rule IDs. It records no repository path, file content, user name, or prompt. `evergreen usage` reads that file and prints how many checks ran and which packages were flagged as `affected` (what the guardrail told an agent to avoid; Evergreen cannot itself stop an edit). **Nothing in this log is sent anywhere: Evergreen has no code that uploads it, and the summary command reads only the local file.** Delete the file to erase it; unset the variable to stop recording. Because the file lives on disk, anything that can read your files can read it.
 
 Evergreen's tools do not edit repository files, execute suggested migration commands, open a network listener, or request credentials — except the explicit write and process rows in the table above (`baseline`, `--write-status`, `init` / `setup`, `fix --branch`, `guard`'s package manager, and similar). Users can disable or remove the plugin at any time. Questions can be reported through [GitHub Issues](https://github.com/arminazimi/evergreen/issues).
+
+---
+
+Source: https://arminazimi.github.io/evergreen/THREAT_MODEL.html
+
+# Threat model
+
+Evergreen reads code it did not write, loads data it did not build at the same time as the code, and gives answers to tools that can edit and install. This page records what v1 trusts, the threats each surface faces, what mitigates them, and what remains. [Privacy](PRIVACY.md) lists the exact capabilities of every command; [Lifecycle data](DATA.md) explains bundle signatures. This page connects them.
+
+## Scope and assumptions
+
+In scope: the CLI scan path, the GitHub Action and GitLab component, lifecycle data bundles, the local MCP server, and the Git and agent hooks.
+
+Out of scope: compromise of the operating system or the user's account, vulnerabilities in npm packages Evergreen depends on, the correctness of the Sigstore and GitHub infrastructure, and what an AI host does with the answers it receives. Report Evergreen vulnerabilities through [SECURITY.md](../SECURITY.md).
+
+Assumptions:
+
+- **Repository contents are untrusted.** A repository may be hostile and may be written to make a scan look clean.
+- **The machine and the user are trusted.** The person running Evergreen can already read the files it reads and run the commands it runs.
+- **The agent is semi-trusted.** A coding agent using the MCP server can be manipulated by content it reads, including repository text that Evergreen returns.
+- **Verified data is authentic, not necessarily correct.** A signature proves which workflow published a rule, not that the claim is true.
+- **Hooks are guardrails, not boundaries.** Everything they add can be bypassed by the user and by commands they do not parse.
+
+## Trust boundaries
+
+| From | To | What crosses |
+|---|---|---|
+| Repository | Detectors and source analysis | File contents, parsed as data only |
+| Signed release | Registry and scan engine | Declarative rules, after verification |
+| Scan engine | CLI output and MCP host | Findings, file paths, short source excerpts |
+| Hook | Package manager, Git, agent | A denial, or the user's command after a passing check |
+| Evergreen | Network | Only `data update`, a first `npx` fetch, a configured PR comment, and the package manager's own traffic |
+
+## Untrusted repositories
+
+This surface covers `scan`, `explain`, `context`, `diff`, the GitHub Action, and the GitLab component. Detectors parse manifests, lockfiles, workflows, and source text; they never evaluate it, and the scan path never starts a child process or uses the network.
+
+| STRIDE | Threat | Mitigation | Residual risk |
+|---|---|---|---|
+| Spoofing | A repository supplies a status file or a modified baseline that hides its own findings from a reader or an agent. | Findings always name the rule, the file, and the exact line; `EVERGREEN_STATUS.md` is described as a snapshot; a baseline's suppressions are counted and reported; neither can change a rule. | A committed status file can be stale or forged for a human reader, and a pull request can edit the CI baseline. Reviewers must review baseline changes and re-scan. |
+| Tampering | Malformed, duplicate, or contradictory input makes a parser miss a declaration, crash the scan, or report a wrong location. | Strict parsers; malformed input yields no declaration instead of a guess; unreadable directories are skipped; scans are deterministic. | Detection is declaration-based. A repository can declare one runtime and use another, and an unsupported syntax can hide a usage until a detector learns it. |
+| Repudiation | There is no record of what a scan saw. | Not a logging product; CI keeps the JSON report, and an opt-in local usage log records `check` calls. | A local scan leaves no audit trail by default. |
+| Information disclosure | Findings embed file paths and source excerpts that appear in logs, pull request comments, or an agent's context. | Reads stay local; the Action posts a comment only when asked; no Evergreen service receives results. | Whatever reads the output, including a hosted agent, receives the excerpts and applies its own policy. |
+| Denial of service | A huge file, deeply nested JSON, a symlink cycle, or a pathological source file stalls the scan. | Per-file read caps of about 1 MB, JSON nesting capped at 64, symlinks not followed, unreadable paths skipped, bounded alias and depth budgets in source parsers. | A very large tree still costs time and memory; there is no global wall-clock budget, and CI jobs have their own timeouts. |
+| Elevation of privilege | Repository content achieves execution, or text in a file instructs the agent that reads the findings. | Parsers never evaluate; no `eval`, no child process, no network in the scan path; the MCP prompt and migration packet name repository files as untrusted. | Prompt injection is not preventable by the scanner: a comment, a file name, or a manifest string can try to steer the host. The host's permission model is the boundary. |
+
+`diff` is the one scan-path command that runs processes: it calls the local `git` and `tar` to materialize a revision in a temporary directory. They operate on Git objects, not on repository scripts.
+
+## Data bundles
+
+Lifecycle rules travel as one JSON bundle. The release workflow signs it with Sigstore keyless signing; Evergreen verifies it offline before use.
+
+| STRIDE | Threat | Mitigation | Residual risk |
+|---|---|---|---|
+| Spoofing | A forged bundle claims to carry Evergreen's rules. | The signature must verify against the exact bytes; the signer must be the release workflow at a `data-v…` tag or `main`; chain, validity, and transparency-log inclusion are checked against a trusted root shipped in the package. | The trusted root ages. If Sigstore rotates keys and the installed release is too old, new bundles stop verifying and Evergreen falls back to bundled data. |
+| Tampering | A file in a valid bundle is altered, removed, or added. | Every file has a SHA-256 and byte count, the manifest has a content digest, extra and missing files are refused, registry content is validated again, and the format version and minimum Evergreen version must match. | A compromise of the release workflow or of a maintainer who can push a data tag would sign whatever was built. Rule review before `main` is the control there. |
+| Repudiation | A bundle's publisher is disputed. | The signing identity is recorded in the public transparency log and can be checked with `cosign`. | Verification is recorded only in local status output. |
+| Information disclosure | Updating data reveals what the user is doing. | `data update` requests the public release list, the bundle, and its signature; it sends no repository data and no identifier. | The mirror and the network observe the download, as with any file fetch. |
+| Denial of service | An oversized or hostile download exhausts memory or hangs. | 20 MB bundle, 1 MB signature, and 4 MB listing caps; 30-second request timeouts; a mirror can be configured but the same signature check still applies; failure falls back to bundled data. | Repeated failed updates can be retried without limit by the user or a script. |
+| Elevation of privilege | A bundle carries executable behavior. | Bundles and registries are declarative JSON, validated before use; no rule field is executed. | A correctly signed but wrong rule affects findings until the next data release. Bundles have no revocation list, and a pinned old bundle stays pinned. |
+
+The local calendar tool's `--bundle FILE` option reads a bundle the user names on the command line. It validates the registry schema but does not verify a signature, because the file is the user's own input, like any other path they pass.
+
+## MCP server
+
+The server speaks MCP over stdio, is started by the host, and is one process per session. It advertises `tools`, `resources`, `prompts`, and `completions`.
+
+| STRIDE | Threat | Mitigation | Residual risk |
+|---|---|---|---|
+| Spoofing | A host starts a different server, or an unrelated local process claims to be Evergreen. | There is no listener, port, account, or credential to impersonate; the host launches the process it configured, and the plugins pin an exact published version. | A host that resolves an unpinned `npx` package trusts the registry and cache it resolves from. |
+| Tampering | A tool changes the repository while "analyzing" it. | Every tool is read-only, has no output, fix, or overwrite option, advertises `readOnlyHint: true`, and runs no command; session findings stay in memory; a test calls every tool and fails if the repository tree changes. | The host still has its own write tools. Evergreen cannot stop an agent from editing after a scan. |
+| Repudiation | Nobody can tell which packages an agent was warned about. | An opt-in usage log appends package, result, severity, and rule IDs to a local file. | Nothing is recorded by default, and the log can be edited or deleted by anyone who can read the file. |
+| Information disclosure | Tool results carry repository paths and excerpts into a hosted model. | No Evergreen-operated service receives results; the host's policy applies; `check_dependency` reads no repository. | A prompt-injected agent can point `scan_repository` at any path the user can read — not only the project — and surface what it finds. The host's authorization prompt is the boundary. |
+| Denial of service | An agent requests scans of very large or repeated trees. | Per-file size caps and deterministic work per file. | The server has no per-request time budget; the host must cancel or time out a call. |
+| Elevation of privilege | A tool executes a suggested migration command. | `verify_migration` returns the project commands it suggests; no tool spawns a shell; the `migrate-finding` prompt states that repository files are untrusted and that commands run only under the host's authorization. | The prompt is guidance. A host that auto-approves commands is outside Evergreen's control. |
+
+## Hooks and guardrails
+
+Four mechanisms try to catch a bad dependency at the moment it is added. Each is documented in [Hooks](HOOKS.md).
+
+| Mechanism | What it does | Bypass and residual risk |
+|---|---|---|
+| Git pre-push hook (`init --hooks`) | Runs `scan . --fail-on <severity>` before a push and blocks at or above the gate. Offline, local rules only. | `git push --no-verify`, `EVERGREEN_SKIP=1`, and deleting the hook. If Evergreen is missing or the scan errors, the push proceeds. It protects only pushes made from this clone. |
+| Claude Code `PreToolUse` hook | Splits a top-level Bash command and checks package arguments of `npm`, `pnpm`, `yarn`, `pip`, and `uv` installs. | It inspects only the top-level command: `bash -c`, shell functions, aliases, scripts, `npm install` with no arguments, and lockfile installs are not checked. A 60-second host timeout and per-package budget fail open. The first `npx` run may download the pinned package. |
+| `guard` CLI | Checks the npm packages named to `evergreen guard npm install …`, then runs exactly that command if none is refused. | `--force` overrides; arguments the parser does not understand, package scripts, and npm's own resolution and lifecycle scripts are outside the check. It checks lifecycle status, not malware. |
+| Cursor rules and Copilot instructions | Tell the agent to call `check_dependency` before adding a package. | Advisory only; nothing blocks an edit. |
+
+Common to all four: they read the same local rules, send nothing, and can be removed by the user. None is a security boundary against a determined person or a misbehaving agent, and none inspects transitive dependencies or the contents of the packages it approves.
+
+## Network reach
+
+Scans use no network. The complete list of network activity in the published package is in [Privacy](PRIVACY.md#command-and-surface-access):
+
+- `data update`: the public release list, a signed bundle, and its signature.
+- A first `npx` or package install of Evergreen itself, by the user, the plugin, or a hook.
+- The GitHub Action's optional pull request comment, through the GitHub API.
+- Whatever package manager a user runs through `guard`.
+
+Maintainer scripts under `tools/` are not part of the published CLI and are excluded from this model.
+
+## Reviewing this model
+
+Update this page in the same pull request as any change to a trust boundary: a new tool that writes, a new network call, a new file format the scanner parses, a new hook, or a change to signature verification. A threat with no mitigation in the table is a bug or an accepted risk that should name its follow-up issue.
 
 ---
 
@@ -2775,6 +4115,13 @@ Besides the action reference itself, the GitHub Actions detector reads one runti
 - A multi-line value (`dotnet-version: |`) is judged per entry, and each finding points at that entry's line.
 - An expression such as `${{ matrix.dotnet }}`, a floating major (`6.x`, `6`), a pre-release (`7.0.100-preview.1`), or any other form is unclassified with its file and line, never guessed.
 - The `global-json-file` input, `dotnet-quality`, and the other `setup-*` actions (`setup-node`, `setup-python`, and so on) are not read. Each needs its own mapping to a lifecycle rule set; they are follow-up work, not part of this decision.
+
+### Bun lockfile resolution and diagnostics
+
+The `npm` detector reads lockfiles to resolve exact package versions and build dependency paths: `package-lock.json`, `npm-shrinkwrap.json`, `pnpm-lock.yaml`, `yarn.lock`, and Bun's text lockfile (`bun.lock`).
+
+- **`bun.lock` (text)**: Parsed as JSON. Direct and transitive packages in the `packages` dictionary resolve exact versions and dependency edges, matching them against lifecycle rules.
+- **`bun.lockb` (binary)**: Bun's legacy binary lockfile format is not parsed. Rather than guessing versions from manifest ranges, the binary lockfile is reported as an unclassified diagnostic reference (`bun.lockb` at line 1). Running `bun install` with Bun 1.2+ generates a text `bun.lock` file that Evergreen resolves.
 
 ## Declaring the files a detector reads
 
@@ -3308,8 +4655,21 @@ Every gate must pass on the commit you will tag. None of them is optional.
 | Public corpus | `npm run validate:public-repos` | Exact findings on every pinned public repository, and each detector's precision above its floor in `benchmarks/thresholds.json`. Needs network. |
 | Source freshness | `npm run check:sources` | No rule is stale and no source has moved or disappeared. Needs network. Review anything it reports before releasing. |
 | Package contents | `npm pack --dry-run` | Only `dist/src`, `examples`, `registry`, `schemas`, and `skills` ship; `registry/sources.lock.json` does not. |
+| Reproducible package | `npm run check:reproducible` | Two clean builds of the same commit pack to byte-identical npm tarballs. The release workflow runs the same check and fails on a mismatch. |
 
 The last weekly runs of the corpus and source-freshness workflows should also be green. If either is red, fix or explain it before tagging.
+
+## Verifying a published release
+
+The package is reproducible: rebuilding the tagged commit packs the same tarball, byte for byte, so anyone can check that a published version was built from its source. On any machine with Node.js 22 or newer:
+
+```bash
+git clone --branch vX.Y.Z --depth 1 https://github.com/arminazimi/evergreen
+cd evergreen
+npm ci && npm run check:reproducible
+```
+
+The printed SHA-256 must match the tarball npm serves for the version, which you can download and hash separately with `npm pack evergreen-deprecation@X.Y.Z` in an empty directory and `shasum -a 256 evergreen-deprecation-X.Y.Z.tgz`. npm normalizes the tar metadata (uid, gid, and mtimes) when packing, so the bytes depend on the shipped file contents only; a mismatch means the build is nondeterministic, and the check keeps both tarballs for diffing.
 
 ## One-time npm setup
 
@@ -3362,8 +4722,9 @@ Trusted publishing needs the package to name its publisher. On npmjs.com, open t
    ```
 8. **Create the GitHub release** for the tag, with the changelog section as the body. If the [standalone binaries](#standalone-binaries) have already been attached, the release exists: edit its body instead of creating it.
 9. **Move the major tag** only if the project publishes one (for example `v1`), as a force-updated lightweight tag pointing at the new release. Do not move it for a pre-1.0 version. The `Release notes` workflow does this by itself after a successful `Publish to npm` run, for stable tags from `v1.0.0` on: the decision is in `.github/scripts/major-tag.mjs` (unit-tested), the tag only moves forward, and a pre-release or `0.x` tag changes nothing. To see what it would do for a tag without pushing anything, run the `Release notes` workflow by hand with `release_tag` set (a manual run is always a dry run).
-10. **Package the plugins.** For Codex, `npm run package:codex-plugin` writes `artifacts/evergreen-codex-plugin-<version>.zip`; follow [Codex submission](CODEX_SUBMISSION.md) to submit it. The Claude plugin is served from the repository marketplace, so the merged change in step 4 is its release; see [Claude plugin](CLAUDE_PLUGIN.md).
-11. **Announce** only after the npm package, tag, and release are live.
+10. **Homebrew.** The same `Release notes` workflow bumps [`arminazimi/homebrew-tap`](https://github.com/arminazimi/homebrew-tap) after a successful publish: it waits for the npm tarball, pins its URL and SHA-256 in `Formula/evergreen.rb` (via `.github/scripts/bump-homebrew-formula.mjs`), and pushes to the tap's `main`. Pre-release tags leave the formula alone. This needs the repository secret `HOMEBREW_TAP_DEPLOY_KEY` — the private half of a **write** deploy key on `arminazimi/homebrew-tap`. Without the secret the Homebrew job fails; npm and the other channels are already published and are not rolled back. To recover, set the secret and re-run the failed job, or edit the formula by hand as the tap README describes.
+11. **Package the plugins.** For Codex, `npm run package:codex-plugin` writes `artifacts/evergreen-codex-plugin-<version>.zip`; follow [Codex submission](CODEX_SUBMISSION.md) to submit it. The Claude plugin is served from the repository marketplace, so the merged change in step 4 is its release; see [Claude plugin](CLAUDE_PLUGIN.md).
+12. **Announce** only after the npm package, tag, and release are live.
 
 ## Standalone binaries
 

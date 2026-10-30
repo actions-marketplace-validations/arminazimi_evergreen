@@ -16,6 +16,8 @@
 
 Evergreen finds **end-of-life and deprecated** runtimes, packages, and GitHub Actions in your repository, shows the exact file and line, and backs every finding with an authoritative source, a replacement, and migration steps. It runs on your machine as a CLI, a local MCP server, a GitHub Action (with SARIF for code scanning), and an Agent Skill, so people and coding agents can find lifecycle risk before it breaks a build, and check a dependency before adding it. Scans are deterministic and offline, and need no account.
 
+Read this in: **English** · [فارسی](docs/i18n/fa/README.md).
+
 Read the [public documentation](https://arminazimi.github.io/evergreen/), run the [90-second demo](docs/DEMO.md), or inspect the [validation report](docs/VALIDATION.md). For AI tools, the docs are also published as [`llms.txt`](https://arminazimi.github.io/evergreen/llms.txt) and [`llms-full.txt`](https://arminazimi.github.io/evergreen/llms-full.txt).
 
 ## What it covers
@@ -55,6 +57,8 @@ The level in parentheses is the detector's maturity; the full list with each lev
 - Extensible: ecosystems are added through detectors rather than core rewrites.
 
 ## Quickstart
+
+The [five-step quickstart](docs/QUICKSTART.md) has copy-paste commands and expected output for each step.
 
 Requirements: Node.js 22 or newer.
 
@@ -236,10 +240,13 @@ See [the roadmap](docs/ROADMAP.md), [architecture](docs/ARCHITECTURE.md), [brand
 
 ## Community
 
-Questions, ideas, and things you built with Evergreen belong in [GitHub Discussions](https://github.com/arminazimi/evergreen/discussions): use **Q&A** to ask, **Ideas** to propose, and **Show and tell** to share. Use issues for bugs, lifecycle rule requests, and ecosystem requests.
+Questions, ideas, and things you built with Evergreen belong in [GitHub Discussions](https://github.com/arminazimi/evergreen/discussions): use **Q&A** to ask, **Ideas** to propose, and **Show and tell** to share. Use issues for bugs, lifecycle rule requests, and ecosystem requests. How decisions are made, who reviews what, and what happens when a detector loses its owner is in [GOVERNANCE.md](GOVERNANCE.md). Who owns each detector is in [MAINTAINERS.md](MAINTAINERS.md).
 
 ## License and brand
 
 Evergreen source code is licensed under the [Apache License 2.0](LICENSE). The
+lifecycle dataset in [`packages/data`](packages/data/) (published as `evergreen-data`)
+is licensed under [CC BY 4.0](packages/data/LICENSE); its attribution notice is in
+[`packages/data/ATTRIBUTION.md`](packages/data/ATTRIBUTION.md). The
 Evergreen name, logo, and files in [`brand/`](brand/) are proprietary brand assets
 and are covered by separate [brand asset terms](brand/LICENSE.md).

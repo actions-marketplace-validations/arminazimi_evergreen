@@ -19,8 +19,21 @@ Every gate must pass on the commit you will tag. None of them is optional.
 | Public corpus | `npm run validate:public-repos` | Exact findings on every pinned public repository, and each detector's precision above its floor in `benchmarks/thresholds.json`. Needs network. |
 | Source freshness | `npm run check:sources` | No rule is stale and no source has moved or disappeared. Needs network. Review anything it reports before releasing. |
 | Package contents | `npm pack --dry-run` | Only `dist/src`, `examples`, `registry`, `schemas`, and `skills` ship; `registry/sources.lock.json` does not. |
+| Reproducible package | `npm run check:reproducible` | Two clean builds of the same commit pack to byte-identical npm tarballs. The release workflow runs the same check and fails on a mismatch. |
 
 The last weekly runs of the corpus and source-freshness workflows should also be green. If either is red, fix or explain it before tagging.
+
+## Verifying a published release
+
+The package is reproducible: rebuilding the tagged commit packs the same tarball, byte for byte, so anyone can check that a published version was built from its source. On any machine with Node.js 22 or newer:
+
+```bash
+git clone --branch vX.Y.Z --depth 1 https://github.com/arminazimi/evergreen
+cd evergreen
+npm ci && npm run check:reproducible
+```
+
+The printed SHA-256 must match the tarball npm serves for the version, which you can download and hash separately with `npm pack evergreen-deprecation@X.Y.Z` in an empty directory and `shasum -a 256 evergreen-deprecation-X.Y.Z.tgz`. npm normalizes the tar metadata (uid, gid, and mtimes) when packing, so the bytes depend on the shipped file contents only; a mismatch means the build is nondeterministic, and the check keeps both tarballs for diffing.
 
 ## One-time npm setup
 
@@ -73,8 +86,9 @@ Trusted publishing needs the package to name its publisher. On npmjs.com, open t
    ```
 8. **Create the GitHub release** for the tag, with the changelog section as the body. If the [standalone binaries](#standalone-binaries) have already been attached, the release exists: edit its body instead of creating it.
 9. **Move the major tag** only if the project publishes one (for example `v1`), as a force-updated lightweight tag pointing at the new release. Do not move it for a pre-1.0 version. The `Release notes` workflow does this by itself after a successful `Publish to npm` run, for stable tags from `v1.0.0` on: the decision is in `.github/scripts/major-tag.mjs` (unit-tested), the tag only moves forward, and a pre-release or `0.x` tag changes nothing. To see what it would do for a tag without pushing anything, run the `Release notes` workflow by hand with `release_tag` set (a manual run is always a dry run).
-10. **Package the plugins.** For Codex, `npm run package:codex-plugin` writes `artifacts/evergreen-codex-plugin-<version>.zip`; follow [Codex submission](CODEX_SUBMISSION.md) to submit it. The Claude plugin is served from the repository marketplace, so the merged change in step 4 is its release; see [Claude plugin](CLAUDE_PLUGIN.md).
-11. **Announce** only after the npm package, tag, and release are live.
+10. **Homebrew.** The same `Release notes` workflow bumps [`arminazimi/homebrew-tap`](https://github.com/arminazimi/homebrew-tap) after a successful publish: it waits for the npm tarball, pins its URL and SHA-256 in `Formula/evergreen.rb` (via `.github/scripts/bump-homebrew-formula.mjs`), and pushes to the tap's `main`. Pre-release tags leave the formula alone. This needs the repository secret `HOMEBREW_TAP_DEPLOY_KEY` — the private half of a **write** deploy key on `arminazimi/homebrew-tap`. Without the secret the Homebrew job fails; npm and the other channels are already published and are not rolled back. To recover, set the secret and re-run the failed job, or edit the formula by hand as the tap README describes.
+11. **Package the plugins.** For Codex, `npm run package:codex-plugin` writes `artifacts/evergreen-codex-plugin-<version>.zip`; follow [Codex submission](CODEX_SUBMISSION.md) to submit it. The Claude plugin is served from the repository marketplace, so the merged change in step 4 is its release; see [Claude plugin](CLAUDE_PLUGIN.md).
+12. **Announce** only after the npm package, tag, and release are live.
 
 ## Standalone binaries
 
