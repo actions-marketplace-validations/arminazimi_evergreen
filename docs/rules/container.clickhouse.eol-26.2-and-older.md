@@ -2,9 +2,19 @@
 title: "ClickHouse image release lines 26.2 and older are end-of-life — dates, impact, migration"
 description: "These ClickHouse release lines are listed as not supported with security updates in the vendor's security policy; 26.3 is the oldest line it still supports."
 canonical_url: "https://arminazimi.github.io/evergreen/rules/container.clickhouse.eol-26.2-and-older.html"
+image: "/assets/og/container.clickhouse.eol-26.2-and-older.svg"
+json_twin: "/rules/container.clickhouse.eol-26.2-and-older.json"
 ---
 
 # ClickHouse image release lines 26.2 and older are end-of-life
+
+**End of life.** The source gives no day. Replacement: A clickhouse image on a supported release line. Source: [ClickHouse security policy: supported versions](https://github.com/ClickHouse/ClickHouse/blob/master/SECURITY.md).
+
+Check a version:
+
+```bash
+evergreen check pkg:docker/library/clickhouse
+```
 
 These ClickHouse release lines are listed as not supported with security updates in the vendor's security policy; 26.3 is the oldest line it still supports.
 
@@ -49,6 +59,20 @@ These ClickHouse release lines are listed as not supported with security updates
 
 The [`container`](../detectors/container.md) detector. See [Detectors](../DETECTORS.md) and [Compatibility](../COMPATIBILITY.md).
 
+## Related
+
+### Same ecosystem
+
+- [Alpine Linux image release lines 3.20 and older are end-of-life](container.alpine.eol-3.20-and-older.html)
+- [Alpine Linux image release line 3.21 reaches end-of-life on 2026-11-01](container.alpine.eol-3.21.html)
+- [Caddy image release lines 1 and older are end-of-life](container.caddy.eol-1-and-older.html)
+- [Couchbase Server image release lines 7.2 and older are end-of-life](container.couchbase.eol-7.2-and-older.html)
+- [Apache CouchDB image release lines 3.3 and older are end-of-life](container.couchdb.eol-3.3-and-older.html)
+- [Debian image release lines 11 and older are end-of-life](container.debian.eol-11-and-older.html)
+- [Drupal image release lines 10.5 and older are end-of-life](container.drupal.eol-10.5-and-older.html)
+- [Go image release lines 1.25 and older are end-of-life](container.golang.eol-1.25-and-older.html)
+
+
 ## Data
 
 This page is generated from [`registry/container.json`](https://github.com/arminazimi/evergreen/blob/main/registry/container.json), rule `container.clickhouse.eol-26.2-and-older`, in the `evergreen.registry.v2` format ([how rules are written](../RULES.md)). A CLE (ECMA-428) export is not published yet. The same facts are embedded in this page as schema.org structured data.
@@ -56,36 +80,71 @@ This page is generated from [`registry/container.json`](https://github.com/armin
 <script type="application/ld+json">
 {
   "@context": "https://schema.org",
-  "@type": "TechArticle",
-  "@id": "https://arminazimi.github.io/evergreen/rules/container.clickhouse.eol-26.2-and-older.html",
-  "url": "https://arminazimi.github.io/evergreen/rules/container.clickhouse.eol-26.2-and-older.html",
-  "mainEntityOfPage": "https://arminazimi.github.io/evergreen/rules/container.clickhouse.eol-26.2-and-older.html",
-  "headline": "ClickHouse image release lines 26.2 and older are end-of-life — dates, impact, migration",
-  "description": "These ClickHouse release lines are listed as not supported with security updates in the vendor's security policy; 26.3 is the oldest line it still supports.",
-  "inLanguage": "en",
-  "dateModified": "2026-10-20",
-  "keywords": [
-    "end-of-life",
-    "container",
-    "high"
-  ],
-  "about": {
-    "@type": "Thing",
-    "name": "ClickHouse image release lines 26.2 and older are end-of-life",
-    "identifier": "pkg:docker/library/clickhouse"
-  },
-  "citation": [
+  "@graph": [
     {
-      "@type": "CreativeWork",
-      "name": "ClickHouse security policy: supported versions",
-      "url": "https://github.com/ClickHouse/ClickHouse/blob/master/SECURITY.md"
+      "@type": "TechArticle",
+      "@id": "https://arminazimi.github.io/evergreen/rules/container.clickhouse.eol-26.2-and-older.html",
+      "url": "https://arminazimi.github.io/evergreen/rules/container.clickhouse.eol-26.2-and-older.html",
+      "mainEntityOfPage": "https://arminazimi.github.io/evergreen/rules/container.clickhouse.eol-26.2-and-older.html",
+      "headline": "ClickHouse image release lines 26.2 and older are end-of-life — dates, impact, migration",
+      "description": "These ClickHouse release lines are listed as not supported with security updates in the vendor's security policy; 26.3 is the oldest line it still supports.",
+      "inLanguage": "en",
+      "dateModified": "2026-10-20",
+      "keywords": [
+        "end-of-life",
+        "container",
+        "high"
+      ],
+      "about": {
+        "@type": "Thing",
+        "name": "ClickHouse image release lines 26.2 and older are end-of-life",
+        "identifier": "pkg:docker/library/clickhouse"
+      },
+      "citation": [
+        {
+          "@type": "CreativeWork",
+          "name": "ClickHouse security policy: supported versions",
+          "url": "https://github.com/ClickHouse/ClickHouse/blob/master/SECURITY.md"
+        }
+      ],
+      "isBasedOn": "https://github.com/arminazimi/evergreen/blob/main/registry/container.json",
+      "publisher": {
+        "@type": "Organization",
+        "name": "Evergreen",
+        "url": "https://arminazimi.github.io/evergreen"
+      }
+    },
+    {
+      "@type": "FAQPage",
+      "@id": "https://arminazimi.github.io/evergreen/rules/container.clickhouse.eol-26.2-and-older.html#faq",
+      "url": "https://arminazimi.github.io/evergreen/rules/container.clickhouse.eol-26.2-and-older.html",
+      "mainEntity": [
+        {
+          "@type": "Question",
+          "name": "What is the lifecycle status of pkg:docker/library/clickhouse?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "End of life. The source gives no day. Affected versions: vers:semver/\u003c26.3.0. Source: ClickHouse security policy: supported versions (https://github.com/ClickHouse/ClickHouse/blob/master/SECURITY.md)."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "What replaces pkg:docker/library/clickhouse?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "A clickhouse image on a supported release line"
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "How do I check pkg:docker/library/clickhouse?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "Run evergreen check pkg:docker/library/clickhouse."
+          }
+        }
+      ]
     }
-  ],
-  "isBasedOn": "https://github.com/arminazimi/evergreen/blob/main/registry/container.json",
-  "publisher": {
-    "@type": "Organization",
-    "name": "Evergreen",
-    "url": "https://arminazimi.github.io/evergreen"
-  }
+  ]
 }
 </script>

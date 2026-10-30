@@ -2,9 +2,19 @@
 title: "fzaninotto/faker is abandoned — dates, impact, migration"
 description: "Packagist marks fzaninotto/faker as abandoned and no longer maintained."
 canonical_url: "https://arminazimi.github.io/evergreen/rules/php.package.fzaninotto.faker.abandoned.html"
+image: "/assets/og/php.package.fzaninotto.faker.abandoned.svg"
+json_twin: "/rules/php.package.fzaninotto.faker.abandoned.json"
 ---
 
 # fzaninotto/faker is abandoned
+
+**Deprecated.** The source gives no day. Source: [fzaninotto/faker on Packagist](https://packagist.org/packages/fzaninotto/faker).
+
+Check a version:
+
+```bash
+evergreen check pkg:composer/fzaninotto/faker
+```
 
 Packagist marks fzaninotto/faker as abandoned and no longer maintained.
 
@@ -48,6 +58,20 @@ Packagist marks fzaninotto/faker as abandoned and no longer maintained.
 
 The `php` detector. See [Detectors](../DETECTORS.md) and [Compatibility](../COMPATIBILITY.md).
 
+## Related
+
+### Same ecosystem
+
+- [doctrine/cache is abandoned](php.package.doctrine.cache.abandoned.html)
+- [Laravel 10 is no longer supported](php.package.laravel.framework-10.end-of-support.html)
+- [Laravel 11 is no longer supported](php.package.laravel.framework-11.end-of-support.html)
+- [sensiolabs/security-checker is abandoned](php.package.sensiolabs.security-checker.abandoned.html)
+- [swiftmailer/swiftmailer is abandoned](php.package.swiftmailer.swiftmailer.abandoned.html)
+- [zendframework/zend-stdlib is abandoned](php.package.zendframework.zend-stdlib.abandoned.html)
+- [PHP 7.0 is end-of-life](php.runtime.eol-7.0.html)
+- [PHP 7.1 is end-of-life](php.runtime.eol-7.1.html)
+
+
 ## Data
 
 This page is generated from [`registry/php.json`](https://github.com/arminazimi/evergreen/blob/main/registry/php.json), rule `php.package.fzaninotto.faker.abandoned`, in the `evergreen.registry.v2` format ([how rules are written](../RULES.md)). A CLE (ECMA-428) export is not published yet. The same facts are embedded in this page as schema.org structured data.
@@ -55,41 +79,68 @@ This page is generated from [`registry/php.json`](https://github.com/arminazimi/
 <script type="application/ld+json">
 {
   "@context": "https://schema.org",
-  "@type": "TechArticle",
-  "@id": "https://arminazimi.github.io/evergreen/rules/php.package.fzaninotto.faker.abandoned.html",
-  "url": "https://arminazimi.github.io/evergreen/rules/php.package.fzaninotto.faker.abandoned.html",
-  "mainEntityOfPage": "https://arminazimi.github.io/evergreen/rules/php.package.fzaninotto.faker.abandoned.html",
-  "headline": "fzaninotto/faker is abandoned — dates, impact, migration",
-  "description": "Packagist marks fzaninotto/faker as abandoned and no longer maintained.",
-  "inLanguage": "en",
-  "dateModified": "2026-10-20",
-  "keywords": [
-    "deprecated",
-    "php",
-    "high"
-  ],
-  "about": {
-    "@type": "Thing",
-    "name": "fzaninotto/faker is abandoned",
-    "identifier": "pkg:composer/fzaninotto/faker"
-  },
-  "citation": [
+  "@graph": [
     {
-      "@type": "CreativeWork",
-      "name": "fzaninotto/faker on Packagist",
-      "url": "https://packagist.org/packages/fzaninotto/faker"
+      "@type": "TechArticle",
+      "@id": "https://arminazimi.github.io/evergreen/rules/php.package.fzaninotto.faker.abandoned.html",
+      "url": "https://arminazimi.github.io/evergreen/rules/php.package.fzaninotto.faker.abandoned.html",
+      "mainEntityOfPage": "https://arminazimi.github.io/evergreen/rules/php.package.fzaninotto.faker.abandoned.html",
+      "headline": "fzaninotto/faker is abandoned — dates, impact, migration",
+      "description": "Packagist marks fzaninotto/faker as abandoned and no longer maintained.",
+      "inLanguage": "en",
+      "dateModified": "2026-10-20",
+      "keywords": [
+        "deprecated",
+        "php",
+        "high"
+      ],
+      "about": {
+        "@type": "Thing",
+        "name": "fzaninotto/faker is abandoned",
+        "identifier": "pkg:composer/fzaninotto/faker"
+      },
+      "citation": [
+        {
+          "@type": "CreativeWork",
+          "name": "fzaninotto/faker on Packagist",
+          "url": "https://packagist.org/packages/fzaninotto/faker"
+        },
+        {
+          "@type": "CreativeWork",
+          "name": "fzaninotto/faker Composer metadata",
+          "url": "https://repo.packagist.org/p2/fzaninotto/faker.json"
+        }
+      ],
+      "isBasedOn": "https://github.com/arminazimi/evergreen/blob/main/registry/php.json",
+      "publisher": {
+        "@type": "Organization",
+        "name": "Evergreen",
+        "url": "https://arminazimi.github.io/evergreen"
+      }
     },
     {
-      "@type": "CreativeWork",
-      "name": "fzaninotto/faker Composer metadata",
-      "url": "https://repo.packagist.org/p2/fzaninotto/faker.json"
+      "@type": "FAQPage",
+      "@id": "https://arminazimi.github.io/evergreen/rules/php.package.fzaninotto.faker.abandoned.html#faq",
+      "url": "https://arminazimi.github.io/evergreen/rules/php.package.fzaninotto.faker.abandoned.html",
+      "mainEntity": [
+        {
+          "@type": "Question",
+          "name": "What is the lifecycle status of pkg:composer/fzaninotto/faker?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "Deprecated. The source gives no day. Affected versions: vers:composer/*. Source: fzaninotto/faker on Packagist (https://packagist.org/packages/fzaninotto/faker)."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "How do I check pkg:composer/fzaninotto/faker?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "Run evergreen check pkg:composer/fzaninotto/faker."
+          }
+        }
+      ]
     }
-  ],
-  "isBasedOn": "https://github.com/arminazimi/evergreen/blob/main/registry/php.json",
-  "publisher": {
-    "@type": "Organization",
-    "name": "Evergreen",
-    "url": "https://arminazimi.github.io/evergreen"
-  }
+  ]
 }
 </script>

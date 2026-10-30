@@ -2,9 +2,19 @@
 title: "Microsoft.Azure.ServiceBus is deprecated on NuGet — dates, impact, migration"
 description: "NuGet marks all 33 listed versions of Microsoft.Azure.ServiceBus as deprecated (reason: Legacy)."
 canonical_url: "https://arminazimi.github.io/evergreen/rules/dotnet.package.microsoft-azure-servicebus.deprecated.html"
+image: "/assets/og/dotnet.package.microsoft-azure-servicebus.deprecated.svg"
+json_twin: "/rules/dotnet.package.microsoft-azure-servicebus.deprecated.json"
 ---
 
 # Microsoft.Azure.ServiceBus is deprecated on NuGet
+
+**Deprecated** as of 2026-09-30. Replacement: Azure.Messaging.ServiceBus. Source: [Microsoft.Azure.ServiceBus on NuGet (deprecation metadata)](https://www.nuget.org/packages/Microsoft.Azure.ServiceBus).
+
+Check a version:
+
+```bash
+evergreen check pkg:nuget/Microsoft.Azure.ServiceBus
+```
 
 NuGet marks all 33 listed versions of Microsoft.Azure.ServiceBus as deprecated (reason: Legacy). The publisher's message: "Please note, this package is obsolete as of 9/30/2026 and is no longer maintained or monitored. Microsoft encourages you to upgrade to the replacement package, Azure.Messaging.ServiceBus, to continue receiving updates. Refer to the migration guide (https://aka.ms/azsdk/net/migrate/sb) for guidance on upgrading. Refer to our deprecation policy (https://aka.ms/azsdk/support-policies) for more details."
 
@@ -48,6 +58,20 @@ NuGet marks all 33 listed versions of Microsoft.Azure.ServiceBus as deprecated (
 
 The `dotnet` detector. See [Detectors](../DETECTORS.md) and [Compatibility](../COMPATIBILITY.md).
 
+## Related
+
+### Same ecosystem
+
+- [Microsoft.Azure.DocumentDB is deprecated on NuGet](dotnet.package.microsoft-azure-documentdb.deprecated.html)
+- [Microsoft.Azure.Storage.Blob is deprecated on NuGet](dotnet.package.microsoft-azure-storage-blob.deprecated.html)
+- [WindowsAzure.Storage is deprecated on NuGet](dotnet.package.windowsazure-storage.deprecated.html)
+- [.NET Core 1.0 is no longer supported](dotnet.runtime.end-of-support-1.0.html)
+- [.NET Core 1.1 is no longer supported](dotnet.runtime.end-of-support-1.1.html)
+- [.NET Core 2.0 is no longer supported](dotnet.runtime.end-of-support-2.0.html)
+- [.NET Core 2.1 is no longer supported](dotnet.runtime.end-of-support-2.1.html)
+- [.NET Core 2.2 is no longer supported](dotnet.runtime.end-of-support-2.2.html)
+
+
 ## Data
 
 This page is generated from [`registry/dotnet.json`](https://github.com/arminazimi/evergreen/blob/main/registry/dotnet.json), rule `dotnet.package.microsoft-azure-servicebus.deprecated`, in the `evergreen.registry.v2` format ([how rules are written](../RULES.md)). A CLE (ECMA-428) export is not published yet. The same facts are embedded in this page as schema.org structured data.
@@ -55,41 +79,76 @@ This page is generated from [`registry/dotnet.json`](https://github.com/arminazi
 <script type="application/ld+json">
 {
   "@context": "https://schema.org",
-  "@type": "TechArticle",
-  "@id": "https://arminazimi.github.io/evergreen/rules/dotnet.package.microsoft-azure-servicebus.deprecated.html",
-  "url": "https://arminazimi.github.io/evergreen/rules/dotnet.package.microsoft-azure-servicebus.deprecated.html",
-  "mainEntityOfPage": "https://arminazimi.github.io/evergreen/rules/dotnet.package.microsoft-azure-servicebus.deprecated.html",
-  "headline": "Microsoft.Azure.ServiceBus is deprecated on NuGet — dates, impact, migration",
-  "description": "NuGet marks all 33 listed versions of Microsoft.Azure.ServiceBus as deprecated (reason: Legacy).",
-  "inLanguage": "en",
-  "dateModified": "2026-10-19",
-  "keywords": [
-    "deprecated",
-    "dotnet",
-    "medium"
-  ],
-  "about": {
-    "@type": "Thing",
-    "name": "Microsoft.Azure.ServiceBus is deprecated on NuGet",
-    "identifier": "pkg:nuget/Microsoft.Azure.ServiceBus"
-  },
-  "citation": [
+  "@graph": [
     {
-      "@type": "CreativeWork",
-      "name": "Microsoft.Azure.ServiceBus on NuGet (deprecation metadata)",
-      "url": "https://www.nuget.org/packages/Microsoft.Azure.ServiceBus"
+      "@type": "TechArticle",
+      "@id": "https://arminazimi.github.io/evergreen/rules/dotnet.package.microsoft-azure-servicebus.deprecated.html",
+      "url": "https://arminazimi.github.io/evergreen/rules/dotnet.package.microsoft-azure-servicebus.deprecated.html",
+      "mainEntityOfPage": "https://arminazimi.github.io/evergreen/rules/dotnet.package.microsoft-azure-servicebus.deprecated.html",
+      "headline": "Microsoft.Azure.ServiceBus is deprecated on NuGet — dates, impact, migration",
+      "description": "NuGet marks all 33 listed versions of Microsoft.Azure.ServiceBus as deprecated (reason: Legacy).",
+      "inLanguage": "en",
+      "dateModified": "2026-10-19",
+      "keywords": [
+        "deprecated",
+        "dotnet",
+        "medium"
+      ],
+      "about": {
+        "@type": "Thing",
+        "name": "Microsoft.Azure.ServiceBus is deprecated on NuGet",
+        "identifier": "pkg:nuget/Microsoft.Azure.ServiceBus"
+      },
+      "citation": [
+        {
+          "@type": "CreativeWork",
+          "name": "Microsoft.Azure.ServiceBus on NuGet (deprecation metadata)",
+          "url": "https://www.nuget.org/packages/Microsoft.Azure.ServiceBus"
+        },
+        {
+          "@type": "CreativeWork",
+          "name": "NuGet package deprecation",
+          "url": "https://learn.microsoft.com/nuget/nuget-org/deprecate-packages"
+        }
+      ],
+      "isBasedOn": "https://github.com/arminazimi/evergreen/blob/main/registry/dotnet.json",
+      "publisher": {
+        "@type": "Organization",
+        "name": "Evergreen",
+        "url": "https://arminazimi.github.io/evergreen"
+      }
     },
     {
-      "@type": "CreativeWork",
-      "name": "NuGet package deprecation",
-      "url": "https://learn.microsoft.com/nuget/nuget-org/deprecate-packages"
+      "@type": "FAQPage",
+      "@id": "https://arminazimi.github.io/evergreen/rules/dotnet.package.microsoft-azure-servicebus.deprecated.html#faq",
+      "url": "https://arminazimi.github.io/evergreen/rules/dotnet.package.microsoft-azure-servicebus.deprecated.html",
+      "mainEntity": [
+        {
+          "@type": "Question",
+          "name": "What is the lifecycle status of pkg:nuget/Microsoft.Azure.ServiceBus?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "Deprecated as of 2026-09-30. Affected versions: vers:nuget/*. Source: Microsoft.Azure.ServiceBus on NuGet (deprecation metadata) (https://www.nuget.org/packages/Microsoft.Azure.ServiceBus)."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "What replaces pkg:nuget/Microsoft.Azure.ServiceBus?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "Azure.Messaging.ServiceBus"
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "How do I check pkg:nuget/Microsoft.Azure.ServiceBus?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "Run evergreen check pkg:nuget/Microsoft.Azure.ServiceBus."
+          }
+        }
+      ]
     }
-  ],
-  "isBasedOn": "https://github.com/arminazimi/evergreen/blob/main/registry/dotnet.json",
-  "publisher": {
-    "@type": "Organization",
-    "name": "Evergreen",
-    "url": "https://arminazimi.github.io/evergreen"
-  }
+  ]
 }
 </script>

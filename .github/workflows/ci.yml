@@ -10,16 +10,93 @@ permissions:
   contents: read
 
 concurrency:
-  group: ci-${{ github.workflow }}-${{ github.event.pull_request.number || github.sha }}
-  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+  group: ci-${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  # A newer push to main supersedes an older one; a merge-queue run is never cancelled.
+  cancel-in-progress: ${{ github.event_name != 'merge_group' }}
 
 jobs:
+  # Classifies the change set so pull requests run only what they need. push and
+  # merge_group always run everything; a docs-only pull request skips the test job.
+  changes:
+    name: changes
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    outputs:
+      docs_only: ${{ steps.classify.outputs.docs_only }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          # Pull requests need history so the docs-only classifier can diff against the base.
+          fetch-depth: 0
+          persist-credentials: false
+      - name: Classify whether this pull request is documentation-only
+        id: classify
+        shell: bash
+        env:
+          EVENT_NAME: ${{ github.event_name }}
+          BASE_SHA: ${{ github.event.pull_request.base.sha }}
+        run: |
+          set -euo pipefail
+
+          if [ "$EVENT_NAME" != "pull_request" ]; then
+            echo "docs_only=false" >> "$GITHUB_OUTPUT"
+            echo "Event is $EVENT_NAME; the full check matrix runs."
+            exit 0
+          fi
+
+          if [ -z "${BASE_SHA:-}" ]; then
+            echo "docs_only=false" >> "$GITHUB_OUTPUT"
+            echo "No pull request base SHA; treating as a code change."
+            exit 0
+          fi
+
+          git fetch --no-tags --depth=1 origin "$BASE_SHA"
+          mapfile -t CHANGED < <(git diff --name-only --diff-filter=ACMRD "$BASE_SHA" HEAD)
+
+          is_generated() {
+            case "$1" in
+              docs/rules/*|docs/ROADMAP.md|docs/llms-full.txt|dist/*|plugins/*|.claude-plugin/*|.agents/plugins/*) return 0 ;;
+              *) return 1 ;;
+            esac
+          }
+
+          is_docs() {
+            local path="$1"
+            if is_generated "$path"; then
+              return 1
+            fi
+            case "$path" in
+              docs/*) return 0 ;;
+            esac
+            [[ "$path" == *.md ]]
+          }
+
+          docs_only=false
+          if [ "${#CHANGED[@]}" -gt 0 ]; then
+            docs_only=true
+            for path in "${CHANGED[@]}"; do
+              if ! is_docs "$path"; then
+                docs_only=false
+                break
+              fi
+            done
+          fi
+
+          echo "docs_only=$docs_only" >> "$GITHUB_OUTPUT"
+          {
+            echo "Changed files (${#CHANGED[@]}):"
+            printf '%s\n' "${CHANGED[@]}"
+            echo "docs_only=$docs_only"
+          } >> "$GITHUB_STEP_SUMMARY"
+
   check:
     name: check (${{ matrix.os }}, node ${{ matrix.node }})
+    needs: changes
+    if: needs.changes.outputs.docs_only != 'true'
     strategy:
       fail-fast: false
       matrix:
-        os: [ubuntu-latest, windows-latest, macos-latest]
+        os: [ubuntu-latest]
         node: [24]
         include:
           - os: ubuntu-latest
@@ -28,13 +105,16 @@ jobs:
     timeout-minutes: 20
     permissions:
       contents: read
+      actions: read
       security-events: write
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          persist-credentials: false
       - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7
         with:
           node-version: ${{ matrix.node }}
-          cache: ${{ runner.os == 'Windows' && '' || 'npm' }}
+          cache: ${{ runner.os != 'Windows' && 'npm' || '' }}
       - run: npm ci
       - name: npm run check
         # The committed action bundle is verified only for a release; ordinary pull requests would conflict on it.
@@ -48,9 +128,67 @@ jobs:
       - name: Check the reference pages against the registry
         if: runner.os == 'Linux' && matrix.node == 24
         run: node dist/tools/build-reference-pages.js --check
+      - name: Check the Open Graph images against the registry
+        if: runner.os == 'Linux' && matrix.node == 24
+        run: node dist/tools/build-og-images.js --check
+      - name: Check the answer pages against the registry
+        if: runner.os == 'Linux' && matrix.node == 24
+        run: node dist/tools/build-answer-pages.js --check
       - name: Enforce coverage thresholds (main only)
         if: github.event_name == 'push' && runner.os == 'Linux' && matrix.node == 24
+        # Emits lcov.info beside the table so pull requests can diff per-file line coverage against main.
         run: npm run test:coverage | tee coverage.txt
+      - name: Upload coverage LCOV (main)
+        if: github.event_name == 'push' && runner.os == 'Linux' && matrix.node == 24
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7
+        with:
+          name: coverage-lcov
+          path: lcov.info
+          retention-days: 30
+      - name: Coverage diff for changed src files
+        if: (github.event_name == 'pull_request' || github.event_name == 'merge_group') && runner.os == 'Linux' && matrix.node == 24
+        env:
+          GH_TOKEN: ${{ github.token }}
+          BASE_SHA: ${{ github.event.pull_request.base.sha || github.event.merge_group.base_sha }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          if [ -z "${BASE_SHA:-}" ]; then
+            echo "No base SHA for this event; skipping coverage diff."
+            exit 0
+          fi
+          git fetch --no-tags --depth=1 origin "$BASE_SHA"
+          git diff --name-only --diff-filter=ACMR "$BASE_SHA" HEAD -- 'src/**/*.ts' 'src/**/*.mts' 'src/**/*.cts' 'src/**/*.js' 'src/**/*.jsx' 'src/**/*.tsx' > "$RUNNER_TEMP/changed-src.txt"
+          if [ ! -s "$RUNNER_TEMP/changed-src.txt" ]; then
+            echo "No src/ files changed; skipping coverage diff."
+            exit 0
+          fi
+          echo "Changed src files:"
+          cat "$RUNNER_TEMP/changed-src.txt"
+
+          RUN_ID="$(gh api "repos/${GITHUB_REPOSITORY}/actions/workflows/ci.yml/runs?branch=main&event=push&status=completed&per_page=30" \
+            --jq '[.workflow_runs[] | select(.conclusion == "success")][0].id // empty')"
+          if [ -z "$RUN_ID" ]; then
+            echo "No successful main CI run yet; skipping coverage diff."
+            exit 0
+          fi
+          mkdir -p "$RUNNER_TEMP/base-coverage"
+          if ! gh run download "$RUN_ID" -n coverage-lcov -D "$RUNNER_TEMP/base-coverage"; then
+            echo "Main run $RUN_ID has no coverage-lcov artifact yet; skipping coverage diff."
+            exit 0
+          fi
+          if [ ! -f "$RUNNER_TEMP/base-coverage/lcov.info" ]; then
+            echo "Downloaded artifact did not contain lcov.info; skipping coverage diff."
+            exit 0
+          fi
+
+          npm run test:coverage:lcov
+          node dist/tools/coverage-diff.js \
+            --base "$RUNNER_TEMP/base-coverage/lcov.info" \
+            --head lcov.info \
+            --changed-files "$RUNNER_TEMP/changed-src.txt" \
+            --root "$GITHUB_WORKSPACE" \
+            --summary "$GITHUB_STEP_SUMMARY"
       - name: Render the coverage badge data
         if: github.event_name == 'push' && runner.os == 'Linux' && matrix.node == 24
         run: node dist/tools/coverage-badge.js < coverage.txt > "$RUNNER_TEMP/coverage.json"
@@ -71,7 +209,7 @@ jobs:
           name: eol-calendar
           path: ${{ runner.temp }}/eol-calendar
           retention-days: 14
-      - name: Dogfood Evergreen action
+      - name: Dogfood Evergreen action # zizmor: ignore[self-repository] -- it scans this repository with the action under test
         if: runner.os == 'Linux' && matrix.node == 24
         uses: ./
         with:
@@ -81,7 +219,68 @@ jobs:
           upload-sarif: ${{ github.event_name == 'push' }}
           upload-badge: ${{ github.event_name == 'push' }}
 
+  # Windows and macOS run on main and in the merge queue, not on pull requests: those runners are
+  # scarce and held every pull request behind a pile of merges. The Linux-only steps stay in `check`.
+  check-cross-os:
+    if: github.event_name != 'pull_request'
+    name: check (${{ matrix.os }}, node ${{ matrix.node }})
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [windows-latest, macos-latest]
+        node: [24]
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 20
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7
+        with:
+          node-version: ${{ matrix.node }}
+          cache: ${{ runner.os != 'Windows' && 'npm' || '' }}
+      - run: npm ci
+      - name: npm run check
+        env:
+          EVERGREEN_VERIFY_ACTION_BUNDLE: "${{ (startsWith(github.event.pull_request.title, 'chore: release') || startsWith(github.event.head_commit.message, 'chore: release')) && '1' || '' }}"
+        run: npm run check
+
+  # Documentation-only pull requests skip the test matrix and run these checks instead.
+  docs:
+    name: docs (reference and llms)
+    needs: changes
+    if: needs.changes.outputs.docs_only == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7
+        with:
+          node-version: 24
+          cache: npm
+      - run: npm ci
+      - run: npm run build --silent
+      - name: Check the reference pages against the registry
+        run: node dist/tools/build-reference-pages.js --check
+      - name: Check docs/llms-full.txt against the linked pages
+        run: node dist/tools/build-llms-full.js --check
+      - uses: ruby/setup-ruby@7f797815d8adceb1c412e7abefdd1ab4abc47a5f # v1.335.0
+        with:
+          ruby-version: "3.3"
+          bundler-cache: true
+          working-directory: docs
+      - name: Build the documentation site
+        working-directory: docs
+        run: bundle exec jekyll build --baseurl ""
+
   self-scan:
+    if: github.event_name != 'pull_request'
     name: self-scan (fail on new findings)
     runs-on: ubuntu-latest
     timeout-minutes: 10
@@ -89,6 +288,8 @@ jobs:
       contents: read
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          persist-credentials: false
       - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7
         with:
           node-version: 24
@@ -98,6 +299,8 @@ jobs:
       - name: Scan this repository with the code under test
         run: |
           node dist/src/cli.js scan . --baseline .evergreen-baseline.json --json > "$RUNNER_TEMP/self-scan.json"
+          # The template literals below are JavaScript evaluated by node, not shell expansions.
+          # shellcheck disable=SC2016
           node -e '
             const result = JSON.parse(require("fs").readFileSync(process.argv[1], "utf8"));
             for (const f of result.findings) console.error(`::error::${f.ruleId} ${f.id}: new finding not covered by .evergreen-baseline.json`);
@@ -105,6 +308,7 @@ jobs:
           ' "$RUNNER_TEMP/self-scan.json"
 
   perf-budget:
+    if: github.event_name != 'pull_request'
     name: perf-budget (fixed fixture scan)
     runs-on: ubuntu-latest
     timeout-minutes: 10
@@ -112,6 +316,8 @@ jobs:
       contents: read
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          persist-credentials: false
       - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7
         with:
           node-version: 24
@@ -121,6 +327,7 @@ jobs:
         run: npm run build --silent && node dist/benchmarks/perf-budget.js --check
 
   lighthouse:
+    if: github.event_name != 'pull_request'
     name: lighthouse (performance and accessibility 90+)
     runs-on: ubuntu-latest
     timeout-minutes: 20
@@ -128,6 +335,8 @@ jobs:
       contents: read
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          persist-credentials: false
       - uses: ruby/setup-ruby@7f797815d8adceb1c412e7abefdd1ab4abc47a5f # v1.335.0
         with:
           ruby-version: "3.3"
@@ -151,11 +360,12 @@ jobs:
       contents: write
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
-      - uses: actions/download-artifact@37930b1c2abaa49bbe596cd826c3c89aef350131 # v7
+        # zizmor: ignore[artipacked] -- it pushes the badges branch with the checkout token
+      - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
         with:
           name: coverage-badge
           path: ${{ runner.temp }}/badge
-      - uses: actions/download-artifact@37930b1c2abaa49bbe596cd826c3c89aef350131 # v7
+      - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
         with:
           name: evergreen-badge
           path: ${{ runner.temp }}/evergreen-badge
@@ -180,7 +390,7 @@ jobs:
   ci-ok:
     name: ci-ok
     if: always()
-    needs: [check, self-scan, perf-budget, lighthouse, coverage-badge]
+    needs: [changes, check, docs, check-cross-os, self-scan, perf-budget, lighthouse, coverage-badge]
     runs-on: ubuntu-latest
     timeout-minutes: 5
     steps:

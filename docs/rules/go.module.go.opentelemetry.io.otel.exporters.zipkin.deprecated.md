@@ -2,9 +2,19 @@
 title: "go.opentelemetry.io/otel/exporters/zipkin is deprecated — dates, impact, migration"
 description: "The latest go.opentelemetry.io/otel/exporters/zipkin module declares: \"The zipkin exporter is deprecated and will be removed in early 2027."
 canonical_url: "https://arminazimi.github.io/evergreen/rules/go.module.go.opentelemetry.io.otel.exporters.zipkin.deprecated.html"
+image: "/assets/og/go.module.go.opentelemetry.io.otel.exporters.zipkin.deprecated.svg"
+json_twin: "/rules/go.module.go.opentelemetry.io.otel.exporters.zipkin.deprecated.json"
 ---
 
 # go.opentelemetry.io/otel/exporters/zipkin is deprecated
+
+**Deprecated.** The source gives no day. Source: [go.opentelemetry.io/otel/exporters/zipkin v1.47.0 go.mod](https://proxy.golang.org/go.opentelemetry.io/otel/exporters/zipkin/@v/v1.47.0.mod).
+
+Check a version:
+
+```bash
+evergreen check pkg:golang/go.opentelemetry.io/otel/exporters/zipkin
+```
 
 The latest go.opentelemetry.io/otel/exporters/zipkin module declares: "The zipkin exporter is deprecated and will be removed in early 2027. See the blog post "Deprecating Zipkin Exporter": https://opentelemetry.io/blog/2025/deprecating-zipkin-exporters/"
 
@@ -49,6 +59,20 @@ The latest go.opentelemetry.io/otel/exporters/zipkin module declares: "The zipki
 
 The [`go`](../detectors/go.md) detector. See [Detectors](../DETECTORS.md) and [Compatibility](../COMPATIBILITY.md).
 
+## Related
+
+### Same ecosystem
+
+- [cloud.google.com/go/pubsub is deprecated](go.module.cloud.google.com.go.pubsub.deprecated.html)
+- [github.com/cncf/udpa/go is deprecated](go.module.github.com.cncf.udpa.go.deprecated.html)
+- [github.com/discord/lilliput is deprecated](go.module.github.com.discord.lilliput.deprecated.html)
+- [github.com/golang/protobuf is deprecated](go.module.github.com.golang.protobuf.deprecated.html)
+- [github.com/streadway/amqp is deprecated](go.module.github.com.streadway.amqp.deprecated.html)
+- [Go 1.20 and older are no longer supported](go.runtime.end-of-support-1.20-and-older.html)
+- [Go 1.21 is no longer supported](go.runtime.end-of-support-1.21.html)
+- [Go 1.22 is no longer supported](go.runtime.end-of-support-1.22.html)
+
+
 ## Data
 
 This page is generated from [`registry/go.json`](https://github.com/arminazimi/evergreen/blob/main/registry/go.json), rule `go.module.go.opentelemetry.io.otel.exporters.zipkin.deprecated`, in the `evergreen.registry.v2` format ([how rules are written](../RULES.md)). A CLE (ECMA-428) export is not published yet. The same facts are embedded in this page as schema.org structured data.
@@ -56,41 +80,68 @@ This page is generated from [`registry/go.json`](https://github.com/arminazimi/e
 <script type="application/ld+json">
 {
   "@context": "https://schema.org",
-  "@type": "TechArticle",
-  "@id": "https://arminazimi.github.io/evergreen/rules/go.module.go.opentelemetry.io.otel.exporters.zipkin.deprecated.html",
-  "url": "https://arminazimi.github.io/evergreen/rules/go.module.go.opentelemetry.io.otel.exporters.zipkin.deprecated.html",
-  "mainEntityOfPage": "https://arminazimi.github.io/evergreen/rules/go.module.go.opentelemetry.io.otel.exporters.zipkin.deprecated.html",
-  "headline": "go.opentelemetry.io/otel/exporters/zipkin is deprecated — dates, impact, migration",
-  "description": "The latest go.opentelemetry.io/otel/exporters/zipkin module declares: \"The zipkin exporter is deprecated and will be removed in early 2027.",
-  "inLanguage": "en",
-  "dateModified": "2026-10-20",
-  "keywords": [
-    "deprecated",
-    "go",
-    "medium"
-  ],
-  "about": {
-    "@type": "Thing",
-    "name": "go.opentelemetry.io/otel/exporters/zipkin is deprecated",
-    "identifier": "pkg:golang/go.opentelemetry.io/otel/exporters/zipkin"
-  },
-  "citation": [
+  "@graph": [
     {
-      "@type": "CreativeWork",
-      "name": "go.opentelemetry.io/otel/exporters/zipkin v1.47.0 go.mod",
-      "url": "https://proxy.golang.org/go.opentelemetry.io/otel/exporters/zipkin/@v/v1.47.0.mod"
+      "@type": "TechArticle",
+      "@id": "https://arminazimi.github.io/evergreen/rules/go.module.go.opentelemetry.io.otel.exporters.zipkin.deprecated.html",
+      "url": "https://arminazimi.github.io/evergreen/rules/go.module.go.opentelemetry.io.otel.exporters.zipkin.deprecated.html",
+      "mainEntityOfPage": "https://arminazimi.github.io/evergreen/rules/go.module.go.opentelemetry.io.otel.exporters.zipkin.deprecated.html",
+      "headline": "go.opentelemetry.io/otel/exporters/zipkin is deprecated — dates, impact, migration",
+      "description": "The latest go.opentelemetry.io/otel/exporters/zipkin module declares: \"The zipkin exporter is deprecated and will be removed in early 2027.",
+      "inLanguage": "en",
+      "dateModified": "2026-10-20",
+      "keywords": [
+        "deprecated",
+        "go",
+        "medium"
+      ],
+      "about": {
+        "@type": "Thing",
+        "name": "go.opentelemetry.io/otel/exporters/zipkin is deprecated",
+        "identifier": "pkg:golang/go.opentelemetry.io/otel/exporters/zipkin"
+      },
+      "citation": [
+        {
+          "@type": "CreativeWork",
+          "name": "go.opentelemetry.io/otel/exporters/zipkin v1.47.0 go.mod",
+          "url": "https://proxy.golang.org/go.opentelemetry.io/otel/exporters/zipkin/@v/v1.47.0.mod"
+        },
+        {
+          "@type": "CreativeWork",
+          "name": "Go module deprecation reference",
+          "url": "https://go.dev/ref/mod#go-mod-file-module-deprecation"
+        }
+      ],
+      "isBasedOn": "https://github.com/arminazimi/evergreen/blob/main/registry/go.json",
+      "publisher": {
+        "@type": "Organization",
+        "name": "Evergreen",
+        "url": "https://arminazimi.github.io/evergreen"
+      }
     },
     {
-      "@type": "CreativeWork",
-      "name": "Go module deprecation reference",
-      "url": "https://go.dev/ref/mod#go-mod-file-module-deprecation"
+      "@type": "FAQPage",
+      "@id": "https://arminazimi.github.io/evergreen/rules/go.module.go.opentelemetry.io.otel.exporters.zipkin.deprecated.html#faq",
+      "url": "https://arminazimi.github.io/evergreen/rules/go.module.go.opentelemetry.io.otel.exporters.zipkin.deprecated.html",
+      "mainEntity": [
+        {
+          "@type": "Question",
+          "name": "What is the lifecycle status of pkg:golang/go.opentelemetry.io/otel/exporters/zipkin?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "Deprecated. The source gives no day. Affected versions: vers:golang/*. Source: go.opentelemetry.io/otel/exporters/zipkin v1.47.0 go.mod (https://proxy.golang.org/go.opentelemetry.io/otel/exporters/zipkin/@v/v1.47.0.mod)."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "How do I check pkg:golang/go.opentelemetry.io/otel/exporters/zipkin?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "Run evergreen check pkg:golang/go.opentelemetry.io/otel/exporters/zipkin."
+          }
+        }
+      ]
     }
-  ],
-  "isBasedOn": "https://github.com/arminazimi/evergreen/blob/main/registry/go.json",
-  "publisher": {
-    "@type": "Organization",
-    "name": "Evergreen",
-    "url": "https://arminazimi.github.io/evergreen"
-  }
+  ]
 }
 </script>

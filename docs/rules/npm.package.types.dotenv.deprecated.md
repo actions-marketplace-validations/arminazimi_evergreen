@@ -2,9 +2,19 @@
 title: "@types/dotenv is deprecated — dates, impact, migration"
 description: "npm marks @types/dotenv as deprecated: \"This is a stub types definition. dotenv provides its own type definitions, so you do not need this installed.\""
 canonical_url: "https://arminazimi.github.io/evergreen/rules/npm.package.types.dotenv.deprecated.html"
+image: "/assets/og/npm.package.types.dotenv.deprecated.svg"
+json_twin: "/rules/npm.package.types.dotenv.deprecated.json"
 ---
 
 # @types/dotenv is deprecated
+
+**Deprecated.** The source gives no day. Replacement: dotenv. Source: [@types/dotenv on npm](https://www.npmjs.com/package/@types/dotenv).
+
+Check a version:
+
+```bash
+evergreen check pkg:npm/%40types/dotenv
+```
 
 npm marks @types/dotenv as deprecated: "This is a stub types definition. dotenv provides its own type definitions, so you do not need this installed."
 
@@ -49,6 +59,20 @@ npm marks @types/dotenv as deprecated: "This is a stub types definition. dotenv 
 
 The `npm` detector. See [Detectors](../DETECTORS.md) and [Compatibility](../COMPATIBILITY.md).
 
+## Related
+
+### Same ecosystem
+
+- [abab is deprecated](npm.package.abab.deprecated.html)
+- [@angular/core v18 and older are no longer supported](npm.package.angular.core.v18-and-older.end-of-support.html)
+- [@angular/core v19 is no longer supported](npm.package.angular.core.v19.end-of-support.html)
+- [@angular/core v20 reaches end of life on 2026-11-28](npm.package.angular.core.v20.scheduled-end-of-life.html)
+- [@angular/core v21 reaches end of life on 2027-06-30](npm.package.angular.core.v21.scheduled-end-of-life.html)
+- [@angular/core v22 reaches end of life on 2028-06-30](npm.package.angular.core.v22.scheduled-end-of-life.html)
+- [are-we-there-yet is no longer supported](npm.package.are-we-there-yet.eol.html)
+- [babel-eslint is deprecated](npm.package.babel-eslint.deprecated.html)
+
+
 ## Data
 
 This page is generated from [`registry/npm.json`](https://github.com/arminazimi/evergreen/blob/main/registry/npm.json), rule `npm.package.types.dotenv.deprecated`, in the `evergreen.registry.v2` format ([how rules are written](../RULES.md)). A CLE (ECMA-428) export is not published yet. The same facts are embedded in this page as schema.org structured data.
@@ -56,41 +80,76 @@ This page is generated from [`registry/npm.json`](https://github.com/arminazimi/
 <script type="application/ld+json">
 {
   "@context": "https://schema.org",
-  "@type": "TechArticle",
-  "@id": "https://arminazimi.github.io/evergreen/rules/npm.package.types.dotenv.deprecated.html",
-  "url": "https://arminazimi.github.io/evergreen/rules/npm.package.types.dotenv.deprecated.html",
-  "mainEntityOfPage": "https://arminazimi.github.io/evergreen/rules/npm.package.types.dotenv.deprecated.html",
-  "headline": "@types/dotenv is deprecated — dates, impact, migration",
-  "description": "npm marks @types/dotenv as deprecated: \"This is a stub types definition. dotenv provides its own type definitions, so you do not need this installed.\"",
-  "inLanguage": "en",
-  "dateModified": "2026-10-19",
-  "keywords": [
-    "deprecated",
-    "npm",
-    "low"
-  ],
-  "about": {
-    "@type": "Thing",
-    "name": "@types/dotenv is deprecated",
-    "identifier": "pkg:npm/%40types/dotenv"
-  },
-  "citation": [
+  "@graph": [
     {
-      "@type": "CreativeWork",
-      "name": "@types/dotenv on npm",
-      "url": "https://www.npmjs.com/package/@types/dotenv"
+      "@type": "TechArticle",
+      "@id": "https://arminazimi.github.io/evergreen/rules/npm.package.types.dotenv.deprecated.html",
+      "url": "https://arminazimi.github.io/evergreen/rules/npm.package.types.dotenv.deprecated.html",
+      "mainEntityOfPage": "https://arminazimi.github.io/evergreen/rules/npm.package.types.dotenv.deprecated.html",
+      "headline": "@types/dotenv is deprecated — dates, impact, migration",
+      "description": "npm marks @types/dotenv as deprecated: \"This is a stub types definition. dotenv provides its own type definitions, so you do not need this installed.\"",
+      "inLanguage": "en",
+      "dateModified": "2026-10-19",
+      "keywords": [
+        "deprecated",
+        "npm",
+        "low"
+      ],
+      "about": {
+        "@type": "Thing",
+        "name": "@types/dotenv is deprecated",
+        "identifier": "pkg:npm/%40types/dotenv"
+      },
+      "citation": [
+        {
+          "@type": "CreativeWork",
+          "name": "@types/dotenv on npm",
+          "url": "https://www.npmjs.com/package/@types/dotenv"
+        },
+        {
+          "@type": "CreativeWork",
+          "name": "@types/dotenv version metadata",
+          "url": "https://registry.npmjs.org/@types%2fdotenv"
+        }
+      ],
+      "isBasedOn": "https://github.com/arminazimi/evergreen/blob/main/registry/npm.json",
+      "publisher": {
+        "@type": "Organization",
+        "name": "Evergreen",
+        "url": "https://arminazimi.github.io/evergreen"
+      }
     },
     {
-      "@type": "CreativeWork",
-      "name": "@types/dotenv version metadata",
-      "url": "https://registry.npmjs.org/@types%2fdotenv"
+      "@type": "FAQPage",
+      "@id": "https://arminazimi.github.io/evergreen/rules/npm.package.types.dotenv.deprecated.html#faq",
+      "url": "https://arminazimi.github.io/evergreen/rules/npm.package.types.dotenv.deprecated.html",
+      "mainEntity": [
+        {
+          "@type": "Question",
+          "name": "What is the lifecycle status of pkg:npm/%40types/dotenv?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "Deprecated. The source gives no day. Affected versions: vers:npm/8.2.0|8.2.1|8.2.2|8.2.3. Source: @types/dotenv on npm (https://www.npmjs.com/package/@types/dotenv)."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "What replaces pkg:npm/%40types/dotenv?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "dotenv"
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "How do I check pkg:npm/%40types/dotenv?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "Run evergreen check pkg:npm/%40types/dotenv."
+          }
+        }
+      ]
     }
-  ],
-  "isBasedOn": "https://github.com/arminazimi/evergreen/blob/main/registry/npm.json",
-  "publisher": {
-    "@type": "Organization",
-    "name": "Evergreen",
-    "url": "https://arminazimi.github.io/evergreen"
-  }
+  ]
 }
 </script>

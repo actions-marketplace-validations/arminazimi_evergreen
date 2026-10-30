@@ -2,9 +2,19 @@
 title: "PHP 7.4 is end-of-life — dates, impact, migration"
 description: "The PHP unsupported branches page lists the PHP 7.4 branch as end of life on 2022-11-28; the branch no longer receives security or bug fixes from the PHP project."
 canonical_url: "https://arminazimi.github.io/evergreen/rules/php.runtime.eol-7.4.html"
+image: "/assets/og/php.runtime.eol-7.4.svg"
+json_twin: "/rules/php.runtime.eol-7.4.json"
 ---
 
 # PHP 7.4 is end-of-life
+
+**End of life** as of 2022-11-28. Replacement: PHP 8.3 or later. Source: [PHP unsupported branches](https://www.php.net/eol.php).
+
+Check a version:
+
+```bash
+evergreen check pkg:generic/php
+```
 
 The PHP unsupported branches page lists the PHP 7.4 branch as end of life on 2022-11-28; the branch no longer receives security or bug fixes from the PHP project.
 
@@ -51,6 +61,28 @@ The PHP unsupported branches page lists the PHP 7.4 branch as end of life on 202
 
 The `php` detector. See [Detectors](../DETECTORS.md) and [Compatibility](../COMPATIBILITY.md).
 
+## Related
+
+### Other versions of this product
+
+- [PHP 7.0 is end-of-life](php.runtime.eol-7.0.html)
+- [PHP 7.1 is end-of-life](php.runtime.eol-7.1.html)
+- [PHP 7.2 is end-of-life](php.runtime.eol-7.2.html)
+- [PHP 7.3 is end-of-life](php.runtime.eol-7.3.html)
+- [PHP 8.0 is end-of-life](php.runtime.eol-8.0.html)
+- [PHP 8.1 is end-of-life](php.runtime.eol-8.1.html)
+
+### Same ecosystem
+
+- [doctrine/cache is abandoned](php.package.doctrine.cache.abandoned.html)
+- [fzaninotto/faker is abandoned](php.package.fzaninotto.faker.abandoned.html)
+- [Laravel 10 is no longer supported](php.package.laravel.framework-10.end-of-support.html)
+- [Laravel 11 is no longer supported](php.package.laravel.framework-11.end-of-support.html)
+- [sensiolabs/security-checker is abandoned](php.package.sensiolabs.security-checker.abandoned.html)
+- [swiftmailer/swiftmailer is abandoned](php.package.swiftmailer.swiftmailer.abandoned.html)
+- [zendframework/zend-stdlib is abandoned](php.package.zendframework.zend-stdlib.abandoned.html)
+
+
 ## Data
 
 This page is generated from [`registry/php.json`](https://github.com/arminazimi/evergreen/blob/main/registry/php.json), rule `php.runtime.eol-7.4`, in the `evergreen.registry.v2` format ([how rules are written](../RULES.md)). A CLE (ECMA-428) export is not published yet. The same facts are embedded in this page as schema.org structured data.
@@ -58,41 +90,76 @@ This page is generated from [`registry/php.json`](https://github.com/arminazimi/
 <script type="application/ld+json">
 {
   "@context": "https://schema.org",
-  "@type": "TechArticle",
-  "@id": "https://arminazimi.github.io/evergreen/rules/php.runtime.eol-7.4.html",
-  "url": "https://arminazimi.github.io/evergreen/rules/php.runtime.eol-7.4.html",
-  "mainEntityOfPage": "https://arminazimi.github.io/evergreen/rules/php.runtime.eol-7.4.html",
-  "headline": "PHP 7.4 is end-of-life — dates, impact, migration",
-  "description": "The PHP unsupported branches page lists the PHP 7.4 branch as end of life on 2022-11-28; the branch no longer receives security or bug fixes from the PHP project.",
-  "inLanguage": "en",
-  "dateModified": "2026-10-19",
-  "keywords": [
-    "end-of-life",
-    "php",
-    "high"
-  ],
-  "about": {
-    "@type": "Thing",
-    "name": "PHP 7.4 is end-of-life",
-    "identifier": "pkg:generic/php"
-  },
-  "citation": [
+  "@graph": [
     {
-      "@type": "CreativeWork",
-      "name": "PHP unsupported branches",
-      "url": "https://www.php.net/eol.php"
+      "@type": "TechArticle",
+      "@id": "https://arminazimi.github.io/evergreen/rules/php.runtime.eol-7.4.html",
+      "url": "https://arminazimi.github.io/evergreen/rules/php.runtime.eol-7.4.html",
+      "mainEntityOfPage": "https://arminazimi.github.io/evergreen/rules/php.runtime.eol-7.4.html",
+      "headline": "PHP 7.4 is end-of-life — dates, impact, migration",
+      "description": "The PHP unsupported branches page lists the PHP 7.4 branch as end of life on 2022-11-28; the branch no longer receives security or bug fixes from the PHP project.",
+      "inLanguage": "en",
+      "dateModified": "2026-10-19",
+      "keywords": [
+        "end-of-life",
+        "php",
+        "high"
+      ],
+      "about": {
+        "@type": "Thing",
+        "name": "PHP 7.4 is end-of-life",
+        "identifier": "pkg:generic/php"
+      },
+      "citation": [
+        {
+          "@type": "CreativeWork",
+          "name": "PHP unsupported branches",
+          "url": "https://www.php.net/eol.php"
+        },
+        {
+          "@type": "CreativeWork",
+          "name": "PHP supported versions",
+          "url": "https://www.php.net/supported-versions.php"
+        }
+      ],
+      "isBasedOn": "https://github.com/arminazimi/evergreen/blob/main/registry/php.json",
+      "publisher": {
+        "@type": "Organization",
+        "name": "Evergreen",
+        "url": "https://arminazimi.github.io/evergreen"
+      }
     },
     {
-      "@type": "CreativeWork",
-      "name": "PHP supported versions",
-      "url": "https://www.php.net/supported-versions.php"
+      "@type": "FAQPage",
+      "@id": "https://arminazimi.github.io/evergreen/rules/php.runtime.eol-7.4.html#faq",
+      "url": "https://arminazimi.github.io/evergreen/rules/php.runtime.eol-7.4.html",
+      "mainEntity": [
+        {
+          "@type": "Question",
+          "name": "What is the lifecycle status of pkg:generic/php?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "End of life as of 2022-11-28. Affected versions: vers:semver/>=7.4.0|\u003c8.0.0. Source: PHP unsupported branches (https://www.php.net/eol.php)."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "What replaces pkg:generic/php?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "PHP 8.3 or later"
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "How do I check pkg:generic/php?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "Run evergreen check pkg:generic/php."
+          }
+        }
+      ]
     }
-  ],
-  "isBasedOn": "https://github.com/arminazimi/evergreen/blob/main/registry/php.json",
-  "publisher": {
-    "@type": "Organization",
-    "name": "Evergreen",
-    "url": "https://arminazimi.github.io/evergreen"
-  }
+  ]
 }
 </script>

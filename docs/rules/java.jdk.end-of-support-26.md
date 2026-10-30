@@ -2,9 +2,19 @@
 title: "Java 26 is no longer supported — dates, impact, migration"
 description: "The Oracle Java SE Support Roadmap lists Java 26 as a non-LTS release whose Premier Support ended in September 2026."
 canonical_url: "https://arminazimi.github.io/evergreen/rules/java.jdk.end-of-support-26.html"
+image: "/assets/og/java.jdk.end-of-support-26.svg"
+json_twin: "/rules/java.jdk.end-of-support-26.json"
 ---
 
 # Java 26 is no longer supported
+
+**End of support.** The source gives no day. Replacement: Java 25 (LTS) or later. Source: [Oracle Java SE Support Roadmap](https://www.oracle.com/java/technologies/java-se-support-roadmap.html).
+
+Check a version:
+
+```bash
+evergreen check pkg:generic/java
+```
 
 The Oracle Java SE Support Roadmap lists Java 26 as a non-LTS release whose Premier Support ended in September 2026. It says a previous non-LTS release is superseded once a new feature release is made available. The Eclipse Temurin support page lists Java 26 as EOSL, with end of availability in September 2026.
 
@@ -51,6 +61,25 @@ The Oracle Java SE Support Roadmap lists Java 26 as a non-LTS release whose Prem
 
 The [`java`](../detectors/java.md) detector. See [Detectors](../DETECTORS.md) and [Compatibility](../COMPATIBILITY.md).
 
+## Related
+
+### Other versions of this product
+
+- [Java 12 to 16 are no longer supported](java.jdk.end-of-support-12-16.html)
+- [Java 18 to 20 are no longer supported](java.jdk.end-of-support-18-20.html)
+- [Java 22 to 24 are no longer supported](java.jdk.end-of-support-22-24.html)
+- [Java 9 and 10 are no longer supported](java.jdk.end-of-support-9-10.html)
+
+### Same ecosystem
+
+- [mysql:mysql-connector-java has moved to com.mysql:mysql-connector-j](java.maven.mysql.mysql-connector-java.relocated.html)
+- [org.hibernate:hibernate-entitymanager has moved to org.hibernate.orm:hibernate-entitymanager](java.maven.org.hibernate.hibernate-entitymanager.relocated.html)
+- [org.slf4j:slf4j-log4j12 has moved to org.slf4j:slf4j-reload4j](java.maven.org.slf4j.slf4j-log4j12.relocated.html)
+- [Spring Boot 1.x is out of open-source support](java.maven.spring-boot.legacy-1x.end-of-support.html)
+- [Spring Boot 2.x is out of open-source support](java.maven.spring-boot.legacy-2x.end-of-support.html)
+- [Spring Boot 3.x is out of open-source support](java.maven.spring-boot.legacy-3x.end-of-support.html)
+
+
 ## Data
 
 This page is generated from [`registry/java.json`](https://github.com/arminazimi/evergreen/blob/main/registry/java.json), rule `java.jdk.end-of-support-26`, in the `evergreen.registry.v2` format ([how rules are written](../RULES.md)). A CLE (ECMA-428) export is not published yet. The same facts are embedded in this page as schema.org structured data.
@@ -58,41 +87,76 @@ This page is generated from [`registry/java.json`](https://github.com/arminazimi
 <script type="application/ld+json">
 {
   "@context": "https://schema.org",
-  "@type": "TechArticle",
-  "@id": "https://arminazimi.github.io/evergreen/rules/java.jdk.end-of-support-26.html",
-  "url": "https://arminazimi.github.io/evergreen/rules/java.jdk.end-of-support-26.html",
-  "mainEntityOfPage": "https://arminazimi.github.io/evergreen/rules/java.jdk.end-of-support-26.html",
-  "headline": "Java 26 is no longer supported — dates, impact, migration",
-  "description": "The Oracle Java SE Support Roadmap lists Java 26 as a non-LTS release whose Premier Support ended in September 2026.",
-  "inLanguage": "en",
-  "dateModified": "2026-10-17",
-  "keywords": [
-    "end-of-support",
-    "java",
-    "high"
-  ],
-  "about": {
-    "@type": "Thing",
-    "name": "Java 26 is no longer supported",
-    "identifier": "pkg:generic/java"
-  },
-  "citation": [
+  "@graph": [
     {
-      "@type": "CreativeWork",
-      "name": "Oracle Java SE Support Roadmap",
-      "url": "https://www.oracle.com/java/technologies/java-se-support-roadmap.html"
+      "@type": "TechArticle",
+      "@id": "https://arminazimi.github.io/evergreen/rules/java.jdk.end-of-support-26.html",
+      "url": "https://arminazimi.github.io/evergreen/rules/java.jdk.end-of-support-26.html",
+      "mainEntityOfPage": "https://arminazimi.github.io/evergreen/rules/java.jdk.end-of-support-26.html",
+      "headline": "Java 26 is no longer supported — dates, impact, migration",
+      "description": "The Oracle Java SE Support Roadmap lists Java 26 as a non-LTS release whose Premier Support ended in September 2026.",
+      "inLanguage": "en",
+      "dateModified": "2026-10-17",
+      "keywords": [
+        "end-of-support",
+        "java",
+        "high"
+      ],
+      "about": {
+        "@type": "Thing",
+        "name": "Java 26 is no longer supported",
+        "identifier": "pkg:generic/java"
+      },
+      "citation": [
+        {
+          "@type": "CreativeWork",
+          "name": "Oracle Java SE Support Roadmap",
+          "url": "https://www.oracle.com/java/technologies/java-se-support-roadmap.html"
+        },
+        {
+          "@type": "CreativeWork",
+          "name": "Eclipse Temurin support",
+          "url": "https://adoptium.net/support/"
+        }
+      ],
+      "isBasedOn": "https://github.com/arminazimi/evergreen/blob/main/registry/java.json",
+      "publisher": {
+        "@type": "Organization",
+        "name": "Evergreen",
+        "url": "https://arminazimi.github.io/evergreen"
+      }
     },
     {
-      "@type": "CreativeWork",
-      "name": "Eclipse Temurin support",
-      "url": "https://adoptium.net/support/"
+      "@type": "FAQPage",
+      "@id": "https://arminazimi.github.io/evergreen/rules/java.jdk.end-of-support-26.html#faq",
+      "url": "https://arminazimi.github.io/evergreen/rules/java.jdk.end-of-support-26.html",
+      "mainEntity": [
+        {
+          "@type": "Question",
+          "name": "What is the lifecycle status of pkg:generic/java?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "End of support. The source gives no day. Affected versions: vers:semver/>=26.0.0|\u003c27.0.0. Source: Oracle Java SE Support Roadmap (https://www.oracle.com/java/technologies/java-se-support-roadmap.html)."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "What replaces pkg:generic/java?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "Java 25 (LTS) or later"
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "How do I check pkg:generic/java?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "Run evergreen check pkg:generic/java."
+          }
+        }
+      ]
     }
-  ],
-  "isBasedOn": "https://github.com/arminazimi/evergreen/blob/main/registry/java.json",
-  "publisher": {
-    "@type": "Organization",
-    "name": "Evergreen",
-    "url": "https://arminazimi.github.io/evergreen"
-  }
+  ]
 }
 </script>

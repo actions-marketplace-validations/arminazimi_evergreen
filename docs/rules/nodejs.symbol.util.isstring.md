@@ -2,9 +2,19 @@
 title: "util.isString has been removed — dates, impact, migration"
 description: "Node.js removed util.isString() (DEP0045 to DEP0058 group, end-of-life since v23.0.0), so calls throw a TypeError."
 canonical_url: "https://arminazimi.github.io/evergreen/rules/nodejs.symbol.util.isstring.html"
+image: "/assets/og/nodejs.symbol.util.isstring.svg"
+json_twin: "/rules/nodejs.symbol.util.isstring.json"
 ---
 
 # util.isString has been removed
+
+**Removed.** The source gives no day. Replacement: typeof arg === 'string'. Source: [Node.js deprecations: DEP0045 to DEP0058 util.is* functions](https://nodejs.org/api/deprecations.html).
+
+Check a version:
+
+```bash
+evergreen check pkg:generic/nodejs
+```
 
 Node.js removed util.isString() (DEP0045 to DEP0058 group, end-of-life since v23.0.0), so calls throw a TypeError.
 
@@ -46,6 +56,35 @@ Node.js removed util.isString() (DEP0045 to DEP0058 group, end-of-life since v23
 
 The `npm` detector. See [Detectors](../DETECTORS.md) and [Compatibility](../COMPATIBILITY.md).
 
+## Related
+
+### Other versions of this product
+
+- [Assert.CallTracker has been removed](nodejs.symbol.assert.calltracker.html)
+- [Async_hooks.currentId has been removed](nodejs.symbol.async-hooks.currentid.html)
+- [Async_hooks.triggerId has been removed](nodejs.symbol.async-hooks.triggerid.html)
+- [The Buffer() constructor is deprecated](nodejs.symbol.buffer.constructor.html)
+- [The customFds option of child_process has been removed](nodejs.symbol.child-process.customfds.html)
+- [New crypto.Certificate() is deprecated](nodejs.symbol.crypto.certificate.html)
+- [crypto.createCipher and createDecipher have been removed](nodejs.symbol.crypto.createcipher.html)
+- [Crypto.createCredentials has been removed](nodejs.symbol.crypto.createcredentials.html)
+- [Crypto.Credentials has been removed](nodejs.symbol.crypto.credentials.html)
+- [Crypto.DEFAULT_ENCODING has been removed](nodejs.symbol.crypto.default-encoding.html)
+- [Crypto.fips is deprecated](nodejs.symbol.crypto.fips.html)
+- [The crypto.Hash constructor is deprecated](nodejs.symbol.crypto.hash.html)
+
+### Same ecosystem
+
+- [Node.js 18 is end-of-life](nodejs.runtime.eol-18.html)
+- [Node.js 19 is end-of-life](nodejs.runtime.eol-19.html)
+- [Node.js 20 is end-of-life](nodejs.runtime.eol-20.html)
+- [Node.js 21 is end-of-life](nodejs.runtime.eol-21.html)
+- [Node.js 22 reaches end-of-life on 2027-04-30](nodejs.runtime.eol-22.html)
+- [Node.js 23 is end-of-life](nodejs.runtime.eol-23.html)
+- [Node.js 25 is end-of-life](nodejs.runtime.eol-25.html)
+- [Legacy Node.js runtime is end-of-life](nodejs.runtime.legacy.html)
+
+
 ## Data
 
 This page is generated from [`registry/nodejs.json`](https://github.com/arminazimi/evergreen/blob/main/registry/nodejs.json), rule `nodejs.symbol.util.isstring`, in the `evergreen.registry.v2` format ([how rules are written](../RULES.md)). A CLE (ECMA-428) export is not published yet. The same facts are embedded in this page as schema.org structured data.
@@ -53,36 +92,71 @@ This page is generated from [`registry/nodejs.json`](https://github.com/arminazi
 <script type="application/ld+json">
 {
   "@context": "https://schema.org",
-  "@type": "TechArticle",
-  "@id": "https://arminazimi.github.io/evergreen/rules/nodejs.symbol.util.isstring.html",
-  "url": "https://arminazimi.github.io/evergreen/rules/nodejs.symbol.util.isstring.html",
-  "mainEntityOfPage": "https://arminazimi.github.io/evergreen/rules/nodejs.symbol.util.isstring.html",
-  "headline": "util.isString has been removed — dates, impact, migration",
-  "description": "Node.js removed util.isString() (DEP0045 to DEP0058 group, end-of-life since v23.0.0), so calls throw a TypeError.",
-  "inLanguage": "en",
-  "dateModified": "2026-10-21",
-  "keywords": [
-    "removed",
-    "nodejs",
-    "high"
-  ],
-  "about": {
-    "@type": "Thing",
-    "name": "util.isString has been removed",
-    "identifier": "pkg:generic/nodejs"
-  },
-  "citation": [
+  "@graph": [
     {
-      "@type": "CreativeWork",
-      "name": "Node.js deprecations: DEP0045 to DEP0058 util.is* functions",
-      "url": "https://nodejs.org/api/deprecations.html"
+      "@type": "TechArticle",
+      "@id": "https://arminazimi.github.io/evergreen/rules/nodejs.symbol.util.isstring.html",
+      "url": "https://arminazimi.github.io/evergreen/rules/nodejs.symbol.util.isstring.html",
+      "mainEntityOfPage": "https://arminazimi.github.io/evergreen/rules/nodejs.symbol.util.isstring.html",
+      "headline": "util.isString has been removed — dates, impact, migration",
+      "description": "Node.js removed util.isString() (DEP0045 to DEP0058 group, end-of-life since v23.0.0), so calls throw a TypeError.",
+      "inLanguage": "en",
+      "dateModified": "2026-10-21",
+      "keywords": [
+        "removed",
+        "nodejs",
+        "high"
+      ],
+      "about": {
+        "@type": "Thing",
+        "name": "util.isString has been removed",
+        "identifier": "pkg:generic/nodejs"
+      },
+      "citation": [
+        {
+          "@type": "CreativeWork",
+          "name": "Node.js deprecations: DEP0045 to DEP0058 util.is* functions",
+          "url": "https://nodejs.org/api/deprecations.html"
+        }
+      ],
+      "isBasedOn": "https://github.com/arminazimi/evergreen/blob/main/registry/nodejs.json",
+      "publisher": {
+        "@type": "Organization",
+        "name": "Evergreen",
+        "url": "https://arminazimi.github.io/evergreen"
+      }
+    },
+    {
+      "@type": "FAQPage",
+      "@id": "https://arminazimi.github.io/evergreen/rules/nodejs.symbol.util.isstring.html#faq",
+      "url": "https://arminazimi.github.io/evergreen/rules/nodejs.symbol.util.isstring.html",
+      "mainEntity": [
+        {
+          "@type": "Question",
+          "name": "What is the lifecycle status of pkg:generic/nodejs?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "Removed. The source gives no day. Affected versions: vers:semver/>=23.0.0. Source: Node.js deprecations: DEP0045 to DEP0058 util.is* functions (https://nodejs.org/api/deprecations.html)."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "What replaces pkg:generic/nodejs?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "typeof arg === 'string'"
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "How do I check pkg:generic/nodejs?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "Run evergreen check pkg:generic/nodejs."
+          }
+        }
+      ]
     }
-  ],
-  "isBasedOn": "https://github.com/arminazimi/evergreen/blob/main/registry/nodejs.json",
-  "publisher": {
-    "@type": "Organization",
-    "name": "Evergreen",
-    "url": "https://arminazimi.github.io/evergreen"
-  }
+  ]
 }
 </script>

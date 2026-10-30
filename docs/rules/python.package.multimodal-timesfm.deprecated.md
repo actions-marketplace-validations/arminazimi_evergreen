@@ -2,9 +2,19 @@
 title: "multimodal-timesfm is no longer maintained — dates, impact, migration"
 description: "The maintainer states that multimodal-timesfm was renamed and is no longer maintained under that name."
 canonical_url: "https://arminazimi.github.io/evergreen/rules/python.package.multimodal-timesfm.deprecated.html"
+image: "/assets/og/python.package.multimodal-timesfm.deprecated.svg"
+json_twin: "/rules/python.package.multimodal-timesfm.deprecated.json"
 ---
 
 # multimodal-timesfm is no longer maintained
+
+**Deprecated.** The source gives no day. Replacement: tsfmx. Source: [multimodal-timesfm rename notice](https://pypi.org/project/multimodal-timesfm/).
+
+Check a version:
+
+```bash
+evergreen check pkg:pypi/multimodal-timesfm
+```
 
 The maintainer states that multimodal-timesfm was renamed and is no longer maintained under that name.
 
@@ -47,6 +57,20 @@ The maintainer states that multimodal-timesfm was renamed and is no longer maint
 
 The `python` detector. See [Detectors](../DETECTORS.md) and [Compatibility](../COMPATIBILITY.md).
 
+## Related
+
+### Same ecosystem
+
+- [agentops-toolkit was renamed and is no longer maintained](python.package.agentops-toolkit.eol.html)
+- [aiohttp-valera-validator was renamed and is no longer maintained](python.package.aiohttp-valera-validator.eol.html)
+- [api-shield is deprecated](python.package.api-shield.deprecated.html)
+- [apisec-code-bolt was renamed](python.package.apisec-code-bolt.deprecated.html)
+- [argparse is archived on PyPI](python.package.argparse.archived.html)
+- [asyncio-requests is retired](python.package.asyncio-requests.deprecated.html)
+- [BatchNotebook is deprecated](python.package.batchnotebook.deprecated.html)
+- [cmip_ref was renamed and is no longer maintained](python.package.cmip-ref.eol.html)
+
+
 ## Data
 
 This page is generated from [`registry/python.json`](https://github.com/arminazimi/evergreen/blob/main/registry/python.json), rule `python.package.multimodal-timesfm.deprecated`, in the `evergreen.registry.v2` format ([how rules are written](../RULES.md)). A CLE (ECMA-428) export is not published yet. The same facts are embedded in this page as schema.org structured data.
@@ -54,36 +78,71 @@ This page is generated from [`registry/python.json`](https://github.com/arminazi
 <script type="application/ld+json">
 {
   "@context": "https://schema.org",
-  "@type": "TechArticle",
-  "@id": "https://arminazimi.github.io/evergreen/rules/python.package.multimodal-timesfm.deprecated.html",
-  "url": "https://arminazimi.github.io/evergreen/rules/python.package.multimodal-timesfm.deprecated.html",
-  "mainEntityOfPage": "https://arminazimi.github.io/evergreen/rules/python.package.multimodal-timesfm.deprecated.html",
-  "headline": "multimodal-timesfm is no longer maintained — dates, impact, migration",
-  "description": "The maintainer states that multimodal-timesfm was renamed and is no longer maintained under that name.",
-  "inLanguage": "en",
-  "dateModified": "2026-10-16",
-  "keywords": [
-    "deprecated",
-    "python",
-    "medium"
-  ],
-  "about": {
-    "@type": "Thing",
-    "name": "multimodal-timesfm is no longer maintained",
-    "identifier": "pkg:pypi/multimodal-timesfm"
-  },
-  "citation": [
+  "@graph": [
     {
-      "@type": "CreativeWork",
-      "name": "multimodal-timesfm rename notice",
-      "url": "https://pypi.org/project/multimodal-timesfm/"
+      "@type": "TechArticle",
+      "@id": "https://arminazimi.github.io/evergreen/rules/python.package.multimodal-timesfm.deprecated.html",
+      "url": "https://arminazimi.github.io/evergreen/rules/python.package.multimodal-timesfm.deprecated.html",
+      "mainEntityOfPage": "https://arminazimi.github.io/evergreen/rules/python.package.multimodal-timesfm.deprecated.html",
+      "headline": "multimodal-timesfm is no longer maintained — dates, impact, migration",
+      "description": "The maintainer states that multimodal-timesfm was renamed and is no longer maintained under that name.",
+      "inLanguage": "en",
+      "dateModified": "2026-10-16",
+      "keywords": [
+        "deprecated",
+        "python",
+        "medium"
+      ],
+      "about": {
+        "@type": "Thing",
+        "name": "multimodal-timesfm is no longer maintained",
+        "identifier": "pkg:pypi/multimodal-timesfm"
+      },
+      "citation": [
+        {
+          "@type": "CreativeWork",
+          "name": "multimodal-timesfm rename notice",
+          "url": "https://pypi.org/project/multimodal-timesfm/"
+        }
+      ],
+      "isBasedOn": "https://github.com/arminazimi/evergreen/blob/main/registry/python.json",
+      "publisher": {
+        "@type": "Organization",
+        "name": "Evergreen",
+        "url": "https://arminazimi.github.io/evergreen"
+      }
+    },
+    {
+      "@type": "FAQPage",
+      "@id": "https://arminazimi.github.io/evergreen/rules/python.package.multimodal-timesfm.deprecated.html#faq",
+      "url": "https://arminazimi.github.io/evergreen/rules/python.package.multimodal-timesfm.deprecated.html",
+      "mainEntity": [
+        {
+          "@type": "Question",
+          "name": "What is the lifecycle status of pkg:pypi/multimodal-timesfm?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "Deprecated. The source gives no day. Affected versions: vers:pypi/*. Source: multimodal-timesfm rename notice (https://pypi.org/project/multimodal-timesfm/)."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "What replaces pkg:pypi/multimodal-timesfm?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "tsfmx"
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "How do I check pkg:pypi/multimodal-timesfm?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "Run evergreen check pkg:pypi/multimodal-timesfm."
+          }
+        }
+      ]
     }
-  ],
-  "isBasedOn": "https://github.com/arminazimi/evergreen/blob/main/registry/python.json",
-  "publisher": {
-    "@type": "Organization",
-    "name": "Evergreen",
-    "url": "https://arminazimi.github.io/evergreen"
-  }
+  ]
 }
 </script>

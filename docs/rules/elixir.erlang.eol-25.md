@@ -2,9 +2,19 @@
 title: "Erlang/OTP 25 no longer receives security updates — dates, impact, migration"
 description: "Erlang/OTP supports the last three major releases with security updates. OTP 25 left that window when OTP 28 shipped on 2025-05-21, so the release no longer receives security updates from the…"
 canonical_url: "https://arminazimi.github.io/evergreen/rules/elixir.erlang.eol-25.html"
+image: "/assets/og/elixir.erlang.eol-25.svg"
+json_twin: "/rules/elixir.erlang.eol-25.json"
 ---
 
 # Erlang/OTP 25 no longer receives security updates
+
+**End of life** as of 2025-05-21. Replacement: Erlang/OTP 27 or later. Source: [Erlang/OTP security policy](https://github.com/erlang/otp/security/policy).
+
+Check a version:
+
+```bash
+evergreen check pkg:generic/erlang
+```
 
 Erlang/OTP supports the last three major releases with security updates. OTP 25 left that window when OTP 28 shipped on 2025-05-21, so the release no longer receives security updates from the Erlang/OTP project.
 
@@ -51,6 +61,19 @@ Erlang/OTP supports the last three major releases with security updates. OTP 25 
 
 The `elixir` detector. See [Detectors](../DETECTORS.md) and [Compatibility](../COMPATIBILITY.md).
 
+## Related
+
+### Other versions of this product
+
+- [Erlang/OTP 26 no longer receives security updates](elixir.erlang.eol-26.html)
+
+### Same ecosystem
+
+- [fennec is retired on Hex](elixir.package.fennec.retired.html)
+- [Elixir 1.14 no longer receives security updates](elixir.runtime.eol-1.14.html)
+- [Elixir 1.15 no longer receives security updates](elixir.runtime.eol-1.15.html)
+
+
 ## Data
 
 This page is generated from [`registry/elixir.json`](https://github.com/arminazimi/evergreen/blob/main/registry/elixir.json), rule `elixir.erlang.eol-25`, in the `evergreen.registry.v2` format ([how rules are written](../RULES.md)). A CLE (ECMA-428) export is not published yet. The same facts are embedded in this page as schema.org structured data.
@@ -58,41 +81,76 @@ This page is generated from [`registry/elixir.json`](https://github.com/arminazi
 <script type="application/ld+json">
 {
   "@context": "https://schema.org",
-  "@type": "TechArticle",
-  "@id": "https://arminazimi.github.io/evergreen/rules/elixir.erlang.eol-25.html",
-  "url": "https://arminazimi.github.io/evergreen/rules/elixir.erlang.eol-25.html",
-  "mainEntityOfPage": "https://arminazimi.github.io/evergreen/rules/elixir.erlang.eol-25.html",
-  "headline": "Erlang/OTP 25 no longer receives security updates — dates, impact, migration",
-  "description": "Erlang/OTP supports the last three major releases with security updates. OTP 25 left that window when OTP 28 shipped on 2025-05-21, so the release no longer receives security updates from the…",
-  "inLanguage": "en",
-  "dateModified": "2026-10-26",
-  "keywords": [
-    "end-of-life",
-    "elixir",
-    "high"
-  ],
-  "about": {
-    "@type": "Thing",
-    "name": "Erlang/OTP 25 no longer receives security updates",
-    "identifier": "pkg:generic/erlang"
-  },
-  "citation": [
+  "@graph": [
     {
-      "@type": "CreativeWork",
-      "name": "Erlang/OTP security policy",
-      "url": "https://github.com/erlang/otp/security/policy"
+      "@type": "TechArticle",
+      "@id": "https://arminazimi.github.io/evergreen/rules/elixir.erlang.eol-25.html",
+      "url": "https://arminazimi.github.io/evergreen/rules/elixir.erlang.eol-25.html",
+      "mainEntityOfPage": "https://arminazimi.github.io/evergreen/rules/elixir.erlang.eol-25.html",
+      "headline": "Erlang/OTP 25 no longer receives security updates — dates, impact, migration",
+      "description": "Erlang/OTP supports the last three major releases with security updates. OTP 25 left that window when OTP 28 shipped on 2025-05-21, so the release no longer receives security updates from the…",
+      "inLanguage": "en",
+      "dateModified": "2026-10-26",
+      "keywords": [
+        "end-of-life",
+        "elixir",
+        "high"
+      ],
+      "about": {
+        "@type": "Thing",
+        "name": "Erlang/OTP 25 no longer receives security updates",
+        "identifier": "pkg:generic/erlang"
+      },
+      "citation": [
+        {
+          "@type": "CreativeWork",
+          "name": "Erlang/OTP security policy",
+          "url": "https://github.com/erlang/otp/security/policy"
+        },
+        {
+          "@type": "CreativeWork",
+          "name": "OTP 28.0 release",
+          "url": "https://github.com/erlang/otp/releases/tag/OTP-28.0"
+        }
+      ],
+      "isBasedOn": "https://github.com/arminazimi/evergreen/blob/main/registry/elixir.json",
+      "publisher": {
+        "@type": "Organization",
+        "name": "Evergreen",
+        "url": "https://arminazimi.github.io/evergreen"
+      }
     },
     {
-      "@type": "CreativeWork",
-      "name": "OTP 28.0 release",
-      "url": "https://github.com/erlang/otp/releases/tag/OTP-28.0"
+      "@type": "FAQPage",
+      "@id": "https://arminazimi.github.io/evergreen/rules/elixir.erlang.eol-25.html#faq",
+      "url": "https://arminazimi.github.io/evergreen/rules/elixir.erlang.eol-25.html",
+      "mainEntity": [
+        {
+          "@type": "Question",
+          "name": "What is the lifecycle status of pkg:generic/erlang?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "End of life as of 2025-05-21. Affected versions: vers:semver/>=25.0.0|\u003c26.0.0. Source: Erlang/OTP security policy (https://github.com/erlang/otp/security/policy)."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "What replaces pkg:generic/erlang?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "Erlang/OTP 27 or later"
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "How do I check pkg:generic/erlang?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "Run evergreen check pkg:generic/erlang."
+          }
+        }
+      ]
     }
-  ],
-  "isBasedOn": "https://github.com/arminazimi/evergreen/blob/main/registry/elixir.json",
-  "publisher": {
-    "@type": "Organization",
-    "name": "Evergreen",
-    "url": "https://arminazimi.github.io/evergreen"
-  }
+  ]
 }
 </script>

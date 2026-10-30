@@ -2,9 +2,19 @@
 title: "Google Play Billing Library 8 reaches its new-app and update deadline on 2027-08-31 — dates, impact, migration"
 description: "The Google Play Billing Library version deprecation page states that all versions have a two-year deprecation cycle."
 canonical_url: "https://arminazimi.github.io/evergreen/rules/android.play-billing.version-8.html"
+image: "/assets/og/android.play-billing.version-8.svg"
+json_twin: "/rules/android.play-billing.version-8.json"
 ---
 
 # Google Play Billing Library 8 reaches its new-app and update deadline on 2027-08-31
+
+**Scheduled end of life** as of 2027-08-31. Replacement: Google Play Billing Library 9.x or later. Source: [Google Play Billing Library version deprecation — support timeline](https://developer.android.com/google/play/billing/deprecation-faq).
+
+Check a version:
+
+```bash
+evergreen check pkg:maven/com.android.billingclient/billing
+```
 
 The Google Play Billing Library version deprecation page states that all versions have a two-year deprecation cycle. Its support timeline table lists version 8 with a new app and update deadline of August 31, 2027 and an extension deadline of November 1, 2027.
 
@@ -49,6 +59,20 @@ The Google Play Billing Library version deprecation page states that all version
 
 The `android` detector. See [Detectors](../DETECTORS.md) and [Compatibility](../COMPATIBILITY.md).
 
+## Related
+
+### Other versions of this product
+
+- [Google Play Billing Library 5 is past its deprecation deadline](android.play-billing.version-5.html)
+- [Google Play Billing Library 6 is past its deprecation deadline](android.play-billing.version-6.html)
+- [Google Play Billing Library 7 is past its deprecation deadline](android.play-billing.version-7.html)
+- [Google Play Billing Library 9 reaches its new-app and update deadline on 2028-08-31](android.play-billing.version-9.html)
+
+### Same ecosystem
+
+- [Google Play requires targetSdk 35+ for existing phone and tablet apps](android.target-sdk.existing.default-below-35.html)
+
+
 ## Data
 
 This page is generated from [`registry/android.json`](https://github.com/arminazimi/evergreen/blob/main/registry/android.json), rule `android.play-billing.version-8`, in the `evergreen.registry.v2` format ([how rules are written](../RULES.md)). A CLE (ECMA-428) export is not published yet. The same facts are embedded in this page as schema.org structured data.
@@ -56,36 +80,71 @@ This page is generated from [`registry/android.json`](https://github.com/arminaz
 <script type="application/ld+json">
 {
   "@context": "https://schema.org",
-  "@type": "TechArticle",
-  "@id": "https://arminazimi.github.io/evergreen/rules/android.play-billing.version-8.html",
-  "url": "https://arminazimi.github.io/evergreen/rules/android.play-billing.version-8.html",
-  "mainEntityOfPage": "https://arminazimi.github.io/evergreen/rules/android.play-billing.version-8.html",
-  "headline": "Google Play Billing Library 8 reaches its new-app and update deadline on 2027-08-31 — dates, impact, migration",
-  "description": "The Google Play Billing Library version deprecation page states that all versions have a two-year deprecation cycle.",
-  "inLanguage": "en",
-  "dateModified": "2026-10-19",
-  "keywords": [
-    "scheduled-end-of-life",
-    "android",
-    "low"
-  ],
-  "about": {
-    "@type": "Thing",
-    "name": "Google Play Billing Library 8 reaches its new-app and update deadline on 2027-08-31",
-    "identifier": "pkg:maven/com.android.billingclient/billing"
-  },
-  "citation": [
+  "@graph": [
     {
-      "@type": "CreativeWork",
-      "name": "Google Play Billing Library version deprecation — support timeline",
-      "url": "https://developer.android.com/google/play/billing/deprecation-faq"
+      "@type": "TechArticle",
+      "@id": "https://arminazimi.github.io/evergreen/rules/android.play-billing.version-8.html",
+      "url": "https://arminazimi.github.io/evergreen/rules/android.play-billing.version-8.html",
+      "mainEntityOfPage": "https://arminazimi.github.io/evergreen/rules/android.play-billing.version-8.html",
+      "headline": "Google Play Billing Library 8 reaches its new-app and update deadline on 2027-08-31 — dates, impact, migration",
+      "description": "The Google Play Billing Library version deprecation page states that all versions have a two-year deprecation cycle.",
+      "inLanguage": "en",
+      "dateModified": "2026-10-19",
+      "keywords": [
+        "scheduled-end-of-life",
+        "android",
+        "low"
+      ],
+      "about": {
+        "@type": "Thing",
+        "name": "Google Play Billing Library 8 reaches its new-app and update deadline on 2027-08-31",
+        "identifier": "pkg:maven/com.android.billingclient/billing"
+      },
+      "citation": [
+        {
+          "@type": "CreativeWork",
+          "name": "Google Play Billing Library version deprecation — support timeline",
+          "url": "https://developer.android.com/google/play/billing/deprecation-faq"
+        }
+      ],
+      "isBasedOn": "https://github.com/arminazimi/evergreen/blob/main/registry/android.json",
+      "publisher": {
+        "@type": "Organization",
+        "name": "Evergreen",
+        "url": "https://arminazimi.github.io/evergreen"
+      }
+    },
+    {
+      "@type": "FAQPage",
+      "@id": "https://arminazimi.github.io/evergreen/rules/android.play-billing.version-8.html#faq",
+      "url": "https://arminazimi.github.io/evergreen/rules/android.play-billing.version-8.html",
+      "mainEntity": [
+        {
+          "@type": "Question",
+          "name": "What is the lifecycle status of pkg:maven/com.android.billingclient/billing?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "Scheduled end of life as of 2027-08-31. Affected versions: vers:maven/>=8.0.0|\u003c9.0.0. Source: Google Play Billing Library version deprecation — support timeline (https://developer.android.com/google/play/billing/deprecation-faq)."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "What replaces pkg:maven/com.android.billingclient/billing?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "Google Play Billing Library 9.x or later"
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "How do I check pkg:maven/com.android.billingclient/billing?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "Run evergreen check pkg:maven/com.android.billingclient/billing."
+          }
+        }
+      ]
     }
-  ],
-  "isBasedOn": "https://github.com/arminazimi/evergreen/blob/main/registry/android.json",
-  "publisher": {
-    "@type": "Organization",
-    "name": "Evergreen",
-    "url": "https://arminazimi.github.io/evergreen"
-  }
+  ]
 }
 </script>

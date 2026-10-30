@@ -2,9 +2,19 @@
 title: "Cloud SQL for PostgreSQL 13 is in extended support — dates, impact, migration"
 description: "The Cloud SQL for PostgreSQL version policy lists PostgreSQL 13 with extended support starting 2026-02-01 and deprecation on 2029-02-01."
 canonical_url: "https://arminazimi.github.io/evergreen/rules/database.google-cloud-sql-postgresql.extended-support-13.html"
+image: "/assets/og/database.google-cloud-sql-postgresql.extended-support-13.svg"
+json_twin: "/rules/database.google-cloud-sql-postgresql.extended-support-13.json"
 ---
 
 # Cloud SQL for PostgreSQL 13 is in extended support
+
+**End of support** as of 2026-02-01. Replacement: PostgreSQL 14 or later. Source: [Cloud SQL for PostgreSQL database versions and version policies](https://cloud.google.com/sql/docs/postgres/db-versions).
+
+Check a version:
+
+```bash
+evergreen check pkg:generic/google-cloud-sql-postgresql
+```
 
 The Cloud SQL for PostgreSQL version policy lists PostgreSQL 13 with extended support starting 2026-02-01 and deprecation on 2029-02-01. The PostgreSQL community no longer supports 13, and Cloud SQL charges for extended support.
 
@@ -55,6 +65,24 @@ The Cloud SQL for PostgreSQL version policy lists PostgreSQL 13 with extended su
 
 The `database` detector. See [Detectors](../DETECTORS.md) and [Compatibility](../COMPATIBILITY.md).
 
+## Related
+
+### Other versions of this product
+
+- [Cloud SQL for PostgreSQL 9.6 through 12 are in extended support](database.google-cloud-sql-postgresql.extended-support-9.6-to-12.html)
+
+### Same ecosystem
+
+- [Azure Database for MySQL 5.7 is past standard support](database.azure-mysql.standard-support-ended-5.7.html)
+- [Azure Database for PostgreSQL 11, 12, and 13 are past standard support](database.azure-postgresql.standard-support-ended-11-to-13.html)
+- [Cloud SQL for MySQL 5.6 and 5.7 are in extended support](database.google-cloud-sql-mysql.extended-support-5.6-to-5.7.html)
+- [MySQL 5.7 is end-of-life](database.mysql.end-of-life-5.7.html)
+- [MySQL 8.0 is end-of-life](database.mysql.end-of-life-8.0.html)
+- [PostgreSQL 10 is no longer a supported major version](database.postgresql.end-of-life-10.html)
+- [PostgreSQL 11 is no longer a supported major version](database.postgresql.end-of-life-11.html)
+- [PostgreSQL 12 is no longer a supported major version](database.postgresql.end-of-life-12.html)
+
+
 ## Data
 
 This page is generated from [`registry/database.json`](https://github.com/arminazimi/evergreen/blob/main/registry/database.json), rule `database.google-cloud-sql-postgresql.extended-support-13`, in the `evergreen.registry.v2` format ([how rules are written](../RULES.md)). A CLE (ECMA-428) export is not published yet. The same facts are embedded in this page as schema.org structured data.
@@ -62,41 +90,76 @@ This page is generated from [`registry/database.json`](https://github.com/armina
 <script type="application/ld+json">
 {
   "@context": "https://schema.org",
-  "@type": "TechArticle",
-  "@id": "https://arminazimi.github.io/evergreen/rules/database.google-cloud-sql-postgresql.extended-support-13.html",
-  "url": "https://arminazimi.github.io/evergreen/rules/database.google-cloud-sql-postgresql.extended-support-13.html",
-  "mainEntityOfPage": "https://arminazimi.github.io/evergreen/rules/database.google-cloud-sql-postgresql.extended-support-13.html",
-  "headline": "Cloud SQL for PostgreSQL 13 is in extended support — dates, impact, migration",
-  "description": "The Cloud SQL for PostgreSQL version policy lists PostgreSQL 13 with extended support starting 2026-02-01 and deprecation on 2029-02-01.",
-  "inLanguage": "en",
-  "dateModified": "2026-10-26",
-  "keywords": [
-    "end-of-support",
-    "database",
-    "high"
-  ],
-  "about": {
-    "@type": "Thing",
-    "name": "Cloud SQL for PostgreSQL 13 is in extended support",
-    "identifier": "pkg:generic/google-cloud-sql-postgresql"
-  },
-  "citation": [
+  "@graph": [
     {
-      "@type": "CreativeWork",
-      "name": "Cloud SQL for PostgreSQL database versions and version policies",
-      "url": "https://cloud.google.com/sql/docs/postgres/db-versions"
+      "@type": "TechArticle",
+      "@id": "https://arminazimi.github.io/evergreen/rules/database.google-cloud-sql-postgresql.extended-support-13.html",
+      "url": "https://arminazimi.github.io/evergreen/rules/database.google-cloud-sql-postgresql.extended-support-13.html",
+      "mainEntityOfPage": "https://arminazimi.github.io/evergreen/rules/database.google-cloud-sql-postgresql.extended-support-13.html",
+      "headline": "Cloud SQL for PostgreSQL 13 is in extended support — dates, impact, migration",
+      "description": "The Cloud SQL for PostgreSQL version policy lists PostgreSQL 13 with extended support starting 2026-02-01 and deprecation on 2029-02-01.",
+      "inLanguage": "en",
+      "dateModified": "2026-10-26",
+      "keywords": [
+        "end-of-support",
+        "database",
+        "high"
+      ],
+      "about": {
+        "@type": "Thing",
+        "name": "Cloud SQL for PostgreSQL 13 is in extended support",
+        "identifier": "pkg:generic/google-cloud-sql-postgresql"
+      },
+      "citation": [
+        {
+          "@type": "CreativeWork",
+          "name": "Cloud SQL for PostgreSQL database versions and version policies",
+          "url": "https://cloud.google.com/sql/docs/postgres/db-versions"
+        },
+        {
+          "@type": "CreativeWork",
+          "name": "PostgreSQL versioning policy",
+          "url": "https://www.postgresql.org/support/versioning/"
+        }
+      ],
+      "isBasedOn": "https://github.com/arminazimi/evergreen/blob/main/registry/database.json",
+      "publisher": {
+        "@type": "Organization",
+        "name": "Evergreen",
+        "url": "https://arminazimi.github.io/evergreen"
+      }
     },
     {
-      "@type": "CreativeWork",
-      "name": "PostgreSQL versioning policy",
-      "url": "https://www.postgresql.org/support/versioning/"
+      "@type": "FAQPage",
+      "@id": "https://arminazimi.github.io/evergreen/rules/database.google-cloud-sql-postgresql.extended-support-13.html#faq",
+      "url": "https://arminazimi.github.io/evergreen/rules/database.google-cloud-sql-postgresql.extended-support-13.html",
+      "mainEntity": [
+        {
+          "@type": "Question",
+          "name": "What is the lifecycle status of pkg:generic/google-cloud-sql-postgresql?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "End of support as of 2026-02-01. Affected versions: vers:semver/>=13.0.0|\u003c14.0.0. Source: Cloud SQL for PostgreSQL database versions and version policies (https://cloud.google.com/sql/docs/postgres/db-versions)."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "What replaces pkg:generic/google-cloud-sql-postgresql?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "PostgreSQL 14 or later"
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "How do I check pkg:generic/google-cloud-sql-postgresql?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "Run evergreen check pkg:generic/google-cloud-sql-postgresql."
+          }
+        }
+      ]
     }
-  ],
-  "isBasedOn": "https://github.com/arminazimi/evergreen/blob/main/registry/database.json",
-  "publisher": {
-    "@type": "Organization",
-    "name": "Evergreen",
-    "url": "https://arminazimi.github.io/evergreen"
-  }
+  ]
 }
 </script>

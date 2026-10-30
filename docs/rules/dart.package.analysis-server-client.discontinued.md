@@ -2,9 +2,19 @@
 title: "analysis_server_client is discontinued on pub.dev — dates, impact, migration"
 description: "pub.dev marks analysis_server_client as discontinued."
 canonical_url: "https://arminazimi.github.io/evergreen/rules/dart.package.analysis-server-client.discontinued.html"
+image: "/assets/og/dart.package.analysis-server-client.discontinued.svg"
+json_twin: "/rules/dart.package.analysis-server-client.discontinued.json"
 ---
 
 # analysis_server_client is discontinued on pub.dev
+
+**Deprecated.** The source gives no day. Source: [analysis_server_client on pub.dev](https://pub.dev/packages/analysis_server_client).
+
+Check a version:
+
+```bash
+evergreen check pkg:pub/analysis_server_client
+```
 
 pub.dev marks analysis_server_client as discontinued.
 
@@ -52,6 +62,17 @@ pub.dev marks analysis_server_client as discontinued.
 
 The `dart` detector. See [Detectors](../DETECTORS.md) and [Compatibility](../COMPATIBILITY.md).
 
+## Related
+
+### Same ecosystem
+
+- [Dart 3.10 no longer receives security updates](dart.sdk.end-of-support-3.10.html)
+- [Dart 3.11 no longer receives security updates](dart.sdk.end-of-support-3.11.html)
+- [Dart 3.12 no longer receives security updates](dart.sdk.end-of-support-3.12.html)
+- [Dart 3.8 no longer receives security updates](dart.sdk.end-of-support-3.8.html)
+- [Dart 3.9 no longer receives security updates](dart.sdk.end-of-support-3.9.html)
+
+
 ## Data
 
 This page is generated from [`registry/dart.json`](https://github.com/arminazimi/evergreen/blob/main/registry/dart.json), rule `dart.package.analysis-server-client.discontinued`, in the `evergreen.registry.v2` format ([how rules are written](../RULES.md)). A CLE (ECMA-428) export is not published yet. The same facts are embedded in this page as schema.org structured data.
@@ -59,46 +80,73 @@ This page is generated from [`registry/dart.json`](https://github.com/arminazimi
 <script type="application/ld+json">
 {
   "@context": "https://schema.org",
-  "@type": "TechArticle",
-  "@id": "https://arminazimi.github.io/evergreen/rules/dart.package.analysis-server-client.discontinued.html",
-  "url": "https://arminazimi.github.io/evergreen/rules/dart.package.analysis-server-client.discontinued.html",
-  "mainEntityOfPage": "https://arminazimi.github.io/evergreen/rules/dart.package.analysis-server-client.discontinued.html",
-  "headline": "analysis_server_client is discontinued on pub.dev — dates, impact, migration",
-  "description": "pub.dev marks analysis_server_client as discontinued.",
-  "inLanguage": "en",
-  "dateModified": "2026-10-30",
-  "keywords": [
-    "deprecated",
-    "dart",
-    "medium"
-  ],
-  "about": {
-    "@type": "Thing",
-    "name": "analysis_server_client is discontinued on pub.dev",
-    "identifier": "pkg:pub/analysis_server_client"
-  },
-  "citation": [
+  "@graph": [
     {
-      "@type": "CreativeWork",
-      "name": "analysis_server_client on pub.dev",
-      "url": "https://pub.dev/packages/analysis_server_client"
+      "@type": "TechArticle",
+      "@id": "https://arminazimi.github.io/evergreen/rules/dart.package.analysis-server-client.discontinued.html",
+      "url": "https://arminazimi.github.io/evergreen/rules/dart.package.analysis-server-client.discontinued.html",
+      "mainEntityOfPage": "https://arminazimi.github.io/evergreen/rules/dart.package.analysis-server-client.discontinued.html",
+      "headline": "analysis_server_client is discontinued on pub.dev — dates, impact, migration",
+      "description": "pub.dev marks analysis_server_client as discontinued.",
+      "inLanguage": "en",
+      "dateModified": "2026-10-30",
+      "keywords": [
+        "deprecated",
+        "dart",
+        "medium"
+      ],
+      "about": {
+        "@type": "Thing",
+        "name": "analysis_server_client is discontinued on pub.dev",
+        "identifier": "pkg:pub/analysis_server_client"
+      },
+      "citation": [
+        {
+          "@type": "CreativeWork",
+          "name": "analysis_server_client on pub.dev",
+          "url": "https://pub.dev/packages/analysis_server_client"
+        },
+        {
+          "@type": "CreativeWork",
+          "name": "analysis_server_client package metadata",
+          "url": "https://pub.dev/api/packages/analysis_server_client"
+        },
+        {
+          "@type": "CreativeWork",
+          "name": "Hosted Pub Repository Specification Version 2",
+          "url": "https://github.com/dart-lang/pub/blob/master/doc/repository-spec-v2.md"
+        }
+      ],
+      "isBasedOn": "https://github.com/arminazimi/evergreen/blob/main/registry/dart.json",
+      "publisher": {
+        "@type": "Organization",
+        "name": "Evergreen",
+        "url": "https://arminazimi.github.io/evergreen"
+      }
     },
     {
-      "@type": "CreativeWork",
-      "name": "analysis_server_client package metadata",
-      "url": "https://pub.dev/api/packages/analysis_server_client"
-    },
-    {
-      "@type": "CreativeWork",
-      "name": "Hosted Pub Repository Specification Version 2",
-      "url": "https://github.com/dart-lang/pub/blob/master/doc/repository-spec-v2.md"
+      "@type": "FAQPage",
+      "@id": "https://arminazimi.github.io/evergreen/rules/dart.package.analysis-server-client.discontinued.html#faq",
+      "url": "https://arminazimi.github.io/evergreen/rules/dart.package.analysis-server-client.discontinued.html",
+      "mainEntity": [
+        {
+          "@type": "Question",
+          "name": "What is the lifecycle status of pkg:pub/analysis_server_client?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "Deprecated. The source gives no day. Affected versions: vers:semver/*. Source: analysis_server_client on pub.dev (https://pub.dev/packages/analysis_server_client)."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "How do I check pkg:pub/analysis_server_client?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "Run evergreen check pkg:pub/analysis_server_client."
+          }
+        }
+      ]
     }
-  ],
-  "isBasedOn": "https://github.com/arminazimi/evergreen/blob/main/registry/dart.json",
-  "publisher": {
-    "@type": "Organization",
-    "name": "Evergreen",
-    "url": "https://arminazimi.github.io/evergreen"
-  }
+  ]
 }
 </script>

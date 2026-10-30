@@ -2,9 +2,19 @@
 title: "pathlib is archived on PyPI — dates, impact, migration"
 description: "PyPI marks pathlib as archived: the project does not expect to be updated in the future."
 canonical_url: "https://arminazimi.github.io/evergreen/rules/python.package.pathlib.archived.html"
+image: "/assets/og/python.package.pathlib.archived.svg"
+json_twin: "/rules/python.package.pathlib.archived.json"
 ---
 
 # pathlib is archived on PyPI
+
+**End of life.** The source gives no day. Source: [pathlib on PyPI](https://pypi.org/project/pathlib/).
+
+Check a version:
+
+```bash
+evergreen check pkg:pypi/pathlib
+```
 
 PyPI marks pathlib as archived: the project does not expect to be updated in the future.
 
@@ -48,6 +58,20 @@ PyPI marks pathlib as archived: the project does not expect to be updated in the
 
 The `python` detector. See [Detectors](../DETECTORS.md) and [Compatibility](../COMPATIBILITY.md).
 
+## Related
+
+### Same ecosystem
+
+- [agentops-toolkit was renamed and is no longer maintained](python.package.agentops-toolkit.eol.html)
+- [aiohttp-valera-validator was renamed and is no longer maintained](python.package.aiohttp-valera-validator.eol.html)
+- [api-shield is deprecated](python.package.api-shield.deprecated.html)
+- [apisec-code-bolt was renamed](python.package.apisec-code-bolt.deprecated.html)
+- [argparse is archived on PyPI](python.package.argparse.archived.html)
+- [asyncio-requests is retired](python.package.asyncio-requests.deprecated.html)
+- [BatchNotebook is deprecated](python.package.batchnotebook.deprecated.html)
+- [cmip_ref was renamed and is no longer maintained](python.package.cmip-ref.eol.html)
+
+
 ## Data
 
 This page is generated from [`registry/python.json`](https://github.com/arminazimi/evergreen/blob/main/registry/python.json), rule `python.package.pathlib.archived`, in the `evergreen.registry.v2` format ([how rules are written](../RULES.md)). A CLE (ECMA-428) export is not published yet. The same facts are embedded in this page as schema.org structured data.
@@ -55,46 +79,73 @@ This page is generated from [`registry/python.json`](https://github.com/arminazi
 <script type="application/ld+json">
 {
   "@context": "https://schema.org",
-  "@type": "TechArticle",
-  "@id": "https://arminazimi.github.io/evergreen/rules/python.package.pathlib.archived.html",
-  "url": "https://arminazimi.github.io/evergreen/rules/python.package.pathlib.archived.html",
-  "mainEntityOfPage": "https://arminazimi.github.io/evergreen/rules/python.package.pathlib.archived.html",
-  "headline": "pathlib is archived on PyPI — dates, impact, migration",
-  "description": "PyPI marks pathlib as archived: the project does not expect to be updated in the future.",
-  "inLanguage": "en",
-  "dateModified": "2026-10-20",
-  "keywords": [
-    "end-of-life",
-    "python",
-    "medium"
-  ],
-  "about": {
-    "@type": "Thing",
-    "name": "pathlib is archived on PyPI",
-    "identifier": "pkg:pypi/pathlib"
-  },
-  "citation": [
+  "@graph": [
     {
-      "@type": "CreativeWork",
-      "name": "pathlib on PyPI",
-      "url": "https://pypi.org/project/pathlib/"
+      "@type": "TechArticle",
+      "@id": "https://arminazimi.github.io/evergreen/rules/python.package.pathlib.archived.html",
+      "url": "https://arminazimi.github.io/evergreen/rules/python.package.pathlib.archived.html",
+      "mainEntityOfPage": "https://arminazimi.github.io/evergreen/rules/python.package.pathlib.archived.html",
+      "headline": "pathlib is archived on PyPI — dates, impact, migration",
+      "description": "PyPI marks pathlib as archived: the project does not expect to be updated in the future.",
+      "inLanguage": "en",
+      "dateModified": "2026-10-20",
+      "keywords": [
+        "end-of-life",
+        "python",
+        "medium"
+      ],
+      "about": {
+        "@type": "Thing",
+        "name": "pathlib is archived on PyPI",
+        "identifier": "pkg:pypi/pathlib"
+      },
+      "citation": [
+        {
+          "@type": "CreativeWork",
+          "name": "pathlib on PyPI",
+          "url": "https://pypi.org/project/pathlib/"
+        },
+        {
+          "@type": "CreativeWork",
+          "name": "pathlib project status (PyPI Simple API)",
+          "url": "https://pypi.org/simple/pathlib/"
+        },
+        {
+          "@type": "CreativeWork",
+          "name": "Project status markers (PEP 792)",
+          "url": "https://packaging.python.org/specifications/project-status-markers/"
+        }
+      ],
+      "isBasedOn": "https://github.com/arminazimi/evergreen/blob/main/registry/python.json",
+      "publisher": {
+        "@type": "Organization",
+        "name": "Evergreen",
+        "url": "https://arminazimi.github.io/evergreen"
+      }
     },
     {
-      "@type": "CreativeWork",
-      "name": "pathlib project status (PyPI Simple API)",
-      "url": "https://pypi.org/simple/pathlib/"
-    },
-    {
-      "@type": "CreativeWork",
-      "name": "Project status markers (PEP 792)",
-      "url": "https://packaging.python.org/specifications/project-status-markers/"
+      "@type": "FAQPage",
+      "@id": "https://arminazimi.github.io/evergreen/rules/python.package.pathlib.archived.html#faq",
+      "url": "https://arminazimi.github.io/evergreen/rules/python.package.pathlib.archived.html",
+      "mainEntity": [
+        {
+          "@type": "Question",
+          "name": "What is the lifecycle status of pkg:pypi/pathlib?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "End of life. The source gives no day. Affected versions: vers:pypi/*. Source: pathlib on PyPI (https://pypi.org/project/pathlib/)."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "How do I check pkg:pypi/pathlib?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "Run evergreen check pkg:pypi/pathlib."
+          }
+        }
+      ]
     }
-  ],
-  "isBasedOn": "https://github.com/arminazimi/evergreen/blob/main/registry/python.json",
-  "publisher": {
-    "@type": "Organization",
-    "name": "Evergreen",
-    "url": "https://arminazimi.github.io/evergreen"
-  }
+  ]
 }
 </script>

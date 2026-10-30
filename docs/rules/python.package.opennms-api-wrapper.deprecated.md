@@ -2,9 +2,19 @@
 title: "opennms-api-wrapper was renamed — dates, impact, migration"
 description: "The maintainer renamed opennms-api-wrapper to python-opennms and states that no further releases will be published under the old name."
 canonical_url: "https://arminazimi.github.io/evergreen/rules/python.package.opennms-api-wrapper.deprecated.html"
+image: "/assets/og/python.package.opennms-api-wrapper.deprecated.svg"
+json_twin: "/rules/python.package.opennms-api-wrapper.deprecated.json"
 ---
 
 # opennms-api-wrapper was renamed
+
+**Deprecated.** The source gives no day. Replacement: python-opennms. Source: [opennms-api-wrapper rename notice](https://pypi.org/project/opennms-api-wrapper/).
+
+Check a version:
+
+```bash
+evergreen check pkg:pypi/opennms-api-wrapper
+```
 
 The maintainer renamed opennms-api-wrapper to python-opennms and states that no further releases will be published under the old name.
 
@@ -46,6 +56,20 @@ The maintainer renamed opennms-api-wrapper to python-opennms and states that no 
 
 The `python` detector. See [Detectors](../DETECTORS.md) and [Compatibility](../COMPATIBILITY.md).
 
+## Related
+
+### Same ecosystem
+
+- [agentops-toolkit was renamed and is no longer maintained](python.package.agentops-toolkit.eol.html)
+- [aiohttp-valera-validator was renamed and is no longer maintained](python.package.aiohttp-valera-validator.eol.html)
+- [api-shield is deprecated](python.package.api-shield.deprecated.html)
+- [apisec-code-bolt was renamed](python.package.apisec-code-bolt.deprecated.html)
+- [argparse is archived on PyPI](python.package.argparse.archived.html)
+- [asyncio-requests is retired](python.package.asyncio-requests.deprecated.html)
+- [BatchNotebook is deprecated](python.package.batchnotebook.deprecated.html)
+- [cmip_ref was renamed and is no longer maintained](python.package.cmip-ref.eol.html)
+
+
 ## Data
 
 This page is generated from [`registry/python.json`](https://github.com/arminazimi/evergreen/blob/main/registry/python.json), rule `python.package.opennms-api-wrapper.deprecated`, in the `evergreen.registry.v2` format ([how rules are written](../RULES.md)). A CLE (ECMA-428) export is not published yet. The same facts are embedded in this page as schema.org structured data.
@@ -53,36 +77,71 @@ This page is generated from [`registry/python.json`](https://github.com/arminazi
 <script type="application/ld+json">
 {
   "@context": "https://schema.org",
-  "@type": "TechArticle",
-  "@id": "https://arminazimi.github.io/evergreen/rules/python.package.opennms-api-wrapper.deprecated.html",
-  "url": "https://arminazimi.github.io/evergreen/rules/python.package.opennms-api-wrapper.deprecated.html",
-  "mainEntityOfPage": "https://arminazimi.github.io/evergreen/rules/python.package.opennms-api-wrapper.deprecated.html",
-  "headline": "opennms-api-wrapper was renamed — dates, impact, migration",
-  "description": "The maintainer renamed opennms-api-wrapper to python-opennms and states that no further releases will be published under the old name.",
-  "inLanguage": "en",
-  "dateModified": "2026-10-16",
-  "keywords": [
-    "deprecated",
-    "python",
-    "medium"
-  ],
-  "about": {
-    "@type": "Thing",
-    "name": "opennms-api-wrapper was renamed",
-    "identifier": "pkg:pypi/opennms-api-wrapper"
-  },
-  "citation": [
+  "@graph": [
     {
-      "@type": "CreativeWork",
-      "name": "opennms-api-wrapper rename notice",
-      "url": "https://pypi.org/project/opennms-api-wrapper/"
+      "@type": "TechArticle",
+      "@id": "https://arminazimi.github.io/evergreen/rules/python.package.opennms-api-wrapper.deprecated.html",
+      "url": "https://arminazimi.github.io/evergreen/rules/python.package.opennms-api-wrapper.deprecated.html",
+      "mainEntityOfPage": "https://arminazimi.github.io/evergreen/rules/python.package.opennms-api-wrapper.deprecated.html",
+      "headline": "opennms-api-wrapper was renamed — dates, impact, migration",
+      "description": "The maintainer renamed opennms-api-wrapper to python-opennms and states that no further releases will be published under the old name.",
+      "inLanguage": "en",
+      "dateModified": "2026-10-16",
+      "keywords": [
+        "deprecated",
+        "python",
+        "medium"
+      ],
+      "about": {
+        "@type": "Thing",
+        "name": "opennms-api-wrapper was renamed",
+        "identifier": "pkg:pypi/opennms-api-wrapper"
+      },
+      "citation": [
+        {
+          "@type": "CreativeWork",
+          "name": "opennms-api-wrapper rename notice",
+          "url": "https://pypi.org/project/opennms-api-wrapper/"
+        }
+      ],
+      "isBasedOn": "https://github.com/arminazimi/evergreen/blob/main/registry/python.json",
+      "publisher": {
+        "@type": "Organization",
+        "name": "Evergreen",
+        "url": "https://arminazimi.github.io/evergreen"
+      }
+    },
+    {
+      "@type": "FAQPage",
+      "@id": "https://arminazimi.github.io/evergreen/rules/python.package.opennms-api-wrapper.deprecated.html#faq",
+      "url": "https://arminazimi.github.io/evergreen/rules/python.package.opennms-api-wrapper.deprecated.html",
+      "mainEntity": [
+        {
+          "@type": "Question",
+          "name": "What is the lifecycle status of pkg:pypi/opennms-api-wrapper?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "Deprecated. The source gives no day. Affected versions: vers:pypi/*. Source: opennms-api-wrapper rename notice (https://pypi.org/project/opennms-api-wrapper/)."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "What replaces pkg:pypi/opennms-api-wrapper?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "python-opennms"
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "How do I check pkg:pypi/opennms-api-wrapper?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "Run evergreen check pkg:pypi/opennms-api-wrapper."
+          }
+        }
+      ]
     }
-  ],
-  "isBasedOn": "https://github.com/arminazimi/evergreen/blob/main/registry/python.json",
-  "publisher": {
-    "@type": "Organization",
-    "name": "Evergreen",
-    "url": "https://arminazimi.github.io/evergreen"
-  }
+  ]
 }
 </script>

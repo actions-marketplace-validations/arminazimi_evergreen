@@ -2,9 +2,19 @@
 title: "Cloud SQL for MySQL 5.6 and 5.7 are in extended support — dates, impact, migration"
 description: "The Cloud SQL for MySQL version policy lists MySQL 5.6 and 5.7 with extended support starting 2025-02-01 and deprecation on 2028-02-01."
 canonical_url: "https://arminazimi.github.io/evergreen/rules/database.google-cloud-sql-mysql.extended-support-5.6-to-5.7.html"
+image: "/assets/og/database.google-cloud-sql-mysql.extended-support-5.6-to-5.7.svg"
+json_twin: "/rules/database.google-cloud-sql-mysql.extended-support-5.6-to-5.7.json"
 ---
 
 # Cloud SQL for MySQL 5.6 and 5.7 are in extended support
+
+**End of support** as of 2025-02-01. Replacement: MySQL 8.0 or later. Source: [Cloud SQL for MySQL database versions and version policies](https://cloud.google.com/sql/docs/mysql/db-versions).
+
+Check a version:
+
+```bash
+evergreen check pkg:generic/google-cloud-sql-mysql
+```
 
 The Cloud SQL for MySQL version policy lists MySQL 5.6 and 5.7 with extended support starting 2025-02-01 and deprecation on 2028-02-01. Oracle no longer supports those release series, and Cloud SQL charges for extended support.
 
@@ -56,6 +66,20 @@ The Cloud SQL for MySQL version policy lists MySQL 5.6 and 5.7 with extended sup
 
 The `database` detector. See [Detectors](../DETECTORS.md) and [Compatibility](../COMPATIBILITY.md).
 
+## Related
+
+### Same ecosystem
+
+- [Azure Database for MySQL 5.7 is past standard support](database.azure-mysql.standard-support-ended-5.7.html)
+- [Azure Database for PostgreSQL 11, 12, and 13 are past standard support](database.azure-postgresql.standard-support-ended-11-to-13.html)
+- [Cloud SQL for PostgreSQL 13 is in extended support](database.google-cloud-sql-postgresql.extended-support-13.html)
+- [Cloud SQL for PostgreSQL 9.6 through 12 are in extended support](database.google-cloud-sql-postgresql.extended-support-9.6-to-12.html)
+- [MySQL 5.7 is end-of-life](database.mysql.end-of-life-5.7.html)
+- [MySQL 8.0 is end-of-life](database.mysql.end-of-life-8.0.html)
+- [PostgreSQL 10 is no longer a supported major version](database.postgresql.end-of-life-10.html)
+- [PostgreSQL 11 is no longer a supported major version](database.postgresql.end-of-life-11.html)
+
+
 ## Data
 
 This page is generated from [`registry/database.json`](https://github.com/arminazimi/evergreen/blob/main/registry/database.json), rule `database.google-cloud-sql-mysql.extended-support-5.6-to-5.7`, in the `evergreen.registry.v2` format ([how rules are written](../RULES.md)). A CLE (ECMA-428) export is not published yet. The same facts are embedded in this page as schema.org structured data.
@@ -63,46 +87,81 @@ This page is generated from [`registry/database.json`](https://github.com/armina
 <script type="application/ld+json">
 {
   "@context": "https://schema.org",
-  "@type": "TechArticle",
-  "@id": "https://arminazimi.github.io/evergreen/rules/database.google-cloud-sql-mysql.extended-support-5.6-to-5.7.html",
-  "url": "https://arminazimi.github.io/evergreen/rules/database.google-cloud-sql-mysql.extended-support-5.6-to-5.7.html",
-  "mainEntityOfPage": "https://arminazimi.github.io/evergreen/rules/database.google-cloud-sql-mysql.extended-support-5.6-to-5.7.html",
-  "headline": "Cloud SQL for MySQL 5.6 and 5.7 are in extended support — dates, impact, migration",
-  "description": "The Cloud SQL for MySQL version policy lists MySQL 5.6 and 5.7 with extended support starting 2025-02-01 and deprecation on 2028-02-01.",
-  "inLanguage": "en",
-  "dateModified": "2026-10-26",
-  "keywords": [
-    "end-of-support",
-    "database",
-    "high"
-  ],
-  "about": {
-    "@type": "Thing",
-    "name": "Cloud SQL for MySQL 5.6 and 5.7 are in extended support",
-    "identifier": "pkg:generic/google-cloud-sql-mysql"
-  },
-  "citation": [
+  "@graph": [
     {
-      "@type": "CreativeWork",
-      "name": "Cloud SQL for MySQL database versions and version policies",
-      "url": "https://cloud.google.com/sql/docs/mysql/db-versions"
+      "@type": "TechArticle",
+      "@id": "https://arminazimi.github.io/evergreen/rules/database.google-cloud-sql-mysql.extended-support-5.6-to-5.7.html",
+      "url": "https://arminazimi.github.io/evergreen/rules/database.google-cloud-sql-mysql.extended-support-5.6-to-5.7.html",
+      "mainEntityOfPage": "https://arminazimi.github.io/evergreen/rules/database.google-cloud-sql-mysql.extended-support-5.6-to-5.7.html",
+      "headline": "Cloud SQL for MySQL 5.6 and 5.7 are in extended support — dates, impact, migration",
+      "description": "The Cloud SQL for MySQL version policy lists MySQL 5.6 and 5.7 with extended support starting 2025-02-01 and deprecation on 2028-02-01.",
+      "inLanguage": "en",
+      "dateModified": "2026-10-26",
+      "keywords": [
+        "end-of-support",
+        "database",
+        "high"
+      ],
+      "about": {
+        "@type": "Thing",
+        "name": "Cloud SQL for MySQL 5.6 and 5.7 are in extended support",
+        "identifier": "pkg:generic/google-cloud-sql-mysql"
+      },
+      "citation": [
+        {
+          "@type": "CreativeWork",
+          "name": "Cloud SQL for MySQL database versions and version policies",
+          "url": "https://cloud.google.com/sql/docs/mysql/db-versions"
+        },
+        {
+          "@type": "CreativeWork",
+          "name": "MySQL supported platforms and lifecycle",
+          "url": "https://www.mysql.com/support/supportedplatforms/database.html"
+        },
+        {
+          "@type": "CreativeWork",
+          "name": "endoflife.date: MySQL",
+          "url": "https://endoflife.date/mysql"
+        }
+      ],
+      "isBasedOn": "https://github.com/arminazimi/evergreen/blob/main/registry/database.json",
+      "publisher": {
+        "@type": "Organization",
+        "name": "Evergreen",
+        "url": "https://arminazimi.github.io/evergreen"
+      }
     },
     {
-      "@type": "CreativeWork",
-      "name": "MySQL supported platforms and lifecycle",
-      "url": "https://www.mysql.com/support/supportedplatforms/database.html"
-    },
-    {
-      "@type": "CreativeWork",
-      "name": "endoflife.date: MySQL",
-      "url": "https://endoflife.date/mysql"
+      "@type": "FAQPage",
+      "@id": "https://arminazimi.github.io/evergreen/rules/database.google-cloud-sql-mysql.extended-support-5.6-to-5.7.html#faq",
+      "url": "https://arminazimi.github.io/evergreen/rules/database.google-cloud-sql-mysql.extended-support-5.6-to-5.7.html",
+      "mainEntity": [
+        {
+          "@type": "Question",
+          "name": "What is the lifecycle status of pkg:generic/google-cloud-sql-mysql?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "End of support as of 2025-02-01. Affected versions: vers:semver/>=5.6.0|\u003c5.8.0. Source: Cloud SQL for MySQL database versions and version policies (https://cloud.google.com/sql/docs/mysql/db-versions)."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "What replaces pkg:generic/google-cloud-sql-mysql?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "MySQL 8.0 or later"
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "How do I check pkg:generic/google-cloud-sql-mysql?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "Run evergreen check pkg:generic/google-cloud-sql-mysql."
+          }
+        }
+      ]
     }
-  ],
-  "isBasedOn": "https://github.com/arminazimi/evergreen/blob/main/registry/database.json",
-  "publisher": {
-    "@type": "Organization",
-    "name": "Evergreen",
-    "url": "https://arminazimi.github.io/evergreen"
-  }
+  ]
 }
 </script>

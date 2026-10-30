@@ -2,9 +2,19 @@
 title: "Legacy Node.js runtime is end-of-life — dates, impact, migration"
 description: "This Node.js release line is end-of-life and no longer receives security or bug fixes."
 canonical_url: "https://arminazimi.github.io/evergreen/rules/nodejs.runtime.legacy.html"
+image: "/assets/og/nodejs.runtime.legacy.svg"
+json_twin: "/rules/nodejs.runtime.legacy.json"
 ---
 
 # Legacy Node.js runtime is end-of-life
+
+**End of life.** The source gives no day. Replacement: Node.js 22 LTS or later. Source: [Node.js end-of-life releases](https://nodejs.org/en/about/eol).
+
+Check a version:
+
+```bash
+evergreen check pkg:generic/nodejs
+```
 
 This Node.js release line is end-of-life and no longer receives security or bug fixes.
 
@@ -51,6 +61,30 @@ This Node.js release line is end-of-life and no longer receives security or bug 
 
 The `npm` detector. See [Detectors](../DETECTORS.md) and [Compatibility](../COMPATIBILITY.md).
 
+## Related
+
+### Other versions of this product
+
+- [Node.js 18 is end-of-life](nodejs.runtime.eol-18.html)
+- [Node.js 19 is end-of-life](nodejs.runtime.eol-19.html)
+- [Node.js 20 is end-of-life](nodejs.runtime.eol-20.html)
+- [Node.js 21 is end-of-life](nodejs.runtime.eol-21.html)
+- [Node.js 22 reaches end-of-life on 2027-04-30](nodejs.runtime.eol-22.html)
+- [Node.js 23 is end-of-life](nodejs.runtime.eol-23.html)
+- [Node.js 25 is end-of-life](nodejs.runtime.eol-25.html)
+
+### Same ecosystem
+
+- [Assert.CallTracker has been removed](nodejs.symbol.assert.calltracker.html)
+- [Async_hooks.currentId has been removed](nodejs.symbol.async-hooks.currentid.html)
+- [Async_hooks.triggerId has been removed](nodejs.symbol.async-hooks.triggerid.html)
+- [The Buffer() constructor is deprecated](nodejs.symbol.buffer.constructor.html)
+- [The customFds option of child_process has been removed](nodejs.symbol.child-process.customfds.html)
+- [New crypto.Certificate() is deprecated](nodejs.symbol.crypto.certificate.html)
+- [crypto.createCipher and createDecipher have been removed](nodejs.symbol.crypto.createcipher.html)
+- [Crypto.createCredentials has been removed](nodejs.symbol.crypto.createcredentials.html)
+
+
 ## Data
 
 This page is generated from [`registry/nodejs.json`](https://github.com/arminazimi/evergreen/blob/main/registry/nodejs.json), rule `nodejs.runtime.legacy`, in the `evergreen.registry.v2` format ([how rules are written](../RULES.md)). A CLE (ECMA-428) export is not published yet. The same facts are embedded in this page as schema.org structured data.
@@ -58,36 +92,71 @@ This page is generated from [`registry/nodejs.json`](https://github.com/arminazi
 <script type="application/ld+json">
 {
   "@context": "https://schema.org",
-  "@type": "TechArticle",
-  "@id": "https://arminazimi.github.io/evergreen/rules/nodejs.runtime.legacy.html",
-  "url": "https://arminazimi.github.io/evergreen/rules/nodejs.runtime.legacy.html",
-  "mainEntityOfPage": "https://arminazimi.github.io/evergreen/rules/nodejs.runtime.legacy.html",
-  "headline": "Legacy Node.js runtime is end-of-life — dates, impact, migration",
-  "description": "This Node.js release line is end-of-life and no longer receives security or bug fixes.",
-  "inLanguage": "en",
-  "dateModified": "2026-10-14",
-  "keywords": [
-    "end-of-life",
-    "nodejs",
-    "critical"
-  ],
-  "about": {
-    "@type": "Thing",
-    "name": "Legacy Node.js runtime is end-of-life",
-    "identifier": "pkg:generic/nodejs"
-  },
-  "citation": [
+  "@graph": [
     {
-      "@type": "CreativeWork",
-      "name": "Node.js end-of-life releases",
-      "url": "https://nodejs.org/en/about/eol"
+      "@type": "TechArticle",
+      "@id": "https://arminazimi.github.io/evergreen/rules/nodejs.runtime.legacy.html",
+      "url": "https://arminazimi.github.io/evergreen/rules/nodejs.runtime.legacy.html",
+      "mainEntityOfPage": "https://arminazimi.github.io/evergreen/rules/nodejs.runtime.legacy.html",
+      "headline": "Legacy Node.js runtime is end-of-life — dates, impact, migration",
+      "description": "This Node.js release line is end-of-life and no longer receives security or bug fixes.",
+      "inLanguage": "en",
+      "dateModified": "2026-10-14",
+      "keywords": [
+        "end-of-life",
+        "nodejs",
+        "critical"
+      ],
+      "about": {
+        "@type": "Thing",
+        "name": "Legacy Node.js runtime is end-of-life",
+        "identifier": "pkg:generic/nodejs"
+      },
+      "citation": [
+        {
+          "@type": "CreativeWork",
+          "name": "Node.js end-of-life releases",
+          "url": "https://nodejs.org/en/about/eol"
+        }
+      ],
+      "isBasedOn": "https://github.com/arminazimi/evergreen/blob/main/registry/nodejs.json",
+      "publisher": {
+        "@type": "Organization",
+        "name": "Evergreen",
+        "url": "https://arminazimi.github.io/evergreen"
+      }
+    },
+    {
+      "@type": "FAQPage",
+      "@id": "https://arminazimi.github.io/evergreen/rules/nodejs.runtime.legacy.html#faq",
+      "url": "https://arminazimi.github.io/evergreen/rules/nodejs.runtime.legacy.html",
+      "mainEntity": [
+        {
+          "@type": "Question",
+          "name": "What is the lifecycle status of pkg:generic/nodejs?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "End of life. The source gives no day. Affected versions: vers:semver/\u003c18.0.0. Source: Node.js end-of-life releases (https://nodejs.org/en/about/eol)."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "What replaces pkg:generic/nodejs?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "Node.js 22 LTS or later"
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "How do I check pkg:generic/nodejs?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "Run evergreen check pkg:generic/nodejs."
+          }
+        }
+      ]
     }
-  ],
-  "isBasedOn": "https://github.com/arminazimi/evergreen/blob/main/registry/nodejs.json",
-  "publisher": {
-    "@type": "Organization",
-    "name": "Evergreen",
-    "url": "https://arminazimi.github.io/evergreen"
-  }
+  ]
 }
 </script>

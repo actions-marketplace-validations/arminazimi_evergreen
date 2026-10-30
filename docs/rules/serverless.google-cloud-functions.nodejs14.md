@@ -2,9 +2,19 @@
 title: "Google Cloud Functions Node.js 14 runtime is end-of-life — dates, impact, migration"
 description: "The Google Cloud Functions runtime support schedule lists Node.js 14 (runtime ID nodejs14) as deprecated on 2024-01-30 and decommissioned on 2025-01-30."
 canonical_url: "https://arminazimi.github.io/evergreen/rules/serverless.google-cloud-functions.nodejs14.html"
+image: "/assets/og/serverless.google-cloud-functions.nodejs14.svg"
+json_twin: "/rules/serverless.google-cloud-functions.nodejs14.json"
 ---
 
 # Google Cloud Functions Node.js 14 runtime is end-of-life
+
+**End of life** as of 2025-01-30. Replacement: nodejs22 or nodejs24. Source: [Cloud Run functions runtime support](https://cloud.google.com/functions/docs/runtime-support).
+
+Check a version:
+
+```bash
+evergreen check pkg:generic/google-cloud-functions-runtime/nodejs14
+```
 
 The Google Cloud Functions runtime support schedule lists Node.js 14 (runtime ID nodejs14) as deprecated on 2024-01-30 and decommissioned on 2025-01-30. Google no longer provides maintenance for that runtime.
 
@@ -48,6 +58,18 @@ The Google Cloud Functions runtime support schedule lists Node.js 14 (runtime ID
 
 The `serverless` detector. See [Detectors](../DETECTORS.md) and [Compatibility](../COMPATIBILITY.md).
 
+## Related
+
+### Same ecosystem
+
+- [AWS Lambda .NET Core 3.1 runtime is end-of-life](serverless.aws-lambda.dotnetcore3.1.html)
+- [AWS Lambda Node.js 12 runtime is end-of-life](serverless.aws-lambda.nodejs12.x.html)
+- [AWS Lambda Node.js 14 runtime is end-of-life](serverless.aws-lambda.nodejs14.x.html)
+- [AWS Lambda Python 3.7 runtime is end-of-life](serverless.aws-lambda.python3.7.html)
+- [AWS Lambda Python 3.8 runtime is end-of-life](serverless.aws-lambda.python3.8.html)
+- [AWS Lambda Ruby 2.7 runtime is end-of-life](serverless.aws-lambda.ruby2.7.html)
+
+
 ## Data
 
 This page is generated from [`registry/serverless.json`](https://github.com/arminazimi/evergreen/blob/main/registry/serverless.json), rule `serverless.google-cloud-functions.nodejs14`, in the `evergreen.registry.v2` format ([how rules are written](../RULES.md)). A CLE (ECMA-428) export is not published yet. The same facts are embedded in this page as schema.org structured data.
@@ -55,36 +77,71 @@ This page is generated from [`registry/serverless.json`](https://github.com/armi
 <script type="application/ld+json">
 {
   "@context": "https://schema.org",
-  "@type": "TechArticle",
-  "@id": "https://arminazimi.github.io/evergreen/rules/serverless.google-cloud-functions.nodejs14.html",
-  "url": "https://arminazimi.github.io/evergreen/rules/serverless.google-cloud-functions.nodejs14.html",
-  "mainEntityOfPage": "https://arminazimi.github.io/evergreen/rules/serverless.google-cloud-functions.nodejs14.html",
-  "headline": "Google Cloud Functions Node.js 14 runtime is end-of-life — dates, impact, migration",
-  "description": "The Google Cloud Functions runtime support schedule lists Node.js 14 (runtime ID nodejs14) as deprecated on 2024-01-30 and decommissioned on 2025-01-30.",
-  "inLanguage": "en",
-  "dateModified": "2026-10-21",
-  "keywords": [
-    "end-of-life",
-    "serverless",
-    "high"
-  ],
-  "about": {
-    "@type": "Thing",
-    "name": "Google Cloud Functions Node.js 14 runtime is end-of-life",
-    "identifier": "pkg:generic/google-cloud-functions-runtime/nodejs14"
-  },
-  "citation": [
+  "@graph": [
     {
-      "@type": "CreativeWork",
-      "name": "Cloud Run functions runtime support",
-      "url": "https://cloud.google.com/functions/docs/runtime-support"
+      "@type": "TechArticle",
+      "@id": "https://arminazimi.github.io/evergreen/rules/serverless.google-cloud-functions.nodejs14.html",
+      "url": "https://arminazimi.github.io/evergreen/rules/serverless.google-cloud-functions.nodejs14.html",
+      "mainEntityOfPage": "https://arminazimi.github.io/evergreen/rules/serverless.google-cloud-functions.nodejs14.html",
+      "headline": "Google Cloud Functions Node.js 14 runtime is end-of-life — dates, impact, migration",
+      "description": "The Google Cloud Functions runtime support schedule lists Node.js 14 (runtime ID nodejs14) as deprecated on 2024-01-30 and decommissioned on 2025-01-30.",
+      "inLanguage": "en",
+      "dateModified": "2026-10-21",
+      "keywords": [
+        "end-of-life",
+        "serverless",
+        "high"
+      ],
+      "about": {
+        "@type": "Thing",
+        "name": "Google Cloud Functions Node.js 14 runtime is end-of-life",
+        "identifier": "pkg:generic/google-cloud-functions-runtime/nodejs14"
+      },
+      "citation": [
+        {
+          "@type": "CreativeWork",
+          "name": "Cloud Run functions runtime support",
+          "url": "https://cloud.google.com/functions/docs/runtime-support"
+        }
+      ],
+      "isBasedOn": "https://github.com/arminazimi/evergreen/blob/main/registry/serverless.json",
+      "publisher": {
+        "@type": "Organization",
+        "name": "Evergreen",
+        "url": "https://arminazimi.github.io/evergreen"
+      }
+    },
+    {
+      "@type": "FAQPage",
+      "@id": "https://arminazimi.github.io/evergreen/rules/serverless.google-cloud-functions.nodejs14.html#faq",
+      "url": "https://arminazimi.github.io/evergreen/rules/serverless.google-cloud-functions.nodejs14.html",
+      "mainEntity": [
+        {
+          "@type": "Question",
+          "name": "What is the lifecycle status of pkg:generic/google-cloud-functions-runtime/nodejs14?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "End of life as of 2025-01-30. Affected versions: vers:semver/*. Source: Cloud Run functions runtime support (https://cloud.google.com/functions/docs/runtime-support)."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "What replaces pkg:generic/google-cloud-functions-runtime/nodejs14?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "nodejs22 or nodejs24"
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "How do I check pkg:generic/google-cloud-functions-runtime/nodejs14?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "Run evergreen check pkg:generic/google-cloud-functions-runtime/nodejs14."
+          }
+        }
+      ]
     }
-  ],
-  "isBasedOn": "https://github.com/arminazimi/evergreen/blob/main/registry/serverless.json",
-  "publisher": {
-    "@type": "Organization",
-    "name": "Evergreen",
-    "url": "https://arminazimi.github.io/evergreen"
-  }
+  ]
 }
 </script>

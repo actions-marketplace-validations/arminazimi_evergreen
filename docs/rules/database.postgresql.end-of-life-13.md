@@ -2,9 +2,19 @@
 title: "PostgreSQL 13 is no longer a supported major version — dates, impact, migration"
 description: "The PostgreSQL Global Development Group lists 13 as unsupported: its final release was on November 13, 2025, so it receives no further bug or security fixes."
 canonical_url: "https://arminazimi.github.io/evergreen/rules/database.postgresql.end-of-life-13.html"
+image: "/assets/og/database.postgresql.end-of-life-13.svg"
+json_twin: "/rules/database.postgresql.end-of-life-13.json"
 ---
 
 # PostgreSQL 13 is no longer a supported major version
+
+**End of life** as of 2025-11-13. Replacement: PostgreSQL 16 or later. Source: [PostgreSQL versioning policy](https://www.postgresql.org/support/versioning/).
+
+Check a version:
+
+```bash
+evergreen check pkg:generic/postgresql
+```
 
 The PostgreSQL Global Development Group lists 13 as unsupported: its final release was on November 13, 2025, so it receives no further bug or security fixes. A database image tag or managed engine_version on this line runs unsupported software.
 
@@ -54,6 +64,27 @@ The PostgreSQL Global Development Group lists 13 as unsupported: its final relea
 
 The `database` detector. See [Detectors](../DETECTORS.md) and [Compatibility](../COMPATIBILITY.md).
 
+## Related
+
+### Other versions of this product
+
+- [PostgreSQL 10 is no longer a supported major version](database.postgresql.end-of-life-10.html)
+- [PostgreSQL 11 is no longer a supported major version](database.postgresql.end-of-life-11.html)
+- [PostgreSQL 12 is no longer a supported major version](database.postgresql.end-of-life-12.html)
+- [PostgreSQL 14 reaches the end of its support on 2026-11-12](database.postgresql.end-of-life-14.html)
+
+### Same ecosystem
+
+- [Azure Database for MySQL 5.7 is past standard support](database.azure-mysql.standard-support-ended-5.7.html)
+- [Azure Database for PostgreSQL 11, 12, and 13 are past standard support](database.azure-postgresql.standard-support-ended-11-to-13.html)
+- [Cloud SQL for MySQL 5.6 and 5.7 are in extended support](database.google-cloud-sql-mysql.extended-support-5.6-to-5.7.html)
+- [Cloud SQL for PostgreSQL 13 is in extended support](database.google-cloud-sql-postgresql.extended-support-13.html)
+- [Cloud SQL for PostgreSQL 9.6 through 12 are in extended support](database.google-cloud-sql-postgresql.extended-support-9.6-to-12.html)
+- [MySQL 5.7 is end-of-life](database.mysql.end-of-life-5.7.html)
+- [MySQL 8.0 is end-of-life](database.mysql.end-of-life-8.0.html)
+- [Redis 7.0 is end-of-life](database.redis.end-of-life-7.0.html)
+
+
 ## Data
 
 This page is generated from [`registry/database.json`](https://github.com/arminazimi/evergreen/blob/main/registry/database.json), rule `database.postgresql.end-of-life-13`, in the `evergreen.registry.v2` format ([how rules are written](../RULES.md)). A CLE (ECMA-428) export is not published yet. The same facts are embedded in this page as schema.org structured data.
@@ -61,41 +92,76 @@ This page is generated from [`registry/database.json`](https://github.com/armina
 <script type="application/ld+json">
 {
   "@context": "https://schema.org",
-  "@type": "TechArticle",
-  "@id": "https://arminazimi.github.io/evergreen/rules/database.postgresql.end-of-life-13.html",
-  "url": "https://arminazimi.github.io/evergreen/rules/database.postgresql.end-of-life-13.html",
-  "mainEntityOfPage": "https://arminazimi.github.io/evergreen/rules/database.postgresql.end-of-life-13.html",
-  "headline": "PostgreSQL 13 is no longer a supported major version — dates, impact, migration",
-  "description": "The PostgreSQL Global Development Group lists 13 as unsupported: its final release was on November 13, 2025, so it receives no further bug or security fixes.",
-  "inLanguage": "en",
-  "dateModified": "2026-10-22",
-  "keywords": [
-    "end-of-life",
-    "database",
-    "high"
-  ],
-  "about": {
-    "@type": "Thing",
-    "name": "PostgreSQL 13 is no longer a supported major version",
-    "identifier": "pkg:generic/postgresql"
-  },
-  "citation": [
+  "@graph": [
     {
-      "@type": "CreativeWork",
-      "name": "PostgreSQL versioning policy",
-      "url": "https://www.postgresql.org/support/versioning/"
+      "@type": "TechArticle",
+      "@id": "https://arminazimi.github.io/evergreen/rules/database.postgresql.end-of-life-13.html",
+      "url": "https://arminazimi.github.io/evergreen/rules/database.postgresql.end-of-life-13.html",
+      "mainEntityOfPage": "https://arminazimi.github.io/evergreen/rules/database.postgresql.end-of-life-13.html",
+      "headline": "PostgreSQL 13 is no longer a supported major version — dates, impact, migration",
+      "description": "The PostgreSQL Global Development Group lists 13 as unsupported: its final release was on November 13, 2025, so it receives no further bug or security fixes.",
+      "inLanguage": "en",
+      "dateModified": "2026-10-22",
+      "keywords": [
+        "end-of-life",
+        "database",
+        "high"
+      ],
+      "about": {
+        "@type": "Thing",
+        "name": "PostgreSQL 13 is no longer a supported major version",
+        "identifier": "pkg:generic/postgresql"
+      },
+      "citation": [
+        {
+          "@type": "CreativeWork",
+          "name": "PostgreSQL versioning policy",
+          "url": "https://www.postgresql.org/support/versioning/"
+        },
+        {
+          "@type": "CreativeWork",
+          "name": "endoflife.date: PostgreSQL",
+          "url": "https://endoflife.date/postgresql"
+        }
+      ],
+      "isBasedOn": "https://github.com/arminazimi/evergreen/blob/main/registry/database.json",
+      "publisher": {
+        "@type": "Organization",
+        "name": "Evergreen",
+        "url": "https://arminazimi.github.io/evergreen"
+      }
     },
     {
-      "@type": "CreativeWork",
-      "name": "endoflife.date: PostgreSQL",
-      "url": "https://endoflife.date/postgresql"
+      "@type": "FAQPage",
+      "@id": "https://arminazimi.github.io/evergreen/rules/database.postgresql.end-of-life-13.html#faq",
+      "url": "https://arminazimi.github.io/evergreen/rules/database.postgresql.end-of-life-13.html",
+      "mainEntity": [
+        {
+          "@type": "Question",
+          "name": "What is the lifecycle status of pkg:generic/postgresql?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "End of life as of 2025-11-13. Affected versions: vers:semver/>=13.0.0|\u003c14.0.0. Source: PostgreSQL versioning policy (https://www.postgresql.org/support/versioning/)."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "What replaces pkg:generic/postgresql?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "PostgreSQL 16 or later"
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "How do I check pkg:generic/postgresql?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "Run evergreen check pkg:generic/postgresql."
+          }
+        }
+      ]
     }
-  ],
-  "isBasedOn": "https://github.com/arminazimi/evergreen/blob/main/registry/database.json",
-  "publisher": {
-    "@type": "Organization",
-    "name": "Evergreen",
-    "url": "https://arminazimi.github.io/evergreen"
-  }
+  ]
 }
 </script>

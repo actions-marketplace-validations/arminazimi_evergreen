@@ -2,9 +2,19 @@
 title: "AWS Lambda Ruby 2.7 runtime is end-of-life — dates, impact, migration"
 description: "The AWS Lambda runtimes table lists ruby2.7 under Deprecated runtimes with deprecation date 2023-12-07. AWS no longer applies security or other updates to that managed runtime."
 canonical_url: "https://arminazimi.github.io/evergreen/rules/serverless.aws-lambda.ruby2.7.html"
+image: "/assets/og/serverless.aws-lambda.ruby2.7.svg"
+json_twin: "/rules/serverless.aws-lambda.ruby2.7.json"
 ---
 
 # AWS Lambda Ruby 2.7 runtime is end-of-life
+
+**End of life** as of 2023-12-07. Replacement: ruby3.4 or ruby3.3. Source: [AWS Lambda runtimes](https://docs.aws.amazon.com/lambda/latest/dg/lambda-runtimes.html).
+
+Check a version:
+
+```bash
+evergreen check pkg:generic/aws-lambda-runtime/ruby2.7
+```
 
 The AWS Lambda runtimes table lists ruby2.7 under Deprecated runtimes with deprecation date 2023-12-07. AWS no longer applies security or other updates to that managed runtime.
 
@@ -48,6 +58,18 @@ The AWS Lambda runtimes table lists ruby2.7 under Deprecated runtimes with depre
 
 The `serverless` detector. See [Detectors](../DETECTORS.md) and [Compatibility](../COMPATIBILITY.md).
 
+## Related
+
+### Same ecosystem
+
+- [AWS Lambda .NET Core 3.1 runtime is end-of-life](serverless.aws-lambda.dotnetcore3.1.html)
+- [AWS Lambda Node.js 12 runtime is end-of-life](serverless.aws-lambda.nodejs12.x.html)
+- [AWS Lambda Node.js 14 runtime is end-of-life](serverless.aws-lambda.nodejs14.x.html)
+- [AWS Lambda Python 3.7 runtime is end-of-life](serverless.aws-lambda.python3.7.html)
+- [AWS Lambda Python 3.8 runtime is end-of-life](serverless.aws-lambda.python3.8.html)
+- [Google Cloud Functions Node.js 14 runtime is end-of-life](serverless.google-cloud-functions.nodejs14.html)
+
+
 ## Data
 
 This page is generated from [`registry/serverless.json`](https://github.com/arminazimi/evergreen/blob/main/registry/serverless.json), rule `serverless.aws-lambda.ruby2.7`, in the `evergreen.registry.v2` format ([how rules are written](../RULES.md)). A CLE (ECMA-428) export is not published yet. The same facts are embedded in this page as schema.org structured data.
@@ -55,36 +77,71 @@ This page is generated from [`registry/serverless.json`](https://github.com/armi
 <script type="application/ld+json">
 {
   "@context": "https://schema.org",
-  "@type": "TechArticle",
-  "@id": "https://arminazimi.github.io/evergreen/rules/serverless.aws-lambda.ruby2.7.html",
-  "url": "https://arminazimi.github.io/evergreen/rules/serverless.aws-lambda.ruby2.7.html",
-  "mainEntityOfPage": "https://arminazimi.github.io/evergreen/rules/serverless.aws-lambda.ruby2.7.html",
-  "headline": "AWS Lambda Ruby 2.7 runtime is end-of-life — dates, impact, migration",
-  "description": "The AWS Lambda runtimes table lists ruby2.7 under Deprecated runtimes with deprecation date 2023-12-07. AWS no longer applies security or other updates to that managed runtime.",
-  "inLanguage": "en",
-  "dateModified": "2026-10-21",
-  "keywords": [
-    "end-of-life",
-    "serverless",
-    "high"
-  ],
-  "about": {
-    "@type": "Thing",
-    "name": "AWS Lambda Ruby 2.7 runtime is end-of-life",
-    "identifier": "pkg:generic/aws-lambda-runtime/ruby2.7"
-  },
-  "citation": [
+  "@graph": [
     {
-      "@type": "CreativeWork",
-      "name": "AWS Lambda runtimes",
-      "url": "https://docs.aws.amazon.com/lambda/latest/dg/lambda-runtimes.html"
+      "@type": "TechArticle",
+      "@id": "https://arminazimi.github.io/evergreen/rules/serverless.aws-lambda.ruby2.7.html",
+      "url": "https://arminazimi.github.io/evergreen/rules/serverless.aws-lambda.ruby2.7.html",
+      "mainEntityOfPage": "https://arminazimi.github.io/evergreen/rules/serverless.aws-lambda.ruby2.7.html",
+      "headline": "AWS Lambda Ruby 2.7 runtime is end-of-life — dates, impact, migration",
+      "description": "The AWS Lambda runtimes table lists ruby2.7 under Deprecated runtimes with deprecation date 2023-12-07. AWS no longer applies security or other updates to that managed runtime.",
+      "inLanguage": "en",
+      "dateModified": "2026-10-21",
+      "keywords": [
+        "end-of-life",
+        "serverless",
+        "high"
+      ],
+      "about": {
+        "@type": "Thing",
+        "name": "AWS Lambda Ruby 2.7 runtime is end-of-life",
+        "identifier": "pkg:generic/aws-lambda-runtime/ruby2.7"
+      },
+      "citation": [
+        {
+          "@type": "CreativeWork",
+          "name": "AWS Lambda runtimes",
+          "url": "https://docs.aws.amazon.com/lambda/latest/dg/lambda-runtimes.html"
+        }
+      ],
+      "isBasedOn": "https://github.com/arminazimi/evergreen/blob/main/registry/serverless.json",
+      "publisher": {
+        "@type": "Organization",
+        "name": "Evergreen",
+        "url": "https://arminazimi.github.io/evergreen"
+      }
+    },
+    {
+      "@type": "FAQPage",
+      "@id": "https://arminazimi.github.io/evergreen/rules/serverless.aws-lambda.ruby2.7.html#faq",
+      "url": "https://arminazimi.github.io/evergreen/rules/serverless.aws-lambda.ruby2.7.html",
+      "mainEntity": [
+        {
+          "@type": "Question",
+          "name": "What is the lifecycle status of pkg:generic/aws-lambda-runtime/ruby2.7?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "End of life as of 2023-12-07. Affected versions: vers:semver/*. Source: AWS Lambda runtimes (https://docs.aws.amazon.com/lambda/latest/dg/lambda-runtimes.html)."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "What replaces pkg:generic/aws-lambda-runtime/ruby2.7?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "ruby3.4 or ruby3.3"
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "How do I check pkg:generic/aws-lambda-runtime/ruby2.7?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "Run evergreen check pkg:generic/aws-lambda-runtime/ruby2.7."
+          }
+        }
+      ]
     }
-  ],
-  "isBasedOn": "https://github.com/arminazimi/evergreen/blob/main/registry/serverless.json",
-  "publisher": {
-    "@type": "Organization",
-    "name": "Evergreen",
-    "url": "https://arminazimi.github.io/evergreen"
-  }
+  ]
 }
 </script>

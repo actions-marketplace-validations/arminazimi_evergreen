@@ -2,9 +2,19 @@
 title: "CMake policy versions older than 3.5 are removed — dates, impact, migration"
 description: "CMake 4.0 removed compatibility with policy versions older than 3.5. A cmake_minimum_required(VERSION) or cmake_policy(VERSION) call that does not set the policy version to at least 3.5 (optionally…"
 canonical_url: "https://arminazimi.github.io/evergreen/rules/cpp.cmake.policy-below-3.5.removed.html"
+image: "/assets/og/cpp.cmake.policy-below-3.5.removed.svg"
+json_twin: "/rules/cpp.cmake.policy-below-3.5.removed.json"
 ---
 
 # CMake policy versions older than 3.5 are removed
+
+**Removed** as of 2025-03-27. Replacement: cmake_minimum_required(VERSION 3.5) or newer, or VERSION &lt;min&gt;...&lt;max&gt; with &lt;max&gt; at least 3.5. Source: [CMake 4.0 release notes (compatibility older than 3.5 removed)](https://cmake.org/cmake/help/latest/release/4.0.html).
+
+Check a version:
+
+```bash
+evergreen check pkg:generic/cmake
+```
 
 CMake 4.0 removed compatibility with policy versions older than 3.5. A cmake_minimum_required(VERSION) or cmake_policy(VERSION) call that does not set the policy version to at least 3.5 (optionally via ...&lt;policy_max&gt;) produces an error on CMake 4.0 and newer. CMake 4.0.0 was published on 2025-03-27.
 
@@ -49,6 +59,19 @@ CMake 4.0 removed compatibility with policy versions older than 3.5. A cmake_min
 
 The `cpp` detector. See [Detectors](../DETECTORS.md) and [Compatibility](../COMPATIBILITY.md).
 
+## Related
+
+### Other versions of this product
+
+- [CMake policy versions older than 3.10 are deprecated](cpp.cmake.policy-below-3.10.deprecated.html)
+
+### Same ecosystem
+
+- [The Visual Studio 12 2013 generator is removed](cpp.cmake.generator.visual-studio-12-2013.removed.html)
+- [The CMakeFindFrameworks module is deprecated](cpp.cmake.module.cmake-find-frameworks.deprecated.html)
+- [The FindGDAL module is deprecated](cpp.cmake.module.find-gdal.deprecated.html)
+
+
 ## Data
 
 This page is generated from [`registry/cpp.json`](https://github.com/arminazimi/evergreen/blob/main/registry/cpp.json), rule `cpp.cmake.policy-below-3.5.removed`, in the `evergreen.registry.v2` format ([how rules are written](../RULES.md)). A CLE (ECMA-428) export is not published yet. The same facts are embedded in this page as schema.org structured data.
@@ -56,46 +79,81 @@ This page is generated from [`registry/cpp.json`](https://github.com/arminazimi/
 <script type="application/ld+json">
 {
   "@context": "https://schema.org",
-  "@type": "TechArticle",
-  "@id": "https://arminazimi.github.io/evergreen/rules/cpp.cmake.policy-below-3.5.removed.html",
-  "url": "https://arminazimi.github.io/evergreen/rules/cpp.cmake.policy-below-3.5.removed.html",
-  "mainEntityOfPage": "https://arminazimi.github.io/evergreen/rules/cpp.cmake.policy-below-3.5.removed.html",
-  "headline": "CMake policy versions older than 3.5 are removed — dates, impact, migration",
-  "description": "CMake 4.0 removed compatibility with policy versions older than 3.5. A cmake_minimum_required(VERSION) or cmake_policy(VERSION) call that does not set the policy version to at least 3.5 (optionally…",
-  "inLanguage": "en",
-  "dateModified": "2026-10-19",
-  "keywords": [
-    "removed",
-    "cpp",
-    "high"
-  ],
-  "about": {
-    "@type": "Thing",
-    "name": "CMake policy versions older than 3.5 are removed",
-    "identifier": "pkg:generic/cmake"
-  },
-  "citation": [
+  "@graph": [
     {
-      "@type": "CreativeWork",
-      "name": "CMake 4.0 release notes (compatibility older than 3.5 removed)",
-      "url": "https://cmake.org/cmake/help/latest/release/4.0.html"
+      "@type": "TechArticle",
+      "@id": "https://arminazimi.github.io/evergreen/rules/cpp.cmake.policy-below-3.5.removed.html",
+      "url": "https://arminazimi.github.io/evergreen/rules/cpp.cmake.policy-below-3.5.removed.html",
+      "mainEntityOfPage": "https://arminazimi.github.io/evergreen/rules/cpp.cmake.policy-below-3.5.removed.html",
+      "headline": "CMake policy versions older than 3.5 are removed — dates, impact, migration",
+      "description": "CMake 4.0 removed compatibility with policy versions older than 3.5. A cmake_minimum_required(VERSION) or cmake_policy(VERSION) call that does not set the policy version to at least 3.5 (optionally…",
+      "inLanguage": "en",
+      "dateModified": "2026-10-19",
+      "keywords": [
+        "removed",
+        "cpp",
+        "high"
+      ],
+      "about": {
+        "@type": "Thing",
+        "name": "CMake policy versions older than 3.5 are removed",
+        "identifier": "pkg:generic/cmake"
+      },
+      "citation": [
+        {
+          "@type": "CreativeWork",
+          "name": "CMake 4.0 release notes (compatibility older than 3.5 removed)",
+          "url": "https://cmake.org/cmake/help/latest/release/4.0.html"
+        },
+        {
+          "@type": "CreativeWork",
+          "name": "cmake_minimum_required (Changed in 4.0)",
+          "url": "https://cmake.org/cmake/help/latest/command/cmake_minimum_required.html"
+        },
+        {
+          "@type": "CreativeWork",
+          "name": "CMake 4.0.0 GitHub release",
+          "url": "https://github.com/Kitware/CMake/releases/tag/v4.0.0"
+        }
+      ],
+      "isBasedOn": "https://github.com/arminazimi/evergreen/blob/main/registry/cpp.json",
+      "publisher": {
+        "@type": "Organization",
+        "name": "Evergreen",
+        "url": "https://arminazimi.github.io/evergreen"
+      }
     },
     {
-      "@type": "CreativeWork",
-      "name": "cmake_minimum_required (Changed in 4.0)",
-      "url": "https://cmake.org/cmake/help/latest/command/cmake_minimum_required.html"
-    },
-    {
-      "@type": "CreativeWork",
-      "name": "CMake 4.0.0 GitHub release",
-      "url": "https://github.com/Kitware/CMake/releases/tag/v4.0.0"
+      "@type": "FAQPage",
+      "@id": "https://arminazimi.github.io/evergreen/rules/cpp.cmake.policy-below-3.5.removed.html#faq",
+      "url": "https://arminazimi.github.io/evergreen/rules/cpp.cmake.policy-below-3.5.removed.html",
+      "mainEntity": [
+        {
+          "@type": "Question",
+          "name": "What is the lifecycle status of pkg:generic/cmake?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "Removed as of 2025-03-27. Affected versions: vers:semver/\u003c3.5.0. Source: CMake 4.0 release notes (compatibility older than 3.5 removed) (https://cmake.org/cmake/help/latest/release/4.0.html)."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "What replaces pkg:generic/cmake?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "cmake_minimum_required(VERSION 3.5) or newer, or VERSION \u003cmin>...\u003cmax> with \u003cmax> at least 3.5"
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "How do I check pkg:generic/cmake?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "Run evergreen check pkg:generic/cmake."
+          }
+        }
+      ]
     }
-  ],
-  "isBasedOn": "https://github.com/arminazimi/evergreen/blob/main/registry/cpp.json",
-  "publisher": {
-    "@type": "Organization",
-    "name": "Evergreen",
-    "url": "https://arminazimi.github.io/evergreen"
-  }
+  ]
 }
 </script>

@@ -2,9 +2,19 @@
 title: "@angular/core v18 and older are no longer supported — dates, impact, migration"
 description: "Angular's release schedule states that Angular versions v2 to v19 are no longer supported. Versions before v19 receive no fixes, including security fixes."
 canonical_url: "https://arminazimi.github.io/evergreen/rules/npm.package.angular.core.v18-and-older.end-of-support.html"
+image: "/assets/og/npm.package.angular.core.v18-and-older.end-of-support.svg"
+json_twin: "/rules/npm.package.angular.core.v18-and-older.end-of-support.json"
 ---
 
 # @angular/core v18 and older are no longer supported
+
+**End of support.** The source gives no day. Replacement: @angular/core@22. Source: [Angular release and support schedule](https://angular.dev/reference/releases).
+
+Check a version:
+
+```bash
+evergreen check pkg:npm/%40angular/core
+```
 
 Angular's release schedule states that Angular versions v2 to v19 are no longer supported. Versions before v19 receive no fixes, including security fixes.
 
@@ -51,6 +61,27 @@ Angular's release schedule states that Angular versions v2 to v19 are no longer 
 
 The `npm` detector. See [Detectors](../DETECTORS.md) and [Compatibility](../COMPATIBILITY.md).
 
+## Related
+
+### Other versions of this product
+
+- [@angular/core v19 is no longer supported](npm.package.angular.core.v19.end-of-support.html)
+- [@angular/core v20 reaches end of life on 2026-11-28](npm.package.angular.core.v20.scheduled-end-of-life.html)
+- [@angular/core v21 reaches end of life on 2027-06-30](npm.package.angular.core.v21.scheduled-end-of-life.html)
+- [@angular/core v22 reaches end of life on 2028-06-30](npm.package.angular.core.v22.scheduled-end-of-life.html)
+
+### Same ecosystem
+
+- [abab is deprecated](npm.package.abab.deprecated.html)
+- [are-we-there-yet is no longer supported](npm.package.are-we-there-yet.eol.html)
+- [babel-eslint is deprecated](npm.package.babel-eslint.deprecated.html)
+- [babel-preset-es2015 is deprecated](npm.package.babel-preset-es2015.deprecated.html)
+- [boom is deprecated](npm.package.boom.deprecated.html)
+- [cryptiles is deprecated](npm.package.cryptiles.deprecated.html)
+- [crypto-js is deprecated](npm.package.crypto-js.deprecated.html)
+- [domexception is deprecated](npm.package.domexception.deprecated.html)
+
+
 ## Data
 
 This page is generated from [`registry/npm.json`](https://github.com/arminazimi/evergreen/blob/main/registry/npm.json), rule `npm.package.angular.core.v18-and-older.end-of-support`, in the `evergreen.registry.v2` format ([how rules are written](../RULES.md)). A CLE (ECMA-428) export is not published yet. The same facts are embedded in this page as schema.org structured data.
@@ -58,41 +89,76 @@ This page is generated from [`registry/npm.json`](https://github.com/arminazimi/
 <script type="application/ld+json">
 {
   "@context": "https://schema.org",
-  "@type": "TechArticle",
-  "@id": "https://arminazimi.github.io/evergreen/rules/npm.package.angular.core.v18-and-older.end-of-support.html",
-  "url": "https://arminazimi.github.io/evergreen/rules/npm.package.angular.core.v18-and-older.end-of-support.html",
-  "mainEntityOfPage": "https://arminazimi.github.io/evergreen/rules/npm.package.angular.core.v18-and-older.end-of-support.html",
-  "headline": "@angular/core v18 and older are no longer supported — dates, impact, migration",
-  "description": "Angular's release schedule states that Angular versions v2 to v19 are no longer supported. Versions before v19 receive no fixes, including security fixes.",
-  "inLanguage": "en",
-  "dateModified": "2026-10-21",
-  "keywords": [
-    "end-of-support",
-    "npm",
-    "high"
-  ],
-  "about": {
-    "@type": "Thing",
-    "name": "@angular/core v18 and older are no longer supported",
-    "identifier": "pkg:npm/%40angular/core"
-  },
-  "citation": [
+  "@graph": [
     {
-      "@type": "CreativeWork",
-      "name": "Angular release and support schedule",
-      "url": "https://angular.dev/reference/releases"
+      "@type": "TechArticle",
+      "@id": "https://arminazimi.github.io/evergreen/rules/npm.package.angular.core.v18-and-older.end-of-support.html",
+      "url": "https://arminazimi.github.io/evergreen/rules/npm.package.angular.core.v18-and-older.end-of-support.html",
+      "mainEntityOfPage": "https://arminazimi.github.io/evergreen/rules/npm.package.angular.core.v18-and-older.end-of-support.html",
+      "headline": "@angular/core v18 and older are no longer supported — dates, impact, migration",
+      "description": "Angular's release schedule states that Angular versions v2 to v19 are no longer supported. Versions before v19 receive no fixes, including security fixes.",
+      "inLanguage": "en",
+      "dateModified": "2026-10-21",
+      "keywords": [
+        "end-of-support",
+        "npm",
+        "high"
+      ],
+      "about": {
+        "@type": "Thing",
+        "name": "@angular/core v18 and older are no longer supported",
+        "identifier": "pkg:npm/%40angular/core"
+      },
+      "citation": [
+        {
+          "@type": "CreativeWork",
+          "name": "Angular release and support schedule",
+          "url": "https://angular.dev/reference/releases"
+        },
+        {
+          "@type": "CreativeWork",
+          "name": "Angular Update Guide",
+          "url": "https://angular.dev/update-guide"
+        }
+      ],
+      "isBasedOn": "https://github.com/arminazimi/evergreen/blob/main/registry/npm.json",
+      "publisher": {
+        "@type": "Organization",
+        "name": "Evergreen",
+        "url": "https://arminazimi.github.io/evergreen"
+      }
     },
     {
-      "@type": "CreativeWork",
-      "name": "Angular Update Guide",
-      "url": "https://angular.dev/update-guide"
+      "@type": "FAQPage",
+      "@id": "https://arminazimi.github.io/evergreen/rules/npm.package.angular.core.v18-and-older.end-of-support.html#faq",
+      "url": "https://arminazimi.github.io/evergreen/rules/npm.package.angular.core.v18-and-older.end-of-support.html",
+      "mainEntity": [
+        {
+          "@type": "Question",
+          "name": "What is the lifecycle status of pkg:npm/%40angular/core?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "End of support. The source gives no day. Affected versions: vers:npm/\u003c19.0.0-0. Source: Angular release and support schedule (https://angular.dev/reference/releases)."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "What replaces pkg:npm/%40angular/core?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "@angular/core@22"
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "How do I check pkg:npm/%40angular/core?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "Run evergreen check pkg:npm/%40angular/core."
+          }
+        }
+      ]
     }
-  ],
-  "isBasedOn": "https://github.com/arminazimi/evergreen/blob/main/registry/npm.json",
-  "publisher": {
-    "@type": "Organization",
-    "name": "Evergreen",
-    "url": "https://arminazimi.github.io/evergreen"
-  }
+  ]
 }
 </script>

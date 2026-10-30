@@ -2,9 +2,19 @@
 title: "sbt 0.13 reached end of life — dates, impact, migration"
 description: "The sbt download page lists the 0.13.x series as end of life on 2018-11-30 after five years. The final release in that line is 0.13.18."
 canonical_url: "https://arminazimi.github.io/evergreen/rules/scala.sbt.eol-0.13.html"
+image: "/assets/og/scala.sbt.eol-0.13.svg"
+json_twin: "/rules/scala.sbt.eol-0.13.json"
 ---
 
 # sbt 0.13 reached end of life
+
+**End of life** as of 2018-11-30. Replacement: sbt 1.x or sbt 2.x. Source: [sbt download — release timeline](https://www.scala-sbt.org/download/).
+
+Check a version:
+
+```bash
+evergreen check pkg:generic/sbt
+```
 
 The sbt download page lists the 0.13.x series as end of life on 2018-11-30 after five years. The final release in that line is 0.13.18.
 
@@ -51,6 +61,14 @@ The sbt download page lists the 0.13.x series as end of life on 2018-11-30 after
 
 The `scala` detector. See [Detectors](../DETECTORS.md) and [Compatibility](../COMPATIBILITY.md).
 
+## Related
+
+### Same ecosystem
+
+- [Scala 2.11 reached end of life](scala.runtime.eol-2.11.html)
+- [Scala 3.0–3.2 no longer receive patches](scala.runtime.eos-3.0-3.2.html)
+
+
 ## Data
 
 This page is generated from [`registry/scala.json`](https://github.com/arminazimi/evergreen/blob/main/registry/scala.json), rule `scala.sbt.eol-0.13`, in the `evergreen.registry.v2` format ([how rules are written](../RULES.md)). A CLE (ECMA-428) export is not published yet. The same facts are embedded in this page as schema.org structured data.
@@ -58,41 +76,76 @@ This page is generated from [`registry/scala.json`](https://github.com/arminazim
 <script type="application/ld+json">
 {
   "@context": "https://schema.org",
-  "@type": "TechArticle",
-  "@id": "https://arminazimi.github.io/evergreen/rules/scala.sbt.eol-0.13.html",
-  "url": "https://arminazimi.github.io/evergreen/rules/scala.sbt.eol-0.13.html",
-  "mainEntityOfPage": "https://arminazimi.github.io/evergreen/rules/scala.sbt.eol-0.13.html",
-  "headline": "sbt 0.13 reached end of life — dates, impact, migration",
-  "description": "The sbt download page lists the 0.13.x series as end of life on 2018-11-30 after five years. The final release in that line is 0.13.18.",
-  "inLanguage": "en",
-  "dateModified": "2026-10-27",
-  "keywords": [
-    "end-of-life",
-    "scala",
-    "high"
-  ],
-  "about": {
-    "@type": "Thing",
-    "name": "sbt 0.13 reached end of life",
-    "identifier": "pkg:generic/sbt"
-  },
-  "citation": [
+  "@graph": [
     {
-      "@type": "CreativeWork",
-      "name": "sbt download — release timeline",
-      "url": "https://www.scala-sbt.org/download/"
+      "@type": "TechArticle",
+      "@id": "https://arminazimi.github.io/evergreen/rules/scala.sbt.eol-0.13.html",
+      "url": "https://arminazimi.github.io/evergreen/rules/scala.sbt.eol-0.13.html",
+      "mainEntityOfPage": "https://arminazimi.github.io/evergreen/rules/scala.sbt.eol-0.13.html",
+      "headline": "sbt 0.13 reached end of life — dates, impact, migration",
+      "description": "The sbt download page lists the 0.13.x series as end of life on 2018-11-30 after five years. The final release in that line is 0.13.18.",
+      "inLanguage": "en",
+      "dateModified": "2026-10-27",
+      "keywords": [
+        "end-of-life",
+        "scala",
+        "high"
+      ],
+      "about": {
+        "@type": "Thing",
+        "name": "sbt 0.13 reached end of life",
+        "identifier": "pkg:generic/sbt"
+      },
+      "citation": [
+        {
+          "@type": "CreativeWork",
+          "name": "sbt download — release timeline",
+          "url": "https://www.scala-sbt.org/download/"
+        },
+        {
+          "@type": "CreativeWork",
+          "name": "Migrating from sbt 0.13.x",
+          "url": "https://www.scala-sbt.org/1.x/docs/Migrating-from-sbt-013x.html"
+        }
+      ],
+      "isBasedOn": "https://github.com/arminazimi/evergreen/blob/main/registry/scala.json",
+      "publisher": {
+        "@type": "Organization",
+        "name": "Evergreen",
+        "url": "https://arminazimi.github.io/evergreen"
+      }
     },
     {
-      "@type": "CreativeWork",
-      "name": "Migrating from sbt 0.13.x",
-      "url": "https://www.scala-sbt.org/1.x/docs/Migrating-from-sbt-013x.html"
+      "@type": "FAQPage",
+      "@id": "https://arminazimi.github.io/evergreen/rules/scala.sbt.eol-0.13.html#faq",
+      "url": "https://arminazimi.github.io/evergreen/rules/scala.sbt.eol-0.13.html",
+      "mainEntity": [
+        {
+          "@type": "Question",
+          "name": "What is the lifecycle status of pkg:generic/sbt?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "End of life as of 2018-11-30. Affected versions: vers:semver/>=0.13.0|\u003c1.0.0. Source: sbt download — release timeline (https://www.scala-sbt.org/download/)."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "What replaces pkg:generic/sbt?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "sbt 1.x or sbt 2.x"
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "How do I check pkg:generic/sbt?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "Run evergreen check pkg:generic/sbt."
+          }
+        }
+      ]
     }
-  ],
-  "isBasedOn": "https://github.com/arminazimi/evergreen/blob/main/registry/scala.json",
-  "publisher": {
-    "@type": "Organization",
-    "name": "Evergreen",
-    "url": "https://arminazimi.github.io/evergreen"
-  }
+  ]
 }
 </script>

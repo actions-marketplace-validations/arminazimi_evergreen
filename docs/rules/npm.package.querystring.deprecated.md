@@ -2,9 +2,19 @@
 title: "querystring is deprecated — dates, impact, migration"
 description: "npm describes the querystring API as legacy and recommends URLSearchParams for new code."
 canonical_url: "https://arminazimi.github.io/evergreen/rules/npm.package.querystring.deprecated.html"
+image: "/assets/og/npm.package.querystring.deprecated.svg"
+json_twin: "/rules/npm.package.querystring.deprecated.json"
 ---
 
 # querystring is deprecated
+
+**Deprecated.** The source gives no day. Replacement: URLSearchParams. Source: [querystring package deprecation notice](https://www.npmjs.com/package/querystring).
+
+Check a version:
+
+```bash
+evergreen check pkg:npm/querystring
+```
 
 npm describes the querystring API as legacy and recommends URLSearchParams for new code.
 
@@ -48,6 +58,20 @@ npm describes the querystring API as legacy and recommends URLSearchParams for n
 
 The `npm` detector. See [Detectors](../DETECTORS.md) and [Compatibility](../COMPATIBILITY.md).
 
+## Related
+
+### Same ecosystem
+
+- [abab is deprecated](npm.package.abab.deprecated.html)
+- [@angular/core v18 and older are no longer supported](npm.package.angular.core.v18-and-older.end-of-support.html)
+- [@angular/core v19 is no longer supported](npm.package.angular.core.v19.end-of-support.html)
+- [@angular/core v20 reaches end of life on 2026-11-28](npm.package.angular.core.v20.scheduled-end-of-life.html)
+- [@angular/core v21 reaches end of life on 2027-06-30](npm.package.angular.core.v21.scheduled-end-of-life.html)
+- [@angular/core v22 reaches end of life on 2028-06-30](npm.package.angular.core.v22.scheduled-end-of-life.html)
+- [are-we-there-yet is no longer supported](npm.package.are-we-there-yet.eol.html)
+- [babel-eslint is deprecated](npm.package.babel-eslint.deprecated.html)
+
+
 ## Data
 
 This page is generated from [`registry/npm.json`](https://github.com/arminazimi/evergreen/blob/main/registry/npm.json), rule `npm.package.querystring.deprecated`, in the `evergreen.registry.v2` format ([how rules are written](../RULES.md)). A CLE (ECMA-428) export is not published yet. The same facts are embedded in this page as schema.org structured data.
@@ -55,41 +79,76 @@ This page is generated from [`registry/npm.json`](https://github.com/arminazimi/
 <script type="application/ld+json">
 {
   "@context": "https://schema.org",
-  "@type": "TechArticle",
-  "@id": "https://arminazimi.github.io/evergreen/rules/npm.package.querystring.deprecated.html",
-  "url": "https://arminazimi.github.io/evergreen/rules/npm.package.querystring.deprecated.html",
-  "mainEntityOfPage": "https://arminazimi.github.io/evergreen/rules/npm.package.querystring.deprecated.html",
-  "headline": "querystring is deprecated — dates, impact, migration",
-  "description": "npm describes the querystring API as legacy and recommends URLSearchParams for new code.",
-  "inLanguage": "en",
-  "dateModified": "2026-10-16",
-  "keywords": [
-    "deprecated",
-    "npm",
-    "medium"
-  ],
-  "about": {
-    "@type": "Thing",
-    "name": "querystring is deprecated",
-    "identifier": "pkg:npm/querystring"
-  },
-  "citation": [
+  "@graph": [
     {
-      "@type": "CreativeWork",
-      "name": "querystring package deprecation notice",
-      "url": "https://www.npmjs.com/package/querystring"
+      "@type": "TechArticle",
+      "@id": "https://arminazimi.github.io/evergreen/rules/npm.package.querystring.deprecated.html",
+      "url": "https://arminazimi.github.io/evergreen/rules/npm.package.querystring.deprecated.html",
+      "mainEntityOfPage": "https://arminazimi.github.io/evergreen/rules/npm.package.querystring.deprecated.html",
+      "headline": "querystring is deprecated — dates, impact, migration",
+      "description": "npm describes the querystring API as legacy and recommends URLSearchParams for new code.",
+      "inLanguage": "en",
+      "dateModified": "2026-10-16",
+      "keywords": [
+        "deprecated",
+        "npm",
+        "medium"
+      ],
+      "about": {
+        "@type": "Thing",
+        "name": "querystring is deprecated",
+        "identifier": "pkg:npm/querystring"
+      },
+      "citation": [
+        {
+          "@type": "CreativeWork",
+          "name": "querystring package deprecation notice",
+          "url": "https://www.npmjs.com/package/querystring"
+        },
+        {
+          "@type": "CreativeWork",
+          "name": "querystring registry metadata",
+          "url": "https://registry.npmjs.org/querystring/latest"
+        }
+      ],
+      "isBasedOn": "https://github.com/arminazimi/evergreen/blob/main/registry/npm.json",
+      "publisher": {
+        "@type": "Organization",
+        "name": "Evergreen",
+        "url": "https://arminazimi.github.io/evergreen"
+      }
     },
     {
-      "@type": "CreativeWork",
-      "name": "querystring registry metadata",
-      "url": "https://registry.npmjs.org/querystring/latest"
+      "@type": "FAQPage",
+      "@id": "https://arminazimi.github.io/evergreen/rules/npm.package.querystring.deprecated.html#faq",
+      "url": "https://arminazimi.github.io/evergreen/rules/npm.package.querystring.deprecated.html",
+      "mainEntity": [
+        {
+          "@type": "Question",
+          "name": "What is the lifecycle status of pkg:npm/querystring?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "Deprecated. The source gives no day. Affected versions: vers:npm/*. Source: querystring package deprecation notice (https://www.npmjs.com/package/querystring)."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "What replaces pkg:npm/querystring?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "URLSearchParams"
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "How do I check pkg:npm/querystring?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "Run evergreen check pkg:npm/querystring."
+          }
+        }
+      ]
     }
-  ],
-  "isBasedOn": "https://github.com/arminazimi/evergreen/blob/main/registry/npm.json",
-  "publisher": {
-    "@type": "Organization",
-    "name": "Evergreen",
-    "url": "https://arminazimi.github.io/evergreen"
-  }
+  ]
 }
 </script>

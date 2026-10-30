@@ -2,9 +2,19 @@
 title: "json 2.17.1.1 is yanked — dates, impact, migration"
 description: "RubyGems lists json 2.17.1.1 as yanked: the version is not available for download or for other gems that depended on it. The version page also flags two known security vulnerabilities."
 canonical_url: "https://arminazimi.github.io/evergreen/rules/ruby.gem.json.yanked-2.17.1.1.html"
+image: "/assets/og/ruby.gem.json.yanked-2.17.1.1.svg"
+json_twin: "/rules/ruby.gem.json.yanked-2.17.1.1.json"
 ---
 
 # json 2.17.1.1 is yanked
+
+**Removed.** The source gives no day. Replacement: A published json release that is not yanked. Source: [RubyGems: json 2.17.1.1 is yanked](https://rubygems.org/gems/json/versions/2.17.1.1).
+
+Check a version:
+
+```bash
+evergreen check pkg:gem/json
+```
 
 RubyGems lists json 2.17.1.1 as yanked: the version is not available for download or for other gems that depended on it. The version page also flags two known security vulnerabilities.
 
@@ -49,6 +59,20 @@ RubyGems lists json 2.17.1.1 as yanked: the version is not available for downloa
 
 The `ruby` detector. See [Detectors](../DETECTORS.md) and [Compatibility](../COMPATIBILITY.md).
 
+## Related
+
+### Same ecosystem
+
+- [Rails 7.2 is end-of-life](ruby.gem.rails-7.2.end-of-life.html)
+- [Rails 8.0 security support is scheduled to end](ruby.gem.rails-8.0.scheduled-end-of-life.html)
+- [Ruby 1.9.3 is end-of-life](ruby.runtime.eol-1.9.3.html)
+- [Ruby 2.0.0 is end-of-life](ruby.runtime.eol-2.0.0.html)
+- [Ruby 2.1 is end-of-life](ruby.runtime.eol-2.1.html)
+- [Ruby 2.2 is end-of-life](ruby.runtime.eol-2.2.html)
+- [Ruby 2.3 is end-of-life](ruby.runtime.eol-2.3.html)
+- [Ruby 2.4 is end-of-life](ruby.runtime.eol-2.4.html)
+
+
 ## Data
 
 This page is generated from [`registry/ruby.json`](https://github.com/arminazimi/evergreen/blob/main/registry/ruby.json), rule `ruby.gem.json.yanked-2.17.1.1`, in the `evergreen.registry.v2` format ([how rules are written](../RULES.md)). A CLE (ECMA-428) export is not published yet. The same facts are embedded in this page as schema.org structured data.
@@ -56,36 +80,71 @@ This page is generated from [`registry/ruby.json`](https://github.com/arminazimi
 <script type="application/ld+json">
 {
   "@context": "https://schema.org",
-  "@type": "TechArticle",
-  "@id": "https://arminazimi.github.io/evergreen/rules/ruby.gem.json.yanked-2.17.1.1.html",
-  "url": "https://arminazimi.github.io/evergreen/rules/ruby.gem.json.yanked-2.17.1.1.html",
-  "mainEntityOfPage": "https://arminazimi.github.io/evergreen/rules/ruby.gem.json.yanked-2.17.1.1.html",
-  "headline": "json 2.17.1.1 is yanked — dates, impact, migration",
-  "description": "RubyGems lists json 2.17.1.1 as yanked: the version is not available for download or for other gems that depended on it. The version page also flags two known security vulnerabilities.",
-  "inLanguage": "en",
-  "dateModified": "2026-10-18",
-  "keywords": [
-    "removed",
-    "ruby",
-    "high"
-  ],
-  "about": {
-    "@type": "Thing",
-    "name": "json 2.17.1.1 is yanked",
-    "identifier": "pkg:gem/json"
-  },
-  "citation": [
+  "@graph": [
     {
-      "@type": "CreativeWork",
-      "name": "RubyGems: json 2.17.1.1 is yanked",
-      "url": "https://rubygems.org/gems/json/versions/2.17.1.1"
+      "@type": "TechArticle",
+      "@id": "https://arminazimi.github.io/evergreen/rules/ruby.gem.json.yanked-2.17.1.1.html",
+      "url": "https://arminazimi.github.io/evergreen/rules/ruby.gem.json.yanked-2.17.1.1.html",
+      "mainEntityOfPage": "https://arminazimi.github.io/evergreen/rules/ruby.gem.json.yanked-2.17.1.1.html",
+      "headline": "json 2.17.1.1 is yanked — dates, impact, migration",
+      "description": "RubyGems lists json 2.17.1.1 as yanked: the version is not available for download or for other gems that depended on it. The version page also flags two known security vulnerabilities.",
+      "inLanguage": "en",
+      "dateModified": "2026-10-18",
+      "keywords": [
+        "removed",
+        "ruby",
+        "high"
+      ],
+      "about": {
+        "@type": "Thing",
+        "name": "json 2.17.1.1 is yanked",
+        "identifier": "pkg:gem/json"
+      },
+      "citation": [
+        {
+          "@type": "CreativeWork",
+          "name": "RubyGems: json 2.17.1.1 is yanked",
+          "url": "https://rubygems.org/gems/json/versions/2.17.1.1"
+        }
+      ],
+      "isBasedOn": "https://github.com/arminazimi/evergreen/blob/main/registry/ruby.json",
+      "publisher": {
+        "@type": "Organization",
+        "name": "Evergreen",
+        "url": "https://arminazimi.github.io/evergreen"
+      }
+    },
+    {
+      "@type": "FAQPage",
+      "@id": "https://arminazimi.github.io/evergreen/rules/ruby.gem.json.yanked-2.17.1.1.html#faq",
+      "url": "https://arminazimi.github.io/evergreen/rules/ruby.gem.json.yanked-2.17.1.1.html",
+      "mainEntity": [
+        {
+          "@type": "Question",
+          "name": "What is the lifecycle status of pkg:gem/json?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "Removed. The source gives no day. Affected versions: vers:gem/2.17.1.1. Source: RubyGems: json 2.17.1.1 is yanked (https://rubygems.org/gems/json/versions/2.17.1.1)."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "What replaces pkg:gem/json?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "A published json release that is not yanked"
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "How do I check pkg:gem/json?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "Run evergreen check pkg:gem/json."
+          }
+        }
+      ]
     }
-  ],
-  "isBasedOn": "https://github.com/arminazimi/evergreen/blob/main/registry/ruby.json",
-  "publisher": {
-    "@type": "Organization",
-    "name": "Evergreen",
-    "url": "https://arminazimi.github.io/evergreen"
-  }
+  ]
 }
 </script>

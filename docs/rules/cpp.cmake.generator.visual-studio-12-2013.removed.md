@@ -2,9 +2,19 @@
 title: "The Visual Studio 12 2013 generator is removed — dates, impact, migration"
 description: "CMake 3.31 removed the Visual Studio 12 2013 generator. Projects and presets that still name that generator cannot configure on CMake 3.31 or newer. CMake 3.31.0 was published on 2024-11-06."
 canonical_url: "https://arminazimi.github.io/evergreen/rules/cpp.cmake.generator.visual-studio-12-2013.removed.html"
+image: "/assets/og/cpp.cmake.generator.visual-studio-12-2013.removed.svg"
+json_twin: "/rules/cpp.cmake.generator.visual-studio-12-2013.removed.json"
 ---
 
 # The Visual Studio 12 2013 generator is removed
+
+**Removed** as of 2024-11-06. Replacement: A still-supported Visual Studio generator, such as Visual Studio 17 2022. Source: [CMake 3.31 release notes (Visual Studio 12 2013 generator removed)](https://cmake.org/cmake/help/latest/release/3.31.html).
+
+Check a version:
+
+```bash
+evergreen check pkg:generic/cmake-generator/visual-studio-12-2013
+```
 
 CMake 3.31 removed the Visual Studio 12 2013 generator. Projects and presets that still name that generator cannot configure on CMake 3.31 or newer. CMake 3.31.0 was published on 2024-11-06.
 
@@ -47,6 +57,16 @@ CMake 3.31 removed the Visual Studio 12 2013 generator. Projects and presets tha
 
 The `cpp` detector. See [Detectors](../DETECTORS.md) and [Compatibility](../COMPATIBILITY.md).
 
+## Related
+
+### Same ecosystem
+
+- [The CMakeFindFrameworks module is deprecated](cpp.cmake.module.cmake-find-frameworks.deprecated.html)
+- [The FindGDAL module is deprecated](cpp.cmake.module.find-gdal.deprecated.html)
+- [CMake policy versions older than 3.10 are deprecated](cpp.cmake.policy-below-3.10.deprecated.html)
+- [CMake policy versions older than 3.5 are removed](cpp.cmake.policy-below-3.5.removed.html)
+
+
 ## Data
 
 This page is generated from [`registry/cpp.json`](https://github.com/arminazimi/evergreen/blob/main/registry/cpp.json), rule `cpp.cmake.generator.visual-studio-12-2013.removed`, in the `evergreen.registry.v2` format ([how rules are written](../RULES.md)). A CLE (ECMA-428) export is not published yet. The same facts are embedded in this page as schema.org structured data.
@@ -54,41 +74,76 @@ This page is generated from [`registry/cpp.json`](https://github.com/arminazimi/
 <script type="application/ld+json">
 {
   "@context": "https://schema.org",
-  "@type": "TechArticle",
-  "@id": "https://arminazimi.github.io/evergreen/rules/cpp.cmake.generator.visual-studio-12-2013.removed.html",
-  "url": "https://arminazimi.github.io/evergreen/rules/cpp.cmake.generator.visual-studio-12-2013.removed.html",
-  "mainEntityOfPage": "https://arminazimi.github.io/evergreen/rules/cpp.cmake.generator.visual-studio-12-2013.removed.html",
-  "headline": "The Visual Studio 12 2013 generator is removed — dates, impact, migration",
-  "description": "CMake 3.31 removed the Visual Studio 12 2013 generator. Projects and presets that still name that generator cannot configure on CMake 3.31 or newer. CMake 3.31.0 was published on 2024-11-06.",
-  "inLanguage": "en",
-  "dateModified": "2026-10-19",
-  "keywords": [
-    "removed",
-    "cpp",
-    "high"
-  ],
-  "about": {
-    "@type": "Thing",
-    "name": "The Visual Studio 12 2013 generator is removed",
-    "identifier": "pkg:generic/cmake-generator/visual-studio-12-2013"
-  },
-  "citation": [
+  "@graph": [
     {
-      "@type": "CreativeWork",
-      "name": "CMake 3.31 release notes (Visual Studio 12 2013 generator removed)",
-      "url": "https://cmake.org/cmake/help/latest/release/3.31.html"
+      "@type": "TechArticle",
+      "@id": "https://arminazimi.github.io/evergreen/rules/cpp.cmake.generator.visual-studio-12-2013.removed.html",
+      "url": "https://arminazimi.github.io/evergreen/rules/cpp.cmake.generator.visual-studio-12-2013.removed.html",
+      "mainEntityOfPage": "https://arminazimi.github.io/evergreen/rules/cpp.cmake.generator.visual-studio-12-2013.removed.html",
+      "headline": "The Visual Studio 12 2013 generator is removed — dates, impact, migration",
+      "description": "CMake 3.31 removed the Visual Studio 12 2013 generator. Projects and presets that still name that generator cannot configure on CMake 3.31 or newer. CMake 3.31.0 was published on 2024-11-06.",
+      "inLanguage": "en",
+      "dateModified": "2026-10-19",
+      "keywords": [
+        "removed",
+        "cpp",
+        "high"
+      ],
+      "about": {
+        "@type": "Thing",
+        "name": "The Visual Studio 12 2013 generator is removed",
+        "identifier": "pkg:generic/cmake-generator/visual-studio-12-2013"
+      },
+      "citation": [
+        {
+          "@type": "CreativeWork",
+          "name": "CMake 3.31 release notes (Visual Studio 12 2013 generator removed)",
+          "url": "https://cmake.org/cmake/help/latest/release/3.31.html"
+        },
+        {
+          "@type": "CreativeWork",
+          "name": "Visual Studio 12 2013 generator documentation",
+          "url": "https://cmake.org/cmake/help/latest/generator/Visual%20Studio%2012%202013.html"
+        }
+      ],
+      "isBasedOn": "https://github.com/arminazimi/evergreen/blob/main/registry/cpp.json",
+      "publisher": {
+        "@type": "Organization",
+        "name": "Evergreen",
+        "url": "https://arminazimi.github.io/evergreen"
+      }
     },
     {
-      "@type": "CreativeWork",
-      "name": "Visual Studio 12 2013 generator documentation",
-      "url": "https://cmake.org/cmake/help/latest/generator/Visual%20Studio%2012%202013.html"
+      "@type": "FAQPage",
+      "@id": "https://arminazimi.github.io/evergreen/rules/cpp.cmake.generator.visual-studio-12-2013.removed.html#faq",
+      "url": "https://arminazimi.github.io/evergreen/rules/cpp.cmake.generator.visual-studio-12-2013.removed.html",
+      "mainEntity": [
+        {
+          "@type": "Question",
+          "name": "What is the lifecycle status of pkg:generic/cmake-generator/visual-studio-12-2013?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "Removed as of 2024-11-06. Affected versions: vers:semver/*. Source: CMake 3.31 release notes (Visual Studio 12 2013 generator removed) (https://cmake.org/cmake/help/latest/release/3.31.html)."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "What replaces pkg:generic/cmake-generator/visual-studio-12-2013?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "A still-supported Visual Studio generator, such as Visual Studio 17 2022"
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "How do I check pkg:generic/cmake-generator/visual-studio-12-2013?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "Run evergreen check pkg:generic/cmake-generator/visual-studio-12-2013."
+          }
+        }
+      ]
     }
-  ],
-  "isBasedOn": "https://github.com/arminazimi/evergreen/blob/main/registry/cpp.json",
-  "publisher": {
-    "@type": "Organization",
-    "name": "Evergreen",
-    "url": "https://arminazimi.github.io/evergreen"
-  }
+  ]
 }
 </script>

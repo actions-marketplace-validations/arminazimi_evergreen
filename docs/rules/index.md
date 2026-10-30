@@ -2,6 +2,7 @@
 title: "Lifecycle reference — end of life, removed, and deprecated components"
 description: "One page per lifecycle rule: status, affected versions, dates, sources, migration, and the detector that reads it."
 canonical_url: "https://arminazimi.github.io/evergreen/rules/"
+image: "/assets/og/default.svg"
 ---
 
 # Lifecycle reference
@@ -15,6 +16,7 @@ Every lifecycle claim Evergreen makes comes from a reviewed rule with an authori
 - [Google Play Billing Library 7 is past its deprecation deadline](android.play-billing.version-7.html) — deprecated, `android.play-billing.version-7`
 - [Google Play Billing Library 8 reaches its new-app and update deadline on 2027-08-31](android.play-billing.version-8.html) — scheduled end of life, `android.play-billing.version-8`
 - [Google Play Billing Library 9 reaches its new-app and update deadline on 2028-08-31](android.play-billing.version-9.html) — scheduled end of life, `android.play-billing.version-9`
+- [Google Play requires targetSdk 35+ for existing phone and tablet apps](android.target-sdk.existing.default-below-35.html) — end of support, `android.target-sdk.existing.default-below-35`
 
 ## ci-images
 
@@ -353,6 +355,7 @@ Every lifecycle claim Evergreen makes comes from a reviewed rule with an authori
 - [Next.js 14 is out of support](npm.package.next.14.support-end.html) — end of support, `npm.package.next.14.support-end`
 - [Next.js 15 is out of support](npm.package.next.15.support-end.html) — end of support, `npm.package.next.15.support-end`
 - [node-pre-gyp is deprecated](npm.package.node-pre-gyp.deprecated.html) — deprecated, `npm.package.node-pre-gyp.deprecated`
+- [node-sass is deprecated](npm.package.node-sass.deprecated.html) — deprecated, `npm.package.node-sass.deprecated`
 - [Node Sass is end-of-life](npm.package.node-sass.eol.html) — end of life, `npm.package.node-sass.eol`
 - [nomnom is deprecated](npm.package.nomnom.deprecated.html) — deprecated, `npm.package.nomnom.deprecated`
 - [@npmcli/move-file is deprecated](npm.package.npmcli-move-file.deprecated.html) — deprecated, `npm.package.npmcli-move-file.deprecated`

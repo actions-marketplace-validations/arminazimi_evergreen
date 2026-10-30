@@ -2,9 +2,19 @@
 title: "Dart 3.11 no longer receives security updates — dates, impact, migration"
 description: "The Dart security policy commits security updates only for the most recent stable SDK release. Dart 3.11 stopped being that release when Dart 3.12 shipped on 2026-05-18."
 canonical_url: "https://arminazimi.github.io/evergreen/rules/dart.sdk.end-of-support-3.11.html"
+image: "/assets/og/dart.sdk.end-of-support-3.11.svg"
+json_twin: "/rules/dart.sdk.end-of-support-3.11.json"
 ---
 
 # Dart 3.11 no longer receives security updates
+
+**End of support** as of 2026-05-18. Replacement: Dart 3.13 or later. Source: [Dart security policy](https://dart.dev/security).
+
+Check a version:
+
+```bash
+evergreen check pkg:generic/dart
+```
 
 The Dart security policy commits security updates only for the most recent stable SDK release. Dart 3.11 stopped being that release when Dart 3.12 shipped on 2026-05-18.
 
@@ -53,6 +63,20 @@ The Dart security policy commits security updates only for the most recent stabl
 
 The `dart` detector. See [Detectors](../DETECTORS.md) and [Compatibility](../COMPATIBILITY.md).
 
+## Related
+
+### Other versions of this product
+
+- [Dart 3.10 no longer receives security updates](dart.sdk.end-of-support-3.10.html)
+- [Dart 3.12 no longer receives security updates](dart.sdk.end-of-support-3.12.html)
+- [Dart 3.8 no longer receives security updates](dart.sdk.end-of-support-3.8.html)
+- [Dart 3.9 no longer receives security updates](dart.sdk.end-of-support-3.9.html)
+
+### Same ecosystem
+
+- [analysis_server_client is discontinued on pub.dev](dart.package.analysis-server-client.discontinued.html)
+
+
 ## Data
 
 This page is generated from [`registry/dart.json`](https://github.com/arminazimi/evergreen/blob/main/registry/dart.json), rule `dart.sdk.end-of-support-3.11`, in the `evergreen.registry.v2` format ([how rules are written](../RULES.md)). A CLE (ECMA-428) export is not published yet. The same facts are embedded in this page as schema.org structured data.
@@ -60,41 +84,76 @@ This page is generated from [`registry/dart.json`](https://github.com/arminazimi
 <script type="application/ld+json">
 {
   "@context": "https://schema.org",
-  "@type": "TechArticle",
-  "@id": "https://arminazimi.github.io/evergreen/rules/dart.sdk.end-of-support-3.11.html",
-  "url": "https://arminazimi.github.io/evergreen/rules/dart.sdk.end-of-support-3.11.html",
-  "mainEntityOfPage": "https://arminazimi.github.io/evergreen/rules/dart.sdk.end-of-support-3.11.html",
-  "headline": "Dart 3.11 no longer receives security updates — dates, impact, migration",
-  "description": "The Dart security policy commits security updates only for the most recent stable SDK release. Dart 3.11 stopped being that release when Dart 3.12 shipped on 2026-05-18.",
-  "inLanguage": "en",
-  "dateModified": "2026-10-21",
-  "keywords": [
-    "end-of-support",
-    "dart",
-    "high"
-  ],
-  "about": {
-    "@type": "Thing",
-    "name": "Dart 3.11 no longer receives security updates",
-    "identifier": "pkg:generic/dart"
-  },
-  "citation": [
+  "@graph": [
     {
-      "@type": "CreativeWork",
-      "name": "Dart security policy",
-      "url": "https://dart.dev/security"
+      "@type": "TechArticle",
+      "@id": "https://arminazimi.github.io/evergreen/rules/dart.sdk.end-of-support-3.11.html",
+      "url": "https://arminazimi.github.io/evergreen/rules/dart.sdk.end-of-support-3.11.html",
+      "mainEntityOfPage": "https://arminazimi.github.io/evergreen/rules/dart.sdk.end-of-support-3.11.html",
+      "headline": "Dart 3.11 no longer receives security updates — dates, impact, migration",
+      "description": "The Dart security policy commits security updates only for the most recent stable SDK release. Dart 3.11 stopped being that release when Dart 3.12 shipped on 2026-05-18.",
+      "inLanguage": "en",
+      "dateModified": "2026-10-21",
+      "keywords": [
+        "end-of-support",
+        "dart",
+        "high"
+      ],
+      "about": {
+        "@type": "Thing",
+        "name": "Dart 3.11 no longer receives security updates",
+        "identifier": "pkg:generic/dart"
+      },
+      "citation": [
+        {
+          "@type": "CreativeWork",
+          "name": "Dart security policy",
+          "url": "https://dart.dev/security"
+        },
+        {
+          "@type": "CreativeWork",
+          "name": "Dart changelog",
+          "url": "https://dart.dev/changelog"
+        }
+      ],
+      "isBasedOn": "https://github.com/arminazimi/evergreen/blob/main/registry/dart.json",
+      "publisher": {
+        "@type": "Organization",
+        "name": "Evergreen",
+        "url": "https://arminazimi.github.io/evergreen"
+      }
     },
     {
-      "@type": "CreativeWork",
-      "name": "Dart changelog",
-      "url": "https://dart.dev/changelog"
+      "@type": "FAQPage",
+      "@id": "https://arminazimi.github.io/evergreen/rules/dart.sdk.end-of-support-3.11.html#faq",
+      "url": "https://arminazimi.github.io/evergreen/rules/dart.sdk.end-of-support-3.11.html",
+      "mainEntity": [
+        {
+          "@type": "Question",
+          "name": "What is the lifecycle status of pkg:generic/dart?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "End of support as of 2026-05-18. Affected versions: vers:semver/>=3.11.0|\u003c3.12.0. Source: Dart security policy (https://dart.dev/security)."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "What replaces pkg:generic/dart?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "Dart 3.13 or later"
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "How do I check pkg:generic/dart?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "Run evergreen check pkg:generic/dart."
+          }
+        }
+      ]
     }
-  ],
-  "isBasedOn": "https://github.com/arminazimi/evergreen/blob/main/registry/dart.json",
-  "publisher": {
-    "@type": "Organization",
-    "name": "Evergreen",
-    "url": "https://arminazimi.github.io/evergreen"
-  }
+  ]
 }
 </script>

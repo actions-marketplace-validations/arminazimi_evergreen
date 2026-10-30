@@ -2,9 +2,19 @@
 title: "Helm stable chart repository is end of life — dates, impact, migration"
 description: "The Helm project retired the stable chart repository: on 2020-11-13 CI was disabled and no further pull requests were accepted, and downloads were redirected to a read-only archive that receives no…"
 canonical_url: "https://arminazimi.github.io/evergreen/rules/kubernetes.helm.repository.stable.end-of-life.html"
+image: "/assets/og/kubernetes.helm.repository.stable.end-of-life.svg"
+json_twin: "/rules/kubernetes.helm.repository.stable.end-of-life.json"
 ---
 
 # Helm stable chart repository is end of life
+
+**End of life** as of 2020-11-13. Replacement: The chart's new maintained repository (see Helm's stable-repo-charts-new-locations list), or adopt the chart yourself. Source: [Helm Chart Repository Deprecation Update (2020-10-30)](https://helm.sh/blog/charts-repo-deprecation/).
+
+Check a version:
+
+```bash
+evergreen check pkg:generic/helm-repository/stable
+```
 
 The Helm project retired the stable chart repository: on 2020-11-13 CI was disabled and no further pull requests were accepted, and downloads were redirected to a read-only archive that receives no bug fixes or security patches. The Helm Chart Repository Deprecation Update states those dates and recommended actions.
 
@@ -50,6 +60,20 @@ The Helm project retired the stable chart repository: on 2020-11-13 CI was disab
 
 The [`kubernetes`](../detectors/kubernetes.md) detector. See [Detectors](../DETECTORS.md) and [Compatibility](../COMPATIBILITY.md).
 
+## Related
+
+### Same ecosystem
+
+- [MutatingWebhookConfiguration admissionregistration.k8s.io/v1beta1 is no longer served](kubernetes.admissionregistration-k8s-io.mutatingwebhookconfiguration.v1beta1.removed.html)
+- [ValidatingWebhookConfiguration admissionregistration.k8s.io/v1beta1 is no longer served](kubernetes.admissionregistration-k8s-io.validatingwebhookconfiguration.v1beta1.removed.html)
+- [CustomResourceDefinition apiextensions.k8s.io/v1beta1 is no longer served](kubernetes.apiextensions-k8s-io.customresourcedefinition.v1beta1.removed.html)
+- [APIService apiregistration.k8s.io/v1beta1 is no longer served](kubernetes.apiregistration-k8s-io.apiservice.v1beta1.removed.html)
+- [DaemonSet apps/v1beta2 is no longer served](kubernetes.apps.daemonset.v1beta2.removed.html)
+- [Deployment apps/v1beta1 is no longer served](kubernetes.apps.deployment.v1beta1.removed.html)
+- [Deployment apps/v1beta2 is no longer served](kubernetes.apps.deployment.v1beta2.removed.html)
+- [ReplicaSet apps/v1beta1 is no longer served](kubernetes.apps.replicaset.v1beta1.removed.html)
+
+
 ## Data
 
 This page is generated from [`registry/kubernetes.json`](https://github.com/arminazimi/evergreen/blob/main/registry/kubernetes.json), rule `kubernetes.helm.repository.stable.end-of-life`, in the `evergreen.registry.v2` format ([how rules are written](../RULES.md)). A CLE (ECMA-428) export is not published yet. The same facts are embedded in this page as schema.org structured data.
@@ -57,41 +81,76 @@ This page is generated from [`registry/kubernetes.json`](https://github.com/armi
 <script type="application/ld+json">
 {
   "@context": "https://schema.org",
-  "@type": "TechArticle",
-  "@id": "https://arminazimi.github.io/evergreen/rules/kubernetes.helm.repository.stable.end-of-life.html",
-  "url": "https://arminazimi.github.io/evergreen/rules/kubernetes.helm.repository.stable.end-of-life.html",
-  "mainEntityOfPage": "https://arminazimi.github.io/evergreen/rules/kubernetes.helm.repository.stable.end-of-life.html",
-  "headline": "Helm stable chart repository is end of life — dates, impact, migration",
-  "description": "The Helm project retired the stable chart repository: on 2020-11-13 CI was disabled and no further pull requests were accepted, and downloads were redirected to a read-only archive that receives no…",
-  "inLanguage": "en",
-  "dateModified": "2026-10-26",
-  "keywords": [
-    "end-of-life",
-    "kubernetes",
-    "high"
-  ],
-  "about": {
-    "@type": "Thing",
-    "name": "Helm stable chart repository is end of life",
-    "identifier": "pkg:generic/helm-repository/stable"
-  },
-  "citation": [
+  "@graph": [
     {
-      "@type": "CreativeWork",
-      "name": "Helm Chart Repository Deprecation Update (2020-10-30)",
-      "url": "https://helm.sh/blog/charts-repo-deprecation/"
+      "@type": "TechArticle",
+      "@id": "https://arminazimi.github.io/evergreen/rules/kubernetes.helm.repository.stable.end-of-life.html",
+      "url": "https://arminazimi.github.io/evergreen/rules/kubernetes.helm.repository.stable.end-of-life.html",
+      "mainEntityOfPage": "https://arminazimi.github.io/evergreen/rules/kubernetes.helm.repository.stable.end-of-life.html",
+      "headline": "Helm stable chart repository is end of life — dates, impact, migration",
+      "description": "The Helm project retired the stable chart repository: on 2020-11-13 CI was disabled and no further pull requests were accepted, and downloads were redirected to a read-only archive that receives no…",
+      "inLanguage": "en",
+      "dateModified": "2026-10-26",
+      "keywords": [
+        "end-of-life",
+        "kubernetes",
+        "high"
+      ],
+      "about": {
+        "@type": "Thing",
+        "name": "Helm stable chart repository is end of life",
+        "identifier": "pkg:generic/helm-repository/stable"
+      },
+      "citation": [
+        {
+          "@type": "CreativeWork",
+          "name": "Helm Chart Repository Deprecation Update (2020-10-30)",
+          "url": "https://helm.sh/blog/charts-repo-deprecation/"
+        },
+        {
+          "@type": "CreativeWork",
+          "name": "Helm community: stable repository charts — new locations",
+          "url": "https://github.com/helm/community/blob/main/stable-repo-charts-new-locations.md"
+        }
+      ],
+      "isBasedOn": "https://github.com/arminazimi/evergreen/blob/main/registry/kubernetes.json",
+      "publisher": {
+        "@type": "Organization",
+        "name": "Evergreen",
+        "url": "https://arminazimi.github.io/evergreen"
+      }
     },
     {
-      "@type": "CreativeWork",
-      "name": "Helm community: stable repository charts — new locations",
-      "url": "https://github.com/helm/community/blob/main/stable-repo-charts-new-locations.md"
+      "@type": "FAQPage",
+      "@id": "https://arminazimi.github.io/evergreen/rules/kubernetes.helm.repository.stable.end-of-life.html#faq",
+      "url": "https://arminazimi.github.io/evergreen/rules/kubernetes.helm.repository.stable.end-of-life.html",
+      "mainEntity": [
+        {
+          "@type": "Question",
+          "name": "What is the lifecycle status of pkg:generic/helm-repository/stable?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "End of life as of 2020-11-13. Affected versions: vers:semver/*. Source: Helm Chart Repository Deprecation Update (2020-10-30) (https://helm.sh/blog/charts-repo-deprecation/)."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "What replaces pkg:generic/helm-repository/stable?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "The chart's new maintained repository (see Helm's stable-repo-charts-new-locations list), or adopt the chart yourself"
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "How do I check pkg:generic/helm-repository/stable?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "Run evergreen check pkg:generic/helm-repository/stable."
+          }
+        }
+      ]
     }
-  ],
-  "isBasedOn": "https://github.com/arminazimi/evergreen/blob/main/registry/kubernetes.json",
-  "publisher": {
-    "@type": "Organization",
-    "name": "Evergreen",
-    "url": "https://arminazimi.github.io/evergreen"
-  }
+  ]
 }
 </script>

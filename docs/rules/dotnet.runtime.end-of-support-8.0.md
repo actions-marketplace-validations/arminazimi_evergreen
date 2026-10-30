@@ -2,9 +2,19 @@
 title: ".NET 8 reaches end of support on 2026-11-10 — dates, impact, migration"
 description: ".NET 8 (Long Term Support) is scheduled to reach the end of its support on 2026-11-10, according to Microsoft's releases index."
 canonical_url: "https://arminazimi.github.io/evergreen/rules/dotnet.runtime.end-of-support-8.0.html"
+image: "/assets/og/dotnet.runtime.end-of-support-8.0.svg"
+json_twin: "/rules/dotnet.runtime.end-of-support-8.0.json"
 ---
 
 # .NET 8 reaches end of support on 2026-11-10
+
+**Scheduled end of life** as of 2026-11-10. Replacement: .NET 10 (LTS), or the newest supported .NET release. Source: [.NET and .NET Core official support policy](https://dotnet.microsoft.com/platform/support/policy/dotnet-core).
+
+Check a version:
+
+```bash
+evergreen check pkg:generic/dotnet
+```
 
 .NET 8 (Long Term Support) is scheduled to reach the end of its support on 2026-11-10, according to Microsoft's releases index. After that date Microsoft no longer ships security or quality fixes for it. The same line applies to the SDK that carries it, so a global.json pinning an SDK 8.0.x is reported too.
 
@@ -52,6 +62,30 @@ canonical_url: "https://arminazimi.github.io/evergreen/rules/dotnet.runtime.end-
 
 The `dotnet` detector. See [Detectors](../DETECTORS.md) and [Compatibility](../COMPATIBILITY.md).
 
+## Related
+
+### Other versions of this product
+
+- [.NET Core 1.0 is no longer supported](dotnet.runtime.end-of-support-1.0.html)
+- [.NET Core 1.1 is no longer supported](dotnet.runtime.end-of-support-1.1.html)
+- [.NET Core 2.0 is no longer supported](dotnet.runtime.end-of-support-2.0.html)
+- [.NET Core 2.1 is no longer supported](dotnet.runtime.end-of-support-2.1.html)
+- [.NET Core 2.2 is no longer supported](dotnet.runtime.end-of-support-2.2.html)
+- [.NET Core 3.0 is no longer supported](dotnet.runtime.end-of-support-3.0.html)
+- [.NET Core 3.1 is no longer supported](dotnet.runtime.end-of-support-3.1.html)
+- [.NET 5 is no longer supported](dotnet.runtime.end-of-support-5.0.html)
+- [.NET 6 is no longer supported](dotnet.runtime.end-of-support-6.0.html)
+- [.NET 7 is no longer supported](dotnet.runtime.end-of-support-7.0.html)
+- [.NET 9 reaches end of support on 2026-11-10](dotnet.runtime.end-of-support-9.0.html)
+
+### Same ecosystem
+
+- [Microsoft.Azure.DocumentDB is deprecated on NuGet](dotnet.package.microsoft-azure-documentdb.deprecated.html)
+- [Microsoft.Azure.ServiceBus is deprecated on NuGet](dotnet.package.microsoft-azure-servicebus.deprecated.html)
+- [Microsoft.Azure.Storage.Blob is deprecated on NuGet](dotnet.package.microsoft-azure-storage-blob.deprecated.html)
+- [WindowsAzure.Storage is deprecated on NuGet](dotnet.package.windowsazure-storage.deprecated.html)
+
+
 ## Data
 
 This page is generated from [`registry/dotnet.json`](https://github.com/arminazimi/evergreen/blob/main/registry/dotnet.json), rule `dotnet.runtime.end-of-support-8.0`, in the `evergreen.registry.v2` format ([how rules are written](../RULES.md)). A CLE (ECMA-428) export is not published yet. The same facts are embedded in this page as schema.org structured data.
@@ -59,41 +93,76 @@ This page is generated from [`registry/dotnet.json`](https://github.com/arminazi
 <script type="application/ld+json">
 {
   "@context": "https://schema.org",
-  "@type": "TechArticle",
-  "@id": "https://arminazimi.github.io/evergreen/rules/dotnet.runtime.end-of-support-8.0.html",
-  "url": "https://arminazimi.github.io/evergreen/rules/dotnet.runtime.end-of-support-8.0.html",
-  "mainEntityOfPage": "https://arminazimi.github.io/evergreen/rules/dotnet.runtime.end-of-support-8.0.html",
-  "headline": ".NET 8 reaches end of support on 2026-11-10 — dates, impact, migration",
-  "description": ".NET 8 (Long Term Support) is scheduled to reach the end of its support on 2026-11-10, according to Microsoft's releases index.",
-  "inLanguage": "en",
-  "dateModified": "2026-10-18",
-  "keywords": [
-    "scheduled-end-of-life",
-    "dotnet",
-    "low"
-  ],
-  "about": {
-    "@type": "Thing",
-    "name": ".NET 8 reaches end of support on 2026-11-10",
-    "identifier": "pkg:generic/dotnet"
-  },
-  "citation": [
+  "@graph": [
     {
-      "@type": "CreativeWork",
-      "name": ".NET and .NET Core official support policy",
-      "url": "https://dotnet.microsoft.com/platform/support/policy/dotnet-core"
+      "@type": "TechArticle",
+      "@id": "https://arminazimi.github.io/evergreen/rules/dotnet.runtime.end-of-support-8.0.html",
+      "url": "https://arminazimi.github.io/evergreen/rules/dotnet.runtime.end-of-support-8.0.html",
+      "mainEntityOfPage": "https://arminazimi.github.io/evergreen/rules/dotnet.runtime.end-of-support-8.0.html",
+      "headline": ".NET 8 reaches end of support on 2026-11-10 — dates, impact, migration",
+      "description": ".NET 8 (Long Term Support) is scheduled to reach the end of its support on 2026-11-10, according to Microsoft's releases index.",
+      "inLanguage": "en",
+      "dateModified": "2026-10-18",
+      "keywords": [
+        "scheduled-end-of-life",
+        "dotnet",
+        "low"
+      ],
+      "about": {
+        "@type": "Thing",
+        "name": ".NET 8 reaches end of support on 2026-11-10",
+        "identifier": "pkg:generic/dotnet"
+      },
+      "citation": [
+        {
+          "@type": "CreativeWork",
+          "name": ".NET and .NET Core official support policy",
+          "url": "https://dotnet.microsoft.com/platform/support/policy/dotnet-core"
+        },
+        {
+          "@type": "CreativeWork",
+          "name": ".NET releases index (channel, support phase, end-of-life date)",
+          "url": "https://dotnetcli.blob.core.windows.net/dotnet/release-metadata/releases-index.json"
+        }
+      ],
+      "isBasedOn": "https://github.com/arminazimi/evergreen/blob/main/registry/dotnet.json",
+      "publisher": {
+        "@type": "Organization",
+        "name": "Evergreen",
+        "url": "https://arminazimi.github.io/evergreen"
+      }
     },
     {
-      "@type": "CreativeWork",
-      "name": ".NET releases index (channel, support phase, end-of-life date)",
-      "url": "https://dotnetcli.blob.core.windows.net/dotnet/release-metadata/releases-index.json"
+      "@type": "FAQPage",
+      "@id": "https://arminazimi.github.io/evergreen/rules/dotnet.runtime.end-of-support-8.0.html#faq",
+      "url": "https://arminazimi.github.io/evergreen/rules/dotnet.runtime.end-of-support-8.0.html",
+      "mainEntity": [
+        {
+          "@type": "Question",
+          "name": "What is the lifecycle status of pkg:generic/dotnet?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "Scheduled end of life as of 2026-11-10. Affected versions: vers:semver/>=8.0.0|\u003c8.1.0. Source: .NET and .NET Core official support policy (https://dotnet.microsoft.com/platform/support/policy/dotnet-core)."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "What replaces pkg:generic/dotnet?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": ".NET 10 (LTS), or the newest supported .NET release"
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "How do I check pkg:generic/dotnet?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "Run evergreen check pkg:generic/dotnet."
+          }
+        }
+      ]
     }
-  ],
-  "isBasedOn": "https://github.com/arminazimi/evergreen/blob/main/registry/dotnet.json",
-  "publisher": {
-    "@type": "Organization",
-    "name": "Evergreen",
-    "url": "https://arminazimi.github.io/evergreen"
-  }
+  ]
 }
 </script>

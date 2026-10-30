@@ -168,24 +168,47 @@ const notAnAddition = [
 ];
 
 /**
- * Deterministic proxy for "an agent should check a dependency before doing this": the task adds a new
+ * Deterministic proxy for the `evergreen-check-before-add` Skill description: the task adds a new
  * package, runtime, or action, or picks one. Removals, installs of what is already declared, routine
- * upgrades, and unrelated work do not trigger it. Like the lifecycle proxy above, it encodes the
- * concepts the skill states, not case IDs.
+ * upgrades, repository lifecycle scans, and unrelated work do not trigger it. Like the lifecycle
+ * proxy above, it encodes the concepts the skill states, not case IDs.
  */
 export function classifyDependencyAddition(prompt: string): boolean {
   const normalized = prompt.toLowerCase().replaceAll("’", "'");
   if (matchesAny(normalized, notAnAddition) && !packageManagerCommand.test(normalized) && !addToManifest.test(normalized)) {
     return choosePackage.test(normalized);
   }
-  return (
+  const strongAdd =
     packageManagerCommand.test(normalized) ||
     addToManifest.test(normalized) ||
     actionReference.test(normalized) ||
     choosePackage.test(normalized) ||
-    namedPackageAfterVerb.test(normalized) ||
-    (addVerb.test(normalized) && dependencyNoun.test(normalized.replace(/package\.json/g, "")))
-  );
+    namedPackageAfterVerb.test(normalized);
+  if (strongAdd) {
+    return true;
+  }
+  // Weak "use/add … action/package" phrasing must not steal repository lifecycle prompts
+  // ("may use an unsupported action") from evergreen-deprecation. Positive status words
+  // like "maintained" still appear when picking a package to add, so they stay allowed.
+  const lifecycleInvestigation = [
+    ...deprecationTerms,
+    /\bend[ -]of[ -](?:life|support)\b/,
+    /\beol\b/,
+    /\bout[ -]of[ -](?:support|maintenance)\b/,
+    /\bunsupported\b/,
+    /\bretired?\b/,
+    /\bsunset\b/,
+    /\bobsolete\b/,
+    /\bno longer (?:supported|maintained|updated)\b/,
+    /\bmaintenance (?:has )?ended\b/,
+    /\bend of maintenance\b/,
+    /\bpast (?:its )?(?:support|end[ -]of[ -]life)\b/,
+    /\blifecycle status\b/,
+  ];
+  if (matchesAny(normalized, lifecycleInvestigation)) {
+    return false;
+  }
+  return addVerb.test(normalized) && dependencyNoun.test(normalized.replace(/package\.json/g, ""));
 }
 
 export function calculateMetrics(
@@ -220,8 +243,69 @@ export async function loadSkillEvalCorpus(): Promise<SkillEvalCorpus> {
 
 export async function loadDependencyEvalCorpus(): Promise<DependencyEvalCorpus> {
   return JSON.parse(
-    await readFile(resolve("skills/evergreen-deprecation/evals/dependency-cases.json"), "utf8"),
+    await readFile(resolve("skills/evergreen-check-before-add/evals/cases.json"), "utf8"),
   ) as DependencyEvalCorpus;
+}
+
+export interface UpgradeRuntimeActionEvalCorpus {
+  schemaVersion: "evergreen.upgrade-runtime-action-evals.v1";
+  cases: SkillEvalCase[];
+}
+
+const upgradeIntent = /\b(?:upgrade|bump|update|raise|migrate|move|replace)\b/;
+const runtimeUpgradeTarget =
+  /\b(?:runtimes?|node(?:\.js|js)?|python|interpreter|engines(?:\.node)?|(?:\.?nvmrc)|requires-python|(?:\.?python-version)|(?:dockerfile|container(?: image)?|base image))\b/;
+const actionUpgradeTarget =
+  /\bgithub actions?\b|\bactions\/[\w.-]+\b|\bworkflow actions?\b|\b(?:upgrade|bump|update|migrate|replace|find)\b[^.?!]{0,40}\bactions?\b|\bactions?\b[^.?!]{0,40}\b(?:ci|workflow|workflows|pinned|sunset|retired|deprecated|end[ -]of[ -]life)\b/;
+const packageWideUpgrade =
+  /\b(?:upgrade|update|bump)\b[^.?!]*\b(?:all |every )?(?:dependencies|dependency|packages?)\b(?![^.?!]*\b(?:runtime|node|python|action|actions|workflow)\b)/;
+const packageNameBump =
+  /\b(?:upgrade|bump|update)\b[^.?!]{0,30}\b(?!node|python|runtime|actions?(?:\/|\b)|github)[@\w.-]*[a-z][@\w.\/-]*\b(?:to|for)\b/;
+
+/**
+ * Deterministic proxy for `evergreen-upgrade-runtime-action`: the task upgrades an already-declared
+ * runtime or GitHub Action. Additions, whole-repo lifecycle discovery without an upgrade ask, and
+ * routine package bumps stay out. Encodes the skill description concepts, not case IDs.
+ */
+export function classifyRuntimeActionUpgrade(prompt: string): boolean {
+  const normalized = prompt.toLowerCase().replaceAll("’", "'");
+  if (classifyDependencyAddition(normalized)) {
+    return false;
+  }
+  if (packageWideUpgrade.test(normalized) && !runtimeUpgradeTarget.test(normalized) && !actionUpgradeTarget.test(normalized)) {
+    return false;
+  }
+  if (packageNameBump.test(normalized) && !runtimeUpgradeTarget.test(normalized) && !actionUpgradeTarget.test(normalized)) {
+    return false;
+  }
+  if (!upgradeIntent.test(normalized)) {
+    return false;
+  }
+  return runtimeUpgradeTarget.test(normalized) || actionUpgradeTarget.test(normalized);
+}
+
+export async function loadUpgradeRuntimeActionEvalCorpus(): Promise<UpgradeRuntimeActionEvalCorpus> {
+  return JSON.parse(
+    await readFile(resolve("skills/evergreen-upgrade-runtime-action/evals/cases.json"), "utf8"),
+  ) as UpgradeRuntimeActionEvalCorpus;
+}
+
+/** Share of upgrade-job positives that `evergreen-deprecation` already covers (decision threshold: 80%). */
+export function deprecationCoverageOnUpgradeJob(cases: SkillEvalCase[]): {
+  cases: number;
+  covered: number;
+  rate: number;
+  misses: string[];
+} {
+  const positives = cases.filter((item) => item.shouldTrigger);
+  const misses = positives.filter((item) => !classifySkillTrigger(item.prompt)).map((item) => item.id);
+  const covered = positives.length - misses.length;
+  return {
+    cases: positives.length,
+    covered,
+    rate: positives.length === 0 ? 0 : covered / positives.length,
+    misses,
+  };
 }
 
 async function run(): Promise<void> {
@@ -247,16 +331,57 @@ async function run(): Promise<void> {
   const guardrailFailures = guardrail.cases
     .filter((item) => classifyDependencyAddition(item.prompt) !== item.shouldTrigger)
     .map((item) => item.id);
+  const upgradeJob = await loadUpgradeRuntimeActionEvalCorpus();
+  const upgradeOverall = calculateMetrics(upgradeJob.cases, classifyRuntimeActionUpgrade);
+  const upgradeByHost = Object.fromEntries(
+    skillEvalHosts.map((host) => [
+      host,
+      calculateMetrics(upgradeJob.cases.filter((item) => item.host === host), classifyRuntimeActionUpgrade),
+    ]),
+  );
+  const upgradeFailures = upgradeJob.cases
+    .filter((item) => classifyRuntimeActionUpgrade(item.prompt) !== item.shouldTrigger)
+    .map((item) => item.id);
+  const deprecationOnUpgradeJob = deprecationCoverageOnUpgradeJob(upgradeJob.cases);
+  const lifecycleOnAddPrompts = guardrail.cases.filter((item) => item.shouldTrigger);
+  const addOnLifecyclePrompts = corpus.cases.filter((item) => item.shouldTrigger);
+  const lifecycleFalseOnAdd = lifecycleOnAddPrompts.filter((item) => classifySkillTrigger(item.prompt));
+  const addFalseOnLifecycle = addOnLifecyclePrompts.filter((item) => classifyDependencyAddition(item.prompt));
+  const upgradeOnAdd = lifecycleOnAddPrompts.filter((item) => classifyRuntimeActionUpgrade(item.prompt));
+  const addOnUpgrade = upgradeJob.cases.filter((item) => item.shouldTrigger && classifyDependencyAddition(item.prompt));
   const result = {
     schemaVersion: corpus.schemaVersion,
+    skill: "evergreen-deprecation",
     overall,
     byHost,
     failures,
     dependencyGuard: {
       schemaVersion: guardrail.schemaVersion,
+      skill: "evergreen-check-before-add",
       overall: guardrailOverall,
       byHost: guardrailByHost,
       failures: guardrailFailures,
+    },
+    upgradeRuntimeAction: {
+      schemaVersion: upgradeJob.schemaVersion,
+      skill: "evergreen-upgrade-runtime-action",
+      overall: upgradeOverall,
+      byHost: upgradeByHost,
+      failures: upgradeFailures,
+      deprecationCoverage: {
+        threshold: 0.8,
+        ...deprecationOnUpgradeJob,
+        decision:
+          deprecationOnUpgradeJob.rate < 0.8
+            ? "added-evergreen-upgrade-runtime-action"
+            : "kept-evergreen-deprecation-only",
+      },
+    },
+    separation: {
+      lifecycleFalseTriggersOnAddPrompts: lifecycleFalseOnAdd.map((item) => item.id),
+      checkBeforeAddFalseTriggersOnLifecyclePrompts: addFalseOnLifecycle.map((item) => item.id),
+      upgradeFalseTriggersOnAddPrompts: upgradeOnAdd.map((item) => item.id),
+      checkBeforeAddFalseTriggersOnUpgradePrompts: addOnUpgrade.map((item) => item.id),
     },
   };
 
@@ -273,7 +398,17 @@ async function run(): Promise<void> {
     guardrailOverall.falseTriggerRate >= 0.05 ||
     Object.values(guardrailByHost).some(
       (metrics) => metrics.recall < 0.9 || metrics.falseTriggerRate >= 0.05,
-    )
+    ) ||
+    upgradeJob.cases.length < 40 ||
+    upgradeOverall.recall < 0.9 ||
+    upgradeOverall.falseTriggerRate >= 0.05 ||
+    Object.values(upgradeByHost).some(
+      (metrics) => metrics.recall < 0.9 || metrics.falseTriggerRate >= 0.05,
+    ) ||
+    lifecycleFalseOnAdd.length > 0 ||
+    addFalseOnLifecycle.length > 0 ||
+    upgradeOnAdd.length > 0 ||
+    addOnUpgrade.length > 0
   ) {
     process.exitCode = 1;
   }

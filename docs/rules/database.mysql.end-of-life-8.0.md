@@ -2,9 +2,19 @@
 title: "MySQL 8.0 is end-of-life — dates, impact, migration"
 description: "MySQL 8.0 reached end of life on 2026-04-30 and no longer receives security or bug fixes from Oracle."
 canonical_url: "https://arminazimi.github.io/evergreen/rules/database.mysql.end-of-life-8.0.html"
+image: "/assets/og/database.mysql.end-of-life-8.0.svg"
+json_twin: "/rules/database.mysql.end-of-life-8.0.json"
 ---
 
 # MySQL 8.0 is end-of-life
+
+**End of life** as of 2026-04-30. Replacement: MySQL 8.4 LTS or later. Source: [MySQL supported platforms and lifecycle](https://www.mysql.com/support/supportedplatforms/database.html).
+
+Check a version:
+
+```bash
+evergreen check pkg:generic/mysql
+```
 
 MySQL 8.0 reached end of life on 2026-04-30 and no longer receives security or bug fixes from Oracle. The mysql.com lifecycle page could not be read when this rule was reviewed (it refuses automated requests), so the date is taken from the endoflife.date record for MySQL.
 
@@ -54,6 +64,24 @@ MySQL 8.0 reached end of life on 2026-04-30 and no longer receives security or b
 
 The `database` detector. See [Detectors](../DETECTORS.md) and [Compatibility](../COMPATIBILITY.md).
 
+## Related
+
+### Other versions of this product
+
+- [MySQL 5.7 is end-of-life](database.mysql.end-of-life-5.7.html)
+
+### Same ecosystem
+
+- [Azure Database for MySQL 5.7 is past standard support](database.azure-mysql.standard-support-ended-5.7.html)
+- [Azure Database for PostgreSQL 11, 12, and 13 are past standard support](database.azure-postgresql.standard-support-ended-11-to-13.html)
+- [Cloud SQL for MySQL 5.6 and 5.7 are in extended support](database.google-cloud-sql-mysql.extended-support-5.6-to-5.7.html)
+- [Cloud SQL for PostgreSQL 13 is in extended support](database.google-cloud-sql-postgresql.extended-support-13.html)
+- [Cloud SQL for PostgreSQL 9.6 through 12 are in extended support](database.google-cloud-sql-postgresql.extended-support-9.6-to-12.html)
+- [PostgreSQL 10 is no longer a supported major version](database.postgresql.end-of-life-10.html)
+- [PostgreSQL 11 is no longer a supported major version](database.postgresql.end-of-life-11.html)
+- [PostgreSQL 12 is no longer a supported major version](database.postgresql.end-of-life-12.html)
+
+
 ## Data
 
 This page is generated from [`registry/database.json`](https://github.com/arminazimi/evergreen/blob/main/registry/database.json), rule `database.mysql.end-of-life-8.0`, in the `evergreen.registry.v2` format ([how rules are written](../RULES.md)). A CLE (ECMA-428) export is not published yet. The same facts are embedded in this page as schema.org structured data.
@@ -61,41 +89,76 @@ This page is generated from [`registry/database.json`](https://github.com/armina
 <script type="application/ld+json">
 {
   "@context": "https://schema.org",
-  "@type": "TechArticle",
-  "@id": "https://arminazimi.github.io/evergreen/rules/database.mysql.end-of-life-8.0.html",
-  "url": "https://arminazimi.github.io/evergreen/rules/database.mysql.end-of-life-8.0.html",
-  "mainEntityOfPage": "https://arminazimi.github.io/evergreen/rules/database.mysql.end-of-life-8.0.html",
-  "headline": "MySQL 8.0 is end-of-life — dates, impact, migration",
-  "description": "MySQL 8.0 reached end of life on 2026-04-30 and no longer receives security or bug fixes from Oracle.",
-  "inLanguage": "en",
-  "dateModified": "2026-10-22",
-  "keywords": [
-    "end-of-life",
-    "database",
-    "high"
-  ],
-  "about": {
-    "@type": "Thing",
-    "name": "MySQL 8.0 is end-of-life",
-    "identifier": "pkg:generic/mysql"
-  },
-  "citation": [
+  "@graph": [
     {
-      "@type": "CreativeWork",
-      "name": "MySQL supported platforms and lifecycle",
-      "url": "https://www.mysql.com/support/supportedplatforms/database.html"
+      "@type": "TechArticle",
+      "@id": "https://arminazimi.github.io/evergreen/rules/database.mysql.end-of-life-8.0.html",
+      "url": "https://arminazimi.github.io/evergreen/rules/database.mysql.end-of-life-8.0.html",
+      "mainEntityOfPage": "https://arminazimi.github.io/evergreen/rules/database.mysql.end-of-life-8.0.html",
+      "headline": "MySQL 8.0 is end-of-life — dates, impact, migration",
+      "description": "MySQL 8.0 reached end of life on 2026-04-30 and no longer receives security or bug fixes from Oracle.",
+      "inLanguage": "en",
+      "dateModified": "2026-10-22",
+      "keywords": [
+        "end-of-life",
+        "database",
+        "high"
+      ],
+      "about": {
+        "@type": "Thing",
+        "name": "MySQL 8.0 is end-of-life",
+        "identifier": "pkg:generic/mysql"
+      },
+      "citation": [
+        {
+          "@type": "CreativeWork",
+          "name": "MySQL supported platforms and lifecycle",
+          "url": "https://www.mysql.com/support/supportedplatforms/database.html"
+        },
+        {
+          "@type": "CreativeWork",
+          "name": "endoflife.date: MySQL",
+          "url": "https://endoflife.date/mysql"
+        }
+      ],
+      "isBasedOn": "https://github.com/arminazimi/evergreen/blob/main/registry/database.json",
+      "publisher": {
+        "@type": "Organization",
+        "name": "Evergreen",
+        "url": "https://arminazimi.github.io/evergreen"
+      }
     },
     {
-      "@type": "CreativeWork",
-      "name": "endoflife.date: MySQL",
-      "url": "https://endoflife.date/mysql"
+      "@type": "FAQPage",
+      "@id": "https://arminazimi.github.io/evergreen/rules/database.mysql.end-of-life-8.0.html#faq",
+      "url": "https://arminazimi.github.io/evergreen/rules/database.mysql.end-of-life-8.0.html",
+      "mainEntity": [
+        {
+          "@type": "Question",
+          "name": "What is the lifecycle status of pkg:generic/mysql?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "End of life as of 2026-04-30. Affected versions: vers:semver/>=8.0.0|\u003c8.1.0. Source: MySQL supported platforms and lifecycle (https://www.mysql.com/support/supportedplatforms/database.html)."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "What replaces pkg:generic/mysql?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "MySQL 8.4 LTS or later"
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "How do I check pkg:generic/mysql?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "Run evergreen check pkg:generic/mysql."
+          }
+        }
+      ]
     }
-  ],
-  "isBasedOn": "https://github.com/arminazimi/evergreen/blob/main/registry/database.json",
-  "publisher": {
-    "@type": "Organization",
-    "name": "Evergreen",
-    "url": "https://arminazimi.github.io/evergreen"
-  }
+  ]
 }
 </script>

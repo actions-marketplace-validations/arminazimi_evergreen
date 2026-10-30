@@ -27,6 +27,55 @@ jobs:
 
 Version tags provide stable release references. Pin a full commit SHA when your threat model requires immutable third-party action references.
 
+## Reusable workflow (one `uses:` line)
+
+Organizations that want the same scan in every repository without copying checkout and Action steps can call the reusable workflow instead. It checks out the caller, runs Evergreen with the common inputs, and needs only `contents: read`. The Action version is pinned inside the workflow file, so pinning the workflow pins the scanner.
+
+```yaml
+name: Evergreen
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+  schedule:
+    - cron: "0 4 * * 1"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  lifecycle:
+    uses: arminazimi/evergreen/.github/workflows/evergreen-reusable.yml@v0.8.0
+    with:
+      baseline: .evergreen-baseline.json
+      fail-on-severity: high
+```
+
+> **Version.** The reusable workflow first ships in `v0.8.0`. Until that tag exists, call `@main` only to try it, then replace it with the release tag before relying on it.
+
+Every workflow input is optional and matches the Action default of the same name. Pass only what you need to change:
+
+| Workflow input | Default | Meaning |
+| --- | --- | --- |
+| `path` | `.` | Repository root or subdirectory to scan. |
+| `paths` | empty | Multi-line list of directories or globs relative to `path`. |
+| `baseline` | empty | Baseline path relative to `path`. |
+| `baseline-warn-days` | `14` | Warn when a baseline suppression expires within this many days. |
+| `on-expired` | `resurface` | `resurface` or `fail` after a suppression's `expires` day. |
+| `min-support-days` | empty | Warn on lines whose support ends within this many days. |
+| `fail-on-severity` | `high` | Lowest failing level: `none`, `info`, `low`, `medium`, `high`, or `critical`. |
+| `mode` | `scan` | `scan` or `diff` (diff fetches full history for the base and head SHAs). |
+| `annotations` | empty | `changed`, `all`, or `none`; empty keeps the Action default. |
+| `report-name` | `evergreen-report` | Artifact name when `upload-report` is true. |
+| `upload-report` | `true` | Upload the JSON report as an Actions artifact. |
+| `attribution` | `true` | Credit Evergreen in the job summary. |
+
+The workflow exposes the same result outputs as the Action (`report-path`, `finding-count`, `has-new-findings`, `highest-severity`, `next-eol-date`, `findings-json`) so a later job can branch on them. Features that need write permissions — `pr-comment`, `suggest-fixes`, `commands`, `fix-pr`, `tracking-issue`, `upload-sarif`, `upload-badge` — stay on the Action step above; the reusable workflow keeps the minimal `contents: read` permission set.
+
+For an organization `.github` repository that offers the starter in the Actions "New workflow" gallery, copy [`templates/workflows/`](../templates/workflows/) into that repository's `workflow-templates/` directory. See [Organization rollout](ORG_ROLLOUT.md#offer-the-starter-from-the-organizations-github-repository).
+
 ### SHA-pinned actions
 
 For the first-party actions covered by Evergreen, a full 40-character commit pin is classified in this order:
@@ -144,6 +193,8 @@ does not provide a `with` entry.
 
 The job summary shows how many findings there are per severity, the ten most severe findings with their location and a link to the evidence each one cites, the age of the lifecycle data, and a warning when the data is stale. When there are more than ten findings, it says how many more there are; the JSON report artifact lists them all.
 
+![Evergreen Actions job summary listing severity counts and the top lifecycle findings with evidence links](assets/screenshots/job-summary.webp)
+
 ### Branching on results
 
 The outputs describe the findings that remain after baseline comparison, so a later step can act on them without reading the report. Every value is empty or `false` when nothing remains.
@@ -195,6 +246,8 @@ High and critical findings become error annotations, medium findings become warn
 ### Pull request comment
 
 Set `pr-comment: true` to get one comment on the pull request with the counts per severity and the top findings, instead of reading every annotation. The same comment is updated on each re-run. The scan itself stays offline; only posting the comment calls the GitHub API.
+
+![Evergreen pull request comment showing severity counts and the top lifecycle findings with file locations](assets/screenshots/pr-comment.webp)
 
 ```yaml
 permissions:
@@ -360,6 +413,8 @@ Every run force-pushes `evergreen/fixes`, and the pull request is found by its h
 
 `fix-pr` runs only on `schedule` and `workflow_dispatch` events. On any other event the Action logs a notice and leaves the repository alone, so a pull request from a fork, whose token is read-only, never tries to push. The scan itself stays offline: only the `git push` and the GitHub API calls that create, update, or close the pull request use the network, after the scan has finished. The job needs `contents: write` to push the branch and `pull-requests: write` to manage the pull request.
 
+See it working on a schedule in [evergreen-action-sample](https://github.com/arminazimi/evergreen-action-sample): it keeps one fix pull request and one tracking issue current every Monday.
+
 ## Permissions and privacy
 
 Only `contents: read` is required. Evergreen does not need `pull-requests: write` unless you set `pr-comment: true`, `commands: true`, or `suggest-fixes: true`; it then writes one pull request comment, command reply, or review of suggestions, each found again by a hidden marker and updated on every re-run, and needs only `pull-requests: write` for that. Evergreen does not send repository contents to an Evergreen backend. Annotations are emitted through runner workflow commands. `tracking-issue: true` needs `issues: write`; it updates one issue, also found by a hidden marker, and touches nothing else. With `fix-pr: true` it also needs `contents: write` (to push `evergreen/fixes`) and `pull-requests: write` (to open, update, or close the fix pull request).
@@ -465,6 +520,8 @@ can keep the artifact private or deliberately publish only this aggregate file.
 ## Code scanning
 
 Set `upload-sarif: true` to show findings in the repository's **Security → Code scanning** tab. The Action writes the same findings as SARIF 2.1.0 and hands the file to `github/codeql-action/upload-sarif` under the category `evergreen`. The job needs one more permission:
+
+![GitHub code scanning alert opened from Evergreen SARIF for a deprecated package, with replacement and verification steps](assets/screenshots/sarif-alert.webp)
 
 ```yaml
 permissions:

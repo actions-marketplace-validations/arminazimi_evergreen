@@ -2,9 +2,19 @@
 title: "poetry-version-plugin is deprecated — dates, impact, migration"
 description: "The maintainer states that poetry-version-plugin is deprecated and recommends migrating to other project and versioning tools."
 canonical_url: "https://arminazimi.github.io/evergreen/rules/python.package.poetry-version-plugin.deprecated.html"
+image: "/assets/og/python.package.poetry-version-plugin.deprecated.svg"
+json_twin: "/rules/python.package.poetry-version-plugin.deprecated.json"
 ---
 
 # poetry-version-plugin is deprecated
+
+**Deprecated.** The source gives no day. Replacement: uv, PDM, Hatch, or poetry-dynamic-versioning. Source: [poetry-version-plugin deprecation notice](https://pypi.org/project/poetry-version-plugin/).
+
+Check a version:
+
+```bash
+evergreen check pkg:pypi/poetry-version-plugin
+```
 
 The maintainer states that poetry-version-plugin is deprecated and recommends migrating to other project and versioning tools.
 
@@ -46,6 +56,20 @@ The maintainer states that poetry-version-plugin is deprecated and recommends mi
 
 The `python` detector. See [Detectors](../DETECTORS.md) and [Compatibility](../COMPATIBILITY.md).
 
+## Related
+
+### Same ecosystem
+
+- [agentops-toolkit was renamed and is no longer maintained](python.package.agentops-toolkit.eol.html)
+- [aiohttp-valera-validator was renamed and is no longer maintained](python.package.aiohttp-valera-validator.eol.html)
+- [api-shield is deprecated](python.package.api-shield.deprecated.html)
+- [apisec-code-bolt was renamed](python.package.apisec-code-bolt.deprecated.html)
+- [argparse is archived on PyPI](python.package.argparse.archived.html)
+- [asyncio-requests is retired](python.package.asyncio-requests.deprecated.html)
+- [BatchNotebook is deprecated](python.package.batchnotebook.deprecated.html)
+- [cmip_ref was renamed and is no longer maintained](python.package.cmip-ref.eol.html)
+
+
 ## Data
 
 This page is generated from [`registry/python.json`](https://github.com/arminazimi/evergreen/blob/main/registry/python.json), rule `python.package.poetry-version-plugin.deprecated`, in the `evergreen.registry.v2` format ([how rules are written](../RULES.md)). A CLE (ECMA-428) export is not published yet. The same facts are embedded in this page as schema.org structured data.
@@ -53,36 +77,71 @@ This page is generated from [`registry/python.json`](https://github.com/arminazi
 <script type="application/ld+json">
 {
   "@context": "https://schema.org",
-  "@type": "TechArticle",
-  "@id": "https://arminazimi.github.io/evergreen/rules/python.package.poetry-version-plugin.deprecated.html",
-  "url": "https://arminazimi.github.io/evergreen/rules/python.package.poetry-version-plugin.deprecated.html",
-  "mainEntityOfPage": "https://arminazimi.github.io/evergreen/rules/python.package.poetry-version-plugin.deprecated.html",
-  "headline": "poetry-version-plugin is deprecated — dates, impact, migration",
-  "description": "The maintainer states that poetry-version-plugin is deprecated and recommends migrating to other project and versioning tools.",
-  "inLanguage": "en",
-  "dateModified": "2026-10-16",
-  "keywords": [
-    "deprecated",
-    "python",
-    "medium"
-  ],
-  "about": {
-    "@type": "Thing",
-    "name": "poetry-version-plugin is deprecated",
-    "identifier": "pkg:pypi/poetry-version-plugin"
-  },
-  "citation": [
+  "@graph": [
     {
-      "@type": "CreativeWork",
-      "name": "poetry-version-plugin deprecation notice",
-      "url": "https://pypi.org/project/poetry-version-plugin/"
+      "@type": "TechArticle",
+      "@id": "https://arminazimi.github.io/evergreen/rules/python.package.poetry-version-plugin.deprecated.html",
+      "url": "https://arminazimi.github.io/evergreen/rules/python.package.poetry-version-plugin.deprecated.html",
+      "mainEntityOfPage": "https://arminazimi.github.io/evergreen/rules/python.package.poetry-version-plugin.deprecated.html",
+      "headline": "poetry-version-plugin is deprecated — dates, impact, migration",
+      "description": "The maintainer states that poetry-version-plugin is deprecated and recommends migrating to other project and versioning tools.",
+      "inLanguage": "en",
+      "dateModified": "2026-10-16",
+      "keywords": [
+        "deprecated",
+        "python",
+        "medium"
+      ],
+      "about": {
+        "@type": "Thing",
+        "name": "poetry-version-plugin is deprecated",
+        "identifier": "pkg:pypi/poetry-version-plugin"
+      },
+      "citation": [
+        {
+          "@type": "CreativeWork",
+          "name": "poetry-version-plugin deprecation notice",
+          "url": "https://pypi.org/project/poetry-version-plugin/"
+        }
+      ],
+      "isBasedOn": "https://github.com/arminazimi/evergreen/blob/main/registry/python.json",
+      "publisher": {
+        "@type": "Organization",
+        "name": "Evergreen",
+        "url": "https://arminazimi.github.io/evergreen"
+      }
+    },
+    {
+      "@type": "FAQPage",
+      "@id": "https://arminazimi.github.io/evergreen/rules/python.package.poetry-version-plugin.deprecated.html#faq",
+      "url": "https://arminazimi.github.io/evergreen/rules/python.package.poetry-version-plugin.deprecated.html",
+      "mainEntity": [
+        {
+          "@type": "Question",
+          "name": "What is the lifecycle status of pkg:pypi/poetry-version-plugin?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "Deprecated. The source gives no day. Affected versions: vers:pypi/*. Source: poetry-version-plugin deprecation notice (https://pypi.org/project/poetry-version-plugin/)."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "What replaces pkg:pypi/poetry-version-plugin?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "uv, PDM, Hatch, or poetry-dynamic-versioning"
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "How do I check pkg:pypi/poetry-version-plugin?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "Run evergreen check pkg:pypi/poetry-version-plugin."
+          }
+        }
+      ]
     }
-  ],
-  "isBasedOn": "https://github.com/arminazimi/evergreen/blob/main/registry/python.json",
-  "publisher": {
-    "@type": "Organization",
-    "name": "Evergreen",
-    "url": "https://arminazimi.github.io/evergreen"
-  }
+  ]
 }
 </script>

@@ -2,9 +2,19 @@
 title: "Rust 1.98 and older are no longer supported — dates, impact, migration"
 description: "The Rust project only provides support and security updates for the most recent stable release, so a release line is unsupported once the next stable release ships."
 canonical_url: "https://arminazimi.github.io/evergreen/rules/rust.toolchain.end-of-support-1.98-and-older.html"
+image: "/assets/og/rust.toolchain.end-of-support-1.98-and-older.svg"
+json_twin: "/rules/rust.toolchain.end-of-support-1.98-and-older.json"
 ---
 
 # Rust 1.98 and older are no longer supported
+
+**End of support** as of 2026-10-01. Replacement: The latest stable Rust release. Source: [Rust security policy](https://www.rust-lang.org/policies/security).
+
+Check a version:
+
+```bash
+evergreen check pkg:generic/rust
+```
 
 The Rust project only provides support and security updates for the most recent stable release, so a release line is unsupported once the next stable release ships. Rust 1.99 was released on 2026-10-01.
 
@@ -51,6 +61,16 @@ The Rust project only provides support and security updates for the most recent 
 
 The `rust` detector. See [Detectors](../DETECTORS.md) and [Compatibility](../COMPATIBILITY.md).
 
+## Related
+
+### Same ecosystem
+
+- [ansi_term is no longer maintained](rust.crate.ansi-term.unmaintained.html)
+- [atty is no longer maintained](rust.crate.atty.unmaintained.html)
+- [failure is no longer maintained](rust.crate.failure.unmaintained.html)
+- [tempdir is no longer maintained](rust.crate.tempdir.unmaintained.html)
+
+
 ## Data
 
 This page is generated from [`registry/rust.json`](https://github.com/arminazimi/evergreen/blob/main/registry/rust.json), rule `rust.toolchain.end-of-support-1.98-and-older`, in the `evergreen.registry.v2` format ([how rules are written](../RULES.md)). A CLE (ECMA-428) export is not published yet. The same facts are embedded in this page as schema.org structured data.
@@ -58,41 +78,76 @@ This page is generated from [`registry/rust.json`](https://github.com/arminazimi
 <script type="application/ld+json">
 {
   "@context": "https://schema.org",
-  "@type": "TechArticle",
-  "@id": "https://arminazimi.github.io/evergreen/rules/rust.toolchain.end-of-support-1.98-and-older.html",
-  "url": "https://arminazimi.github.io/evergreen/rules/rust.toolchain.end-of-support-1.98-and-older.html",
-  "mainEntityOfPage": "https://arminazimi.github.io/evergreen/rules/rust.toolchain.end-of-support-1.98-and-older.html",
-  "headline": "Rust 1.98 and older are no longer supported — dates, impact, migration",
-  "description": "The Rust project only provides support and security updates for the most recent stable release, so a release line is unsupported once the next stable release ships.",
-  "inLanguage": "en",
-  "dateModified": "2026-10-17",
-  "keywords": [
-    "end-of-support",
-    "rust",
-    "medium"
-  ],
-  "about": {
-    "@type": "Thing",
-    "name": "Rust 1.98 and older are no longer supported",
-    "identifier": "pkg:generic/rust"
-  },
-  "citation": [
+  "@graph": [
     {
-      "@type": "CreativeWork",
-      "name": "Rust security policy",
-      "url": "https://www.rust-lang.org/policies/security"
+      "@type": "TechArticle",
+      "@id": "https://arminazimi.github.io/evergreen/rules/rust.toolchain.end-of-support-1.98-and-older.html",
+      "url": "https://arminazimi.github.io/evergreen/rules/rust.toolchain.end-of-support-1.98-and-older.html",
+      "mainEntityOfPage": "https://arminazimi.github.io/evergreen/rules/rust.toolchain.end-of-support-1.98-and-older.html",
+      "headline": "Rust 1.98 and older are no longer supported — dates, impact, migration",
+      "description": "The Rust project only provides support and security updates for the most recent stable release, so a release line is unsupported once the next stable release ships.",
+      "inLanguage": "en",
+      "dateModified": "2026-10-17",
+      "keywords": [
+        "end-of-support",
+        "rust",
+        "medium"
+      ],
+      "about": {
+        "@type": "Thing",
+        "name": "Rust 1.98 and older are no longer supported",
+        "identifier": "pkg:generic/rust"
+      },
+      "citation": [
+        {
+          "@type": "CreativeWork",
+          "name": "Rust security policy",
+          "url": "https://www.rust-lang.org/policies/security"
+        },
+        {
+          "@type": "CreativeWork",
+          "name": "Rust release notes (release dates)",
+          "url": "https://github.com/rust-lang/rust/blob/master/RELEASES.md"
+        }
+      ],
+      "isBasedOn": "https://github.com/arminazimi/evergreen/blob/main/registry/rust.json",
+      "publisher": {
+        "@type": "Organization",
+        "name": "Evergreen",
+        "url": "https://arminazimi.github.io/evergreen"
+      }
     },
     {
-      "@type": "CreativeWork",
-      "name": "Rust release notes (release dates)",
-      "url": "https://github.com/rust-lang/rust/blob/master/RELEASES.md"
+      "@type": "FAQPage",
+      "@id": "https://arminazimi.github.io/evergreen/rules/rust.toolchain.end-of-support-1.98-and-older.html#faq",
+      "url": "https://arminazimi.github.io/evergreen/rules/rust.toolchain.end-of-support-1.98-and-older.html",
+      "mainEntity": [
+        {
+          "@type": "Question",
+          "name": "What is the lifecycle status of pkg:generic/rust?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "End of support as of 2026-10-01. Affected versions: vers:semver/\u003c1.99.0. Source: Rust security policy (https://www.rust-lang.org/policies/security)."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "What replaces pkg:generic/rust?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "The latest stable Rust release"
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "How do I check pkg:generic/rust?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "Run evergreen check pkg:generic/rust."
+          }
+        }
+      ]
     }
-  ],
-  "isBasedOn": "https://github.com/arminazimi/evergreen/blob/main/registry/rust.json",
-  "publisher": {
-    "@type": "Organization",
-    "name": "Evergreen",
-    "url": "https://arminazimi.github.io/evergreen"
-  }
+  ]
 }
 </script>

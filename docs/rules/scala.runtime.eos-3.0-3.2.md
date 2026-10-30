@@ -2,9 +2,19 @@
 title: "Scala 3.0–3.2 no longer receive patches — dates, impact, migration"
 description: "The Scala project's development guarantees page states that a non-LTS Scala 3 minor receives patches only until the next minor ships."
 canonical_url: "https://arminazimi.github.io/evergreen/rules/scala.runtime.eos-3.0-3.2.html"
+image: "/assets/og/scala.runtime.eos-3.0-3.2.svg"
+json_twin: "/rules/scala.runtime.eos-3.0-3.2.json"
 ---
 
 # Scala 3.0–3.2 no longer receive patches
+
+**End of support.** The source gives no day. Replacement: Scala 3.3 LTS or a current Scala Next / LTS line. Source: [Scala development guarantees — Scala 3 LTS](https://scala-lang.org/development/).
+
+Check a version:
+
+```bash
+evergreen check pkg:generic/scala
+```
 
 The Scala project's development guarantees page states that a non-LTS Scala 3 minor receives patches only until the next minor ships. Scala 3.0, 3.1, and 3.2 are frozen on their last patches; later fixes landed only in 3.3 LTS and newer lines.
 
@@ -51,6 +61,17 @@ The Scala project's development guarantees page states that a non-LTS Scala 3 mi
 
 The `scala` detector. See [Detectors](../DETECTORS.md) and [Compatibility](../COMPATIBILITY.md).
 
+## Related
+
+### Other versions of this product
+
+- [Scala 2.11 reached end of life](scala.runtime.eol-2.11.html)
+
+### Same ecosystem
+
+- [sbt 0.13 reached end of life](scala.sbt.eol-0.13.html)
+
+
 ## Data
 
 This page is generated from [`registry/scala.json`](https://github.com/arminazimi/evergreen/blob/main/registry/scala.json), rule `scala.runtime.eos-3.0-3.2`, in the `evergreen.registry.v2` format ([how rules are written](../RULES.md)). A CLE (ECMA-428) export is not published yet. The same facts are embedded in this page as schema.org structured data.
@@ -58,41 +79,76 @@ This page is generated from [`registry/scala.json`](https://github.com/arminazim
 <script type="application/ld+json">
 {
   "@context": "https://schema.org",
-  "@type": "TechArticle",
-  "@id": "https://arminazimi.github.io/evergreen/rules/scala.runtime.eos-3.0-3.2.html",
-  "url": "https://arminazimi.github.io/evergreen/rules/scala.runtime.eos-3.0-3.2.html",
-  "mainEntityOfPage": "https://arminazimi.github.io/evergreen/rules/scala.runtime.eos-3.0-3.2.html",
-  "headline": "Scala 3.0–3.2 no longer receive patches — dates, impact, migration",
-  "description": "The Scala project's development guarantees page states that a non-LTS Scala 3 minor receives patches only until the next minor ships.",
-  "inLanguage": "en",
-  "dateModified": "2026-10-27",
-  "keywords": [
-    "end-of-support",
-    "scala",
-    "high"
-  ],
-  "about": {
-    "@type": "Thing",
-    "name": "Scala 3.0–3.2 no longer receive patches",
-    "identifier": "pkg:generic/scala"
-  },
-  "citation": [
+  "@graph": [
     {
-      "@type": "CreativeWork",
-      "name": "Scala development guarantees — Scala 3 LTS",
-      "url": "https://scala-lang.org/development/"
+      "@type": "TechArticle",
+      "@id": "https://arminazimi.github.io/evergreen/rules/scala.runtime.eos-3.0-3.2.html",
+      "url": "https://arminazimi.github.io/evergreen/rules/scala.runtime.eos-3.0-3.2.html",
+      "mainEntityOfPage": "https://arminazimi.github.io/evergreen/rules/scala.runtime.eos-3.0-3.2.html",
+      "headline": "Scala 3.0–3.2 no longer receive patches — dates, impact, migration",
+      "description": "The Scala project's development guarantees page states that a non-LTS Scala 3 minor receives patches only until the next minor ships.",
+      "inLanguage": "en",
+      "dateModified": "2026-10-27",
+      "keywords": [
+        "end-of-support",
+        "scala",
+        "high"
+      ],
+      "about": {
+        "@type": "Thing",
+        "name": "Scala 3.0–3.2 no longer receive patches",
+        "identifier": "pkg:generic/scala"
+      },
+      "citation": [
+        {
+          "@type": "CreativeWork",
+          "name": "Scala development guarantees — Scala 3 LTS",
+          "url": "https://scala-lang.org/development/"
+        },
+        {
+          "@type": "CreativeWork",
+          "name": "Scala 3.9 LTS released",
+          "url": "https://scala-lang.org/news/3.9/"
+        }
+      ],
+      "isBasedOn": "https://github.com/arminazimi/evergreen/blob/main/registry/scala.json",
+      "publisher": {
+        "@type": "Organization",
+        "name": "Evergreen",
+        "url": "https://arminazimi.github.io/evergreen"
+      }
     },
     {
-      "@type": "CreativeWork",
-      "name": "Scala 3.9 LTS released",
-      "url": "https://scala-lang.org/news/3.9/"
+      "@type": "FAQPage",
+      "@id": "https://arminazimi.github.io/evergreen/rules/scala.runtime.eos-3.0-3.2.html#faq",
+      "url": "https://arminazimi.github.io/evergreen/rules/scala.runtime.eos-3.0-3.2.html",
+      "mainEntity": [
+        {
+          "@type": "Question",
+          "name": "What is the lifecycle status of pkg:generic/scala?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "End of support. The source gives no day. Affected versions: vers:semver/>=3.0.0|\u003c3.3.0. Source: Scala development guarantees — Scala 3 LTS (https://scala-lang.org/development/)."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "What replaces pkg:generic/scala?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "Scala 3.3 LTS or a current Scala Next / LTS line"
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "How do I check pkg:generic/scala?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "Run evergreen check pkg:generic/scala."
+          }
+        }
+      ]
     }
-  ],
-  "isBasedOn": "https://github.com/arminazimi/evergreen/blob/main/registry/scala.json",
-  "publisher": {
-    "@type": "Organization",
-    "name": "Evergreen",
-    "url": "https://arminazimi.github.io/evergreen"
-  }
+  ]
 }
 </script>

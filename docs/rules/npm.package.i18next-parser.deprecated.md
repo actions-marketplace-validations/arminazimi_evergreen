@@ -2,9 +2,19 @@
 title: "i18next-parser is deprecated — dates, impact, migration"
 description: "npm marks i18next-parser as deprecated: \"Project is deprecated, use i18next-cli instead\""
 canonical_url: "https://arminazimi.github.io/evergreen/rules/npm.package.i18next-parser.deprecated.html"
+image: "/assets/og/npm.package.i18next-parser.deprecated.svg"
+json_twin: "/rules/npm.package.i18next-parser.deprecated.json"
 ---
 
 # i18next-parser is deprecated
+
+**Deprecated.** The source gives no day. Replacement: i18next-cli. Source: [i18next-parser on npm](https://www.npmjs.com/package/i18next-parser).
+
+Check a version:
+
+```bash
+evergreen check pkg:npm/i18next-parser
+```
 
 npm marks i18next-parser as deprecated: "Project is deprecated, use i18next-cli instead"
 
@@ -49,6 +59,20 @@ npm marks i18next-parser as deprecated: "Project is deprecated, use i18next-cli 
 
 The `npm` detector. See [Detectors](../DETECTORS.md) and [Compatibility](../COMPATIBILITY.md).
 
+## Related
+
+### Same ecosystem
+
+- [abab is deprecated](npm.package.abab.deprecated.html)
+- [@angular/core v18 and older are no longer supported](npm.package.angular.core.v18-and-older.end-of-support.html)
+- [@angular/core v19 is no longer supported](npm.package.angular.core.v19.end-of-support.html)
+- [@angular/core v20 reaches end of life on 2026-11-28](npm.package.angular.core.v20.scheduled-end-of-life.html)
+- [@angular/core v21 reaches end of life on 2027-06-30](npm.package.angular.core.v21.scheduled-end-of-life.html)
+- [@angular/core v22 reaches end of life on 2028-06-30](npm.package.angular.core.v22.scheduled-end-of-life.html)
+- [are-we-there-yet is no longer supported](npm.package.are-we-there-yet.eol.html)
+- [babel-eslint is deprecated](npm.package.babel-eslint.deprecated.html)
+
+
 ## Data
 
 This page is generated from [`registry/npm.json`](https://github.com/arminazimi/evergreen/blob/main/registry/npm.json), rule `npm.package.i18next-parser.deprecated`, in the `evergreen.registry.v2` format ([how rules are written](../RULES.md)). A CLE (ECMA-428) export is not published yet. The same facts are embedded in this page as schema.org structured data.
@@ -56,41 +80,76 @@ This page is generated from [`registry/npm.json`](https://github.com/arminazimi/
 <script type="application/ld+json">
 {
   "@context": "https://schema.org",
-  "@type": "TechArticle",
-  "@id": "https://arminazimi.github.io/evergreen/rules/npm.package.i18next-parser.deprecated.html",
-  "url": "https://arminazimi.github.io/evergreen/rules/npm.package.i18next-parser.deprecated.html",
-  "mainEntityOfPage": "https://arminazimi.github.io/evergreen/rules/npm.package.i18next-parser.deprecated.html",
-  "headline": "i18next-parser is deprecated — dates, impact, migration",
-  "description": "npm marks i18next-parser as deprecated: \"Project is deprecated, use i18next-cli instead\"",
-  "inLanguage": "en",
-  "dateModified": "2026-10-19",
-  "keywords": [
-    "deprecated",
-    "npm",
-    "medium"
-  ],
-  "about": {
-    "@type": "Thing",
-    "name": "i18next-parser is deprecated",
-    "identifier": "pkg:npm/i18next-parser"
-  },
-  "citation": [
+  "@graph": [
     {
-      "@type": "CreativeWork",
-      "name": "i18next-parser on npm",
-      "url": "https://www.npmjs.com/package/i18next-parser"
+      "@type": "TechArticle",
+      "@id": "https://arminazimi.github.io/evergreen/rules/npm.package.i18next-parser.deprecated.html",
+      "url": "https://arminazimi.github.io/evergreen/rules/npm.package.i18next-parser.deprecated.html",
+      "mainEntityOfPage": "https://arminazimi.github.io/evergreen/rules/npm.package.i18next-parser.deprecated.html",
+      "headline": "i18next-parser is deprecated — dates, impact, migration",
+      "description": "npm marks i18next-parser as deprecated: \"Project is deprecated, use i18next-cli instead\"",
+      "inLanguage": "en",
+      "dateModified": "2026-10-19",
+      "keywords": [
+        "deprecated",
+        "npm",
+        "medium"
+      ],
+      "about": {
+        "@type": "Thing",
+        "name": "i18next-parser is deprecated",
+        "identifier": "pkg:npm/i18next-parser"
+      },
+      "citation": [
+        {
+          "@type": "CreativeWork",
+          "name": "i18next-parser on npm",
+          "url": "https://www.npmjs.com/package/i18next-parser"
+        },
+        {
+          "@type": "CreativeWork",
+          "name": "i18next-parser registry metadata",
+          "url": "https://registry.npmjs.org/i18next-parser/latest"
+        }
+      ],
+      "isBasedOn": "https://github.com/arminazimi/evergreen/blob/main/registry/npm.json",
+      "publisher": {
+        "@type": "Organization",
+        "name": "Evergreen",
+        "url": "https://arminazimi.github.io/evergreen"
+      }
     },
     {
-      "@type": "CreativeWork",
-      "name": "i18next-parser registry metadata",
-      "url": "https://registry.npmjs.org/i18next-parser/latest"
+      "@type": "FAQPage",
+      "@id": "https://arminazimi.github.io/evergreen/rules/npm.package.i18next-parser.deprecated.html#faq",
+      "url": "https://arminazimi.github.io/evergreen/rules/npm.package.i18next-parser.deprecated.html",
+      "mainEntity": [
+        {
+          "@type": "Question",
+          "name": "What is the lifecycle status of pkg:npm/i18next-parser?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "Deprecated. The source gives no day. Affected versions: vers:npm/*. Source: i18next-parser on npm (https://www.npmjs.com/package/i18next-parser)."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "What replaces pkg:npm/i18next-parser?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "i18next-cli"
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "How do I check pkg:npm/i18next-parser?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "Run evergreen check pkg:npm/i18next-parser."
+          }
+        }
+      ]
     }
-  ],
-  "isBasedOn": "https://github.com/arminazimi/evergreen/blob/main/registry/npm.json",
-  "publisher": {
-    "@type": "Organization",
-    "name": "Evergreen",
-    "url": "https://arminazimi.github.io/evergreen"
-  }
+  ]
 }
 </script>

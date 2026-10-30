@@ -2,9 +2,19 @@
 title: "Azure Pipelines macOS 13 Ventura hosted image is retired — dates, impact, migration"
 description: "The macOS 13 Ventura hosted image was retired on 2025-12-04. The Microsoft-hosted agents page states that date, and the Azure DevOps blog lists the same full retiral date."
 canonical_url: "https://arminazimi.github.io/evergreen/rules/ci-images.azure-pipelines.macos-13.html"
+image: "/assets/og/ci-images.azure-pipelines.macos-13.svg"
+json_twin: "/rules/ci-images.azure-pipelines.macos-13.json"
 ---
 
 # Azure Pipelines macOS 13 Ventura hosted image is retired
+
+**Removed** as of 2025-12-04. Replacement: macos-14, macos-15, or macos-latest. Source: [Microsoft-hosted agents for Azure Pipelines](https://learn.microsoft.com/azure/devops/pipelines/agents/hosted).
+
+Check a version:
+
+```bash
+evergreen check pkg:generic/azure-pipelines/macos-image
+```
 
 The macOS 13 Ventura hosted image was retired on 2025-12-04. The Microsoft-hosted agents page states that date, and the Azure DevOps blog lists the same full retiral date.
 
@@ -49,6 +59,19 @@ The macOS 13 Ventura hosted image was retired on 2025-12-04. The Microsoft-hoste
 
 The `ci-images` detector. See [Detectors](../DETECTORS.md) and [Compatibility](../COMPATIBILITY.md).
 
+## Related
+
+### Other versions of this product
+
+- [Azure Pipelines macOS 14 Sonoma hosted image is scheduled for removal](ci-images.azure-pipelines.macos-14.html)
+
+### Same ecosystem
+
+- [Azure Pipelines Ubuntu 20.04 hosted image is retired](ci-images.azure-pipelines.ubuntu-20.04.html)
+- [Azure Pipelines Ubuntu 22.04 hosted image is scheduled for removal](ci-images.azure-pipelines.ubuntu-22.04.html)
+- [Azure Pipelines Windows Server 2019 hosted image is retired](ci-images.azure-pipelines.windows-2019.html)
+
+
 ## Data
 
 This page is generated from [`registry/ci-images.json`](https://github.com/arminazimi/evergreen/blob/main/registry/ci-images.json), rule `ci-images.azure-pipelines.macos-13`, in the `evergreen.registry.v2` format ([how rules are written](../RULES.md)). A CLE (ECMA-428) export is not published yet. The same facts are embedded in this page as schema.org structured data.
@@ -56,41 +79,76 @@ This page is generated from [`registry/ci-images.json`](https://github.com/armin
 <script type="application/ld+json">
 {
   "@context": "https://schema.org",
-  "@type": "TechArticle",
-  "@id": "https://arminazimi.github.io/evergreen/rules/ci-images.azure-pipelines.macos-13.html",
-  "url": "https://arminazimi.github.io/evergreen/rules/ci-images.azure-pipelines.macos-13.html",
-  "mainEntityOfPage": "https://arminazimi.github.io/evergreen/rules/ci-images.azure-pipelines.macos-13.html",
-  "headline": "Azure Pipelines macOS 13 Ventura hosted image is retired — dates, impact, migration",
-  "description": "The macOS 13 Ventura hosted image was retired on 2025-12-04. The Microsoft-hosted agents page states that date, and the Azure DevOps blog lists the same full retiral date.",
-  "inLanguage": "en",
-  "dateModified": "2026-10-21",
-  "keywords": [
-    "removed",
-    "ci-images",
-    "high"
-  ],
-  "about": {
-    "@type": "Thing",
-    "name": "Azure Pipelines macOS 13 Ventura hosted image is retired",
-    "identifier": "pkg:generic/azure-pipelines/macos-image"
-  },
-  "citation": [
+  "@graph": [
     {
-      "@type": "CreativeWork",
-      "name": "Microsoft-hosted agents for Azure Pipelines",
-      "url": "https://learn.microsoft.com/azure/devops/pipelines/agents/hosted"
+      "@type": "TechArticle",
+      "@id": "https://arminazimi.github.io/evergreen/rules/ci-images.azure-pipelines.macos-13.html",
+      "url": "https://arminazimi.github.io/evergreen/rules/ci-images.azure-pipelines.macos-13.html",
+      "mainEntityOfPage": "https://arminazimi.github.io/evergreen/rules/ci-images.azure-pipelines.macos-13.html",
+      "headline": "Azure Pipelines macOS 13 Ventura hosted image is retired — dates, impact, migration",
+      "description": "The macOS 13 Ventura hosted image was retired on 2025-12-04. The Microsoft-hosted agents page states that date, and the Azure DevOps blog lists the same full retiral date.",
+      "inLanguage": "en",
+      "dateModified": "2026-10-21",
+      "keywords": [
+        "removed",
+        "ci-images",
+        "high"
+      ],
+      "about": {
+        "@type": "Thing",
+        "name": "Azure Pipelines macOS 13 Ventura hosted image is retired",
+        "identifier": "pkg:generic/azure-pipelines/macos-image"
+      },
+      "citation": [
+        {
+          "@type": "CreativeWork",
+          "name": "Microsoft-hosted agents for Azure Pipelines",
+          "url": "https://learn.microsoft.com/azure/devops/pipelines/agents/hosted"
+        },
+        {
+          "@type": "CreativeWork",
+          "name": "Upcoming Updates for Azure Pipelines Agents Images",
+          "url": "https://devblogs.microsoft.com/devops/upcoming-updates-for-azure-pipelines-agents-images/"
+        }
+      ],
+      "isBasedOn": "https://github.com/arminazimi/evergreen/blob/main/registry/ci-images.json",
+      "publisher": {
+        "@type": "Organization",
+        "name": "Evergreen",
+        "url": "https://arminazimi.github.io/evergreen"
+      }
     },
     {
-      "@type": "CreativeWork",
-      "name": "Upcoming Updates for Azure Pipelines Agents Images",
-      "url": "https://devblogs.microsoft.com/devops/upcoming-updates-for-azure-pipelines-agents-images/"
+      "@type": "FAQPage",
+      "@id": "https://arminazimi.github.io/evergreen/rules/ci-images.azure-pipelines.macos-13.html#faq",
+      "url": "https://arminazimi.github.io/evergreen/rules/ci-images.azure-pipelines.macos-13.html",
+      "mainEntity": [
+        {
+          "@type": "Question",
+          "name": "What is the lifecycle status of pkg:generic/azure-pipelines/macos-image?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "Removed as of 2025-12-04. Affected versions: vers:intdot/13. Source: Microsoft-hosted agents for Azure Pipelines (https://learn.microsoft.com/azure/devops/pipelines/agents/hosted)."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "What replaces pkg:generic/azure-pipelines/macos-image?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "macos-14, macos-15, or macos-latest"
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "How do I check pkg:generic/azure-pipelines/macos-image?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "Run evergreen check pkg:generic/azure-pipelines/macos-image."
+          }
+        }
+      ]
     }
-  ],
-  "isBasedOn": "https://github.com/arminazimi/evergreen/blob/main/registry/ci-images.json",
-  "publisher": {
-    "@type": "Organization",
-    "name": "Evergreen",
-    "url": "https://arminazimi.github.io/evergreen"
-  }
+  ]
 }
 </script>

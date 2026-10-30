@@ -2,9 +2,19 @@
 title: "Alpine Linux image release line 3.21 reaches end-of-life on 2026-11-01 — dates, impact, migration"
 description: "Alpine Linux 3.21 is scheduled to stop receiving security updates on 2026-11-01."
 canonical_url: "https://arminazimi.github.io/evergreen/rules/container.alpine.eol-3.21.html"
+image: "/assets/og/container.alpine.eol-3.21.svg"
+json_twin: "/rules/container.alpine.eol-3.21.json"
 ---
 
 # Alpine Linux image release line 3.21 reaches end-of-life on 2026-11-01
+
+**Scheduled end of life** as of 2026-11-01. Replacement: An alpine image on a later supported release line. Source: [Alpine Linux releases](https://alpinelinux.org/releases/).
+
+Check a version:
+
+```bash
+evergreen check pkg:docker/library/alpine
+```
 
 Alpine Linux 3.21 is scheduled to stop receiving security updates on 2026-11-01.
 
@@ -49,6 +59,24 @@ Alpine Linux 3.21 is scheduled to stop receiving security updates on 2026-11-01.
 
 The [`container`](../detectors/container.md) detector. See [Detectors](../DETECTORS.md) and [Compatibility](../COMPATIBILITY.md).
 
+## Related
+
+### Other versions of this product
+
+- [Alpine Linux image release lines 3.20 and older are end-of-life](container.alpine.eol-3.20-and-older.html)
+
+### Same ecosystem
+
+- [Caddy image release lines 1 and older are end-of-life](container.caddy.eol-1-and-older.html)
+- [ClickHouse image release lines 26.2 and older are end-of-life](container.clickhouse.eol-26.2-and-older.html)
+- [Couchbase Server image release lines 7.2 and older are end-of-life](container.couchbase.eol-7.2-and-older.html)
+- [Apache CouchDB image release lines 3.3 and older are end-of-life](container.couchdb.eol-3.3-and-older.html)
+- [Debian image release lines 11 and older are end-of-life](container.debian.eol-11-and-older.html)
+- [Drupal image release lines 10.5 and older are end-of-life](container.drupal.eol-10.5-and-older.html)
+- [Go image release lines 1.25 and older are end-of-life](container.golang.eol-1.25-and-older.html)
+- [MariaDB image release lines 10.10 and older are end-of-life](container.mariadb.eol-10.10-and-older.html)
+
+
 ## Data
 
 This page is generated from [`registry/container.json`](https://github.com/arminazimi/evergreen/blob/main/registry/container.json), rule `container.alpine.eol-3.21`, in the `evergreen.registry.v2` format ([how rules are written](../RULES.md)). A CLE (ECMA-428) export is not published yet. The same facts are embedded in this page as schema.org structured data.
@@ -56,36 +84,71 @@ This page is generated from [`registry/container.json`](https://github.com/armin
 <script type="application/ld+json">
 {
   "@context": "https://schema.org",
-  "@type": "TechArticle",
-  "@id": "https://arminazimi.github.io/evergreen/rules/container.alpine.eol-3.21.html",
-  "url": "https://arminazimi.github.io/evergreen/rules/container.alpine.eol-3.21.html",
-  "mainEntityOfPage": "https://arminazimi.github.io/evergreen/rules/container.alpine.eol-3.21.html",
-  "headline": "Alpine Linux image release line 3.21 reaches end-of-life on 2026-11-01 — dates, impact, migration",
-  "description": "Alpine Linux 3.21 is scheduled to stop receiving security updates on 2026-11-01.",
-  "inLanguage": "en",
-  "dateModified": "2026-10-26",
-  "keywords": [
-    "scheduled-end-of-life",
-    "container",
-    "low"
-  ],
-  "about": {
-    "@type": "Thing",
-    "name": "Alpine Linux image release line 3.21 reaches end-of-life on 2026-11-01",
-    "identifier": "pkg:docker/library/alpine"
-  },
-  "citation": [
+  "@graph": [
     {
-      "@type": "CreativeWork",
-      "name": "Alpine Linux releases",
-      "url": "https://alpinelinux.org/releases/"
+      "@type": "TechArticle",
+      "@id": "https://arminazimi.github.io/evergreen/rules/container.alpine.eol-3.21.html",
+      "url": "https://arminazimi.github.io/evergreen/rules/container.alpine.eol-3.21.html",
+      "mainEntityOfPage": "https://arminazimi.github.io/evergreen/rules/container.alpine.eol-3.21.html",
+      "headline": "Alpine Linux image release line 3.21 reaches end-of-life on 2026-11-01 — dates, impact, migration",
+      "description": "Alpine Linux 3.21 is scheduled to stop receiving security updates on 2026-11-01.",
+      "inLanguage": "en",
+      "dateModified": "2026-10-26",
+      "keywords": [
+        "scheduled-end-of-life",
+        "container",
+        "low"
+      ],
+      "about": {
+        "@type": "Thing",
+        "name": "Alpine Linux image release line 3.21 reaches end-of-life on 2026-11-01",
+        "identifier": "pkg:docker/library/alpine"
+      },
+      "citation": [
+        {
+          "@type": "CreativeWork",
+          "name": "Alpine Linux releases",
+          "url": "https://alpinelinux.org/releases/"
+        }
+      ],
+      "isBasedOn": "https://github.com/arminazimi/evergreen/blob/main/registry/container.json",
+      "publisher": {
+        "@type": "Organization",
+        "name": "Evergreen",
+        "url": "https://arminazimi.github.io/evergreen"
+      }
+    },
+    {
+      "@type": "FAQPage",
+      "@id": "https://arminazimi.github.io/evergreen/rules/container.alpine.eol-3.21.html#faq",
+      "url": "https://arminazimi.github.io/evergreen/rules/container.alpine.eol-3.21.html",
+      "mainEntity": [
+        {
+          "@type": "Question",
+          "name": "What is the lifecycle status of pkg:docker/library/alpine?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "Scheduled end of life as of 2026-11-01. Affected versions: vers:semver/>=3.21.0|\u003c3.22.0. Source: Alpine Linux releases (https://alpinelinux.org/releases/)."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "What replaces pkg:docker/library/alpine?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "An alpine image on a later supported release line"
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "How do I check pkg:docker/library/alpine?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "Run evergreen check pkg:docker/library/alpine."
+          }
+        }
+      ]
     }
-  ],
-  "isBasedOn": "https://github.com/arminazimi/evergreen/blob/main/registry/container.json",
-  "publisher": {
-    "@type": "Organization",
-    "name": "Evergreen",
-    "url": "https://arminazimi.github.io/evergreen"
-  }
+  ]
 }
 </script>

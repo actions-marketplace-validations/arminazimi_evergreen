@@ -2,9 +2,19 @@
 title: "AKS 1.28 and earlier are no longer supported — dates, impact, migration"
 description: "AKS supports a generally available Kubernetes version for 12 months, with opt-in long-term support beyond that."
 canonical_url: "https://arminazimi.github.io/evergreen/rules/terraform.aks.end-of-life-1.28-and-older.html"
+image: "/assets/og/terraform.aks.end-of-life-1.28-and-older.svg"
+json_twin: "/rules/terraform.aks.end-of-life-1.28-and-older.json"
 ---
 
 # AKS 1.28 and earlier are no longer supported
+
+**End of life.** The source gives no day. Replacement: Azure Kubernetes Service 1.35 or later. Source: [Supported Kubernetes versions in Azure Kubernetes Service (AKS)](https://learn.microsoft.com/en-us/azure/aks/supported-kubernetes-versions).
+
+Check a version:
+
+```bash
+evergreen check pkg:generic/azure-kubernetes-service
+```
 
 AKS supports a generally available Kubernetes version for 12 months, with opt-in long-term support beyond that. Versions before 1.29 are no longer listed on the AKS supported-versions page and are past both windows.
 
@@ -53,6 +63,28 @@ AKS supports a generally available Kubernetes version for 12 months, with opt-in
 
 The `terraform` detector. See [Detectors](../DETECTORS.md) and [Compatibility](../COMPATIBILITY.md).
 
+## Related
+
+### Other versions of this product
+
+- [AKS 1.29 is past long-term support](terraform.aks.end-of-life-1.29.html)
+- [AKS 1.30 is past long-term support](terraform.aks.end-of-life-1.30.html)
+- [AKS 1.31 is past its 12-month support window](terraform.aks.end-of-support-1.31.html)
+- [AKS 1.32 is past its 12-month support window](terraform.aks.end-of-support-1.32.html)
+- [AKS 1.33 is past its 12-month support window](terraform.aks.end-of-support-1.33.html)
+
+### Same ecosystem
+
+- [Terraform CLI 1.10 is no longer a supported release line](terraform.cli.end-of-support-1.10.html)
+- [Terraform CLI 1.11 is no longer a supported release line](terraform.cli.end-of-support-1.11.html)
+- [Terraform CLI 1.12 is no longer a supported release line](terraform.cli.end-of-support-1.12.html)
+- [Terraform CLI 1.13 is no longer a supported release line](terraform.cli.end-of-support-1.13.html)
+- [Terraform CLI 1.14 is no longer a supported release line](terraform.cli.end-of-support-1.14.html)
+- [Terraform CLI 1.15 is no longer a supported release line](terraform.cli.end-of-support-1.15.html)
+- [Amazon EKS 1.30 and earlier are past end of extended support](terraform.eks.end-of-life-1.30-and-older.html)
+- [Amazon EKS 1.31 is past end of standard support](terraform.eks.end-of-support-1.31.html)
+
+
 ## Data
 
 This page is generated from [`registry/terraform.json`](https://github.com/arminazimi/evergreen/blob/main/registry/terraform.json), rule `terraform.aks.end-of-life-1.28-and-older`, in the `evergreen.registry.v2` format ([how rules are written](../RULES.md)). A CLE (ECMA-428) export is not published yet. The same facts are embedded in this page as schema.org structured data.
@@ -60,36 +92,71 @@ This page is generated from [`registry/terraform.json`](https://github.com/armin
 <script type="application/ld+json">
 {
   "@context": "https://schema.org",
-  "@type": "TechArticle",
-  "@id": "https://arminazimi.github.io/evergreen/rules/terraform.aks.end-of-life-1.28-and-older.html",
-  "url": "https://arminazimi.github.io/evergreen/rules/terraform.aks.end-of-life-1.28-and-older.html",
-  "mainEntityOfPage": "https://arminazimi.github.io/evergreen/rules/terraform.aks.end-of-life-1.28-and-older.html",
-  "headline": "AKS 1.28 and earlier are no longer supported — dates, impact, migration",
-  "description": "AKS supports a generally available Kubernetes version for 12 months, with opt-in long-term support beyond that.",
-  "inLanguage": "en",
-  "dateModified": "2026-10-26",
-  "keywords": [
-    "end-of-life",
-    "terraform",
-    "high"
-  ],
-  "about": {
-    "@type": "Thing",
-    "name": "AKS 1.28 and earlier are no longer supported",
-    "identifier": "pkg:generic/azure-kubernetes-service"
-  },
-  "citation": [
+  "@graph": [
     {
-      "@type": "CreativeWork",
-      "name": "Supported Kubernetes versions in Azure Kubernetes Service (AKS)",
-      "url": "https://learn.microsoft.com/en-us/azure/aks/supported-kubernetes-versions"
+      "@type": "TechArticle",
+      "@id": "https://arminazimi.github.io/evergreen/rules/terraform.aks.end-of-life-1.28-and-older.html",
+      "url": "https://arminazimi.github.io/evergreen/rules/terraform.aks.end-of-life-1.28-and-older.html",
+      "mainEntityOfPage": "https://arminazimi.github.io/evergreen/rules/terraform.aks.end-of-life-1.28-and-older.html",
+      "headline": "AKS 1.28 and earlier are no longer supported — dates, impact, migration",
+      "description": "AKS supports a generally available Kubernetes version for 12 months, with opt-in long-term support beyond that.",
+      "inLanguage": "en",
+      "dateModified": "2026-10-26",
+      "keywords": [
+        "end-of-life",
+        "terraform",
+        "high"
+      ],
+      "about": {
+        "@type": "Thing",
+        "name": "AKS 1.28 and earlier are no longer supported",
+        "identifier": "pkg:generic/azure-kubernetes-service"
+      },
+      "citation": [
+        {
+          "@type": "CreativeWork",
+          "name": "Supported Kubernetes versions in Azure Kubernetes Service (AKS)",
+          "url": "https://learn.microsoft.com/en-us/azure/aks/supported-kubernetes-versions"
+        }
+      ],
+      "isBasedOn": "https://github.com/arminazimi/evergreen/blob/main/registry/terraform.json",
+      "publisher": {
+        "@type": "Organization",
+        "name": "Evergreen",
+        "url": "https://arminazimi.github.io/evergreen"
+      }
+    },
+    {
+      "@type": "FAQPage",
+      "@id": "https://arminazimi.github.io/evergreen/rules/terraform.aks.end-of-life-1.28-and-older.html#faq",
+      "url": "https://arminazimi.github.io/evergreen/rules/terraform.aks.end-of-life-1.28-and-older.html",
+      "mainEntity": [
+        {
+          "@type": "Question",
+          "name": "What is the lifecycle status of pkg:generic/azure-kubernetes-service?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "End of life. The source gives no day. Affected versions: vers:semver/\u003c1.29.0. Source: Supported Kubernetes versions in Azure Kubernetes Service (AKS) (https://learn.microsoft.com/en-us/azure/aks/supported-kubernetes-versions)."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "What replaces pkg:generic/azure-kubernetes-service?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "Azure Kubernetes Service 1.35 or later"
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "How do I check pkg:generic/azure-kubernetes-service?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "Run evergreen check pkg:generic/azure-kubernetes-service."
+          }
+        }
+      ]
     }
-  ],
-  "isBasedOn": "https://github.com/arminazimi/evergreen/blob/main/registry/terraform.json",
-  "publisher": {
-    "@type": "Organization",
-    "name": "Evergreen",
-    "url": "https://arminazimi.github.io/evergreen"
-  }
+  ]
 }
 </script>

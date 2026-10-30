@@ -2,9 +2,19 @@
 title: "sklearn is deprecated on PyPI — dates, impact, migration"
 description: "The sklearn maintainers state that the PyPI package is deprecated and that scikit-learn is the actual distribution name."
 canonical_url: "https://arminazimi.github.io/evergreen/rules/python.package.sklearn.deprecated.html"
+image: "/assets/og/python.package.sklearn.deprecated.svg"
+json_twin: "/rules/python.package.sklearn.deprecated.json"
 ---
 
 # sklearn is deprecated on PyPI
+
+**Deprecated.** The source gives no day. Replacement: scikit-learn. Source: [sklearn deprecation notice](https://pypi.org/project/sklearn/).
+
+Check a version:
+
+```bash
+evergreen check pkg:pypi/sklearn
+```
 
 The sklearn maintainers state that the PyPI package is deprecated and that scikit-learn is the actual distribution name.
 
@@ -48,6 +58,20 @@ The sklearn maintainers state that the PyPI package is deprecated and that sciki
 
 The `python` detector. See [Detectors](../DETECTORS.md) and [Compatibility](../COMPATIBILITY.md).
 
+## Related
+
+### Same ecosystem
+
+- [agentops-toolkit was renamed and is no longer maintained](python.package.agentops-toolkit.eol.html)
+- [aiohttp-valera-validator was renamed and is no longer maintained](python.package.aiohttp-valera-validator.eol.html)
+- [api-shield is deprecated](python.package.api-shield.deprecated.html)
+- [apisec-code-bolt was renamed](python.package.apisec-code-bolt.deprecated.html)
+- [argparse is archived on PyPI](python.package.argparse.archived.html)
+- [asyncio-requests is retired](python.package.asyncio-requests.deprecated.html)
+- [BatchNotebook is deprecated](python.package.batchnotebook.deprecated.html)
+- [cmip_ref was renamed and is no longer maintained](python.package.cmip-ref.eol.html)
+
+
 ## Data
 
 This page is generated from [`registry/python.json`](https://github.com/arminazimi/evergreen/blob/main/registry/python.json), rule `python.package.sklearn.deprecated`, in the `evergreen.registry.v2` format ([how rules are written](../RULES.md)). A CLE (ECMA-428) export is not published yet. The same facts are embedded in this page as schema.org structured data.
@@ -55,36 +79,71 @@ This page is generated from [`registry/python.json`](https://github.com/arminazi
 <script type="application/ld+json">
 {
   "@context": "https://schema.org",
-  "@type": "TechArticle",
-  "@id": "https://arminazimi.github.io/evergreen/rules/python.package.sklearn.deprecated.html",
-  "url": "https://arminazimi.github.io/evergreen/rules/python.package.sklearn.deprecated.html",
-  "mainEntityOfPage": "https://arminazimi.github.io/evergreen/rules/python.package.sklearn.deprecated.html",
-  "headline": "sklearn is deprecated on PyPI — dates, impact, migration",
-  "description": "The sklearn maintainers state that the PyPI package is deprecated and that scikit-learn is the actual distribution name.",
-  "inLanguage": "en",
-  "dateModified": "2026-10-16",
-  "keywords": [
-    "deprecated",
-    "python",
-    "high"
-  ],
-  "about": {
-    "@type": "Thing",
-    "name": "sklearn is deprecated on PyPI",
-    "identifier": "pkg:pypi/sklearn"
-  },
-  "citation": [
+  "@graph": [
     {
-      "@type": "CreativeWork",
-      "name": "sklearn deprecation notice",
-      "url": "https://pypi.org/project/sklearn/"
+      "@type": "TechArticle",
+      "@id": "https://arminazimi.github.io/evergreen/rules/python.package.sklearn.deprecated.html",
+      "url": "https://arminazimi.github.io/evergreen/rules/python.package.sklearn.deprecated.html",
+      "mainEntityOfPage": "https://arminazimi.github.io/evergreen/rules/python.package.sklearn.deprecated.html",
+      "headline": "sklearn is deprecated on PyPI — dates, impact, migration",
+      "description": "The sklearn maintainers state that the PyPI package is deprecated and that scikit-learn is the actual distribution name.",
+      "inLanguage": "en",
+      "dateModified": "2026-10-16",
+      "keywords": [
+        "deprecated",
+        "python",
+        "high"
+      ],
+      "about": {
+        "@type": "Thing",
+        "name": "sklearn is deprecated on PyPI",
+        "identifier": "pkg:pypi/sklearn"
+      },
+      "citation": [
+        {
+          "@type": "CreativeWork",
+          "name": "sklearn deprecation notice",
+          "url": "https://pypi.org/project/sklearn/"
+        }
+      ],
+      "isBasedOn": "https://github.com/arminazimi/evergreen/blob/main/registry/python.json",
+      "publisher": {
+        "@type": "Organization",
+        "name": "Evergreen",
+        "url": "https://arminazimi.github.io/evergreen"
+      }
+    },
+    {
+      "@type": "FAQPage",
+      "@id": "https://arminazimi.github.io/evergreen/rules/python.package.sklearn.deprecated.html#faq",
+      "url": "https://arminazimi.github.io/evergreen/rules/python.package.sklearn.deprecated.html",
+      "mainEntity": [
+        {
+          "@type": "Question",
+          "name": "What is the lifecycle status of pkg:pypi/sklearn?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "Deprecated. The source gives no day. Affected versions: vers:pypi/*. Source: sklearn deprecation notice (https://pypi.org/project/sklearn/)."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "What replaces pkg:pypi/sklearn?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "scikit-learn"
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "How do I check pkg:pypi/sklearn?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "Run evergreen check pkg:pypi/sklearn."
+          }
+        }
+      ]
     }
-  ],
-  "isBasedOn": "https://github.com/arminazimi/evergreen/blob/main/registry/python.json",
-  "publisher": {
-    "@type": "Organization",
-    "name": "Evergreen",
-    "url": "https://arminazimi.github.io/evergreen"
-  }
+  ]
 }
 </script>

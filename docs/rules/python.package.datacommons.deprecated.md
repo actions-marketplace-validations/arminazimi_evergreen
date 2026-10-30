@@ -2,9 +2,19 @@
 title: "datacommons is deprecated — dates, impact, migration"
 description: "The maintainers state that datacommons is no longer maintained or functional and direct users to datacommons-client."
 canonical_url: "https://arminazimi.github.io/evergreen/rules/python.package.datacommons.deprecated.html"
+image: "/assets/og/python.package.datacommons.deprecated.svg"
+json_twin: "/rules/python.package.datacommons.deprecated.json"
 ---
 
 # datacommons is deprecated
+
+**Deprecated.** The source gives no day. Replacement: datacommons-client. Source: [datacommons deprecation notice](https://pypi.org/project/datacommons/).
+
+Check a version:
+
+```bash
+evergreen check pkg:pypi/datacommons
+```
 
 The maintainers state that datacommons is no longer maintained or functional and direct users to datacommons-client.
 
@@ -47,6 +57,20 @@ The maintainers state that datacommons is no longer maintained or functional and
 
 The `python` detector. See [Detectors](../DETECTORS.md) and [Compatibility](../COMPATIBILITY.md).
 
+## Related
+
+### Same ecosystem
+
+- [agentops-toolkit was renamed and is no longer maintained](python.package.agentops-toolkit.eol.html)
+- [aiohttp-valera-validator was renamed and is no longer maintained](python.package.aiohttp-valera-validator.eol.html)
+- [api-shield is deprecated](python.package.api-shield.deprecated.html)
+- [apisec-code-bolt was renamed](python.package.apisec-code-bolt.deprecated.html)
+- [argparse is archived on PyPI](python.package.argparse.archived.html)
+- [asyncio-requests is retired](python.package.asyncio-requests.deprecated.html)
+- [BatchNotebook is deprecated](python.package.batchnotebook.deprecated.html)
+- [cmip_ref was renamed and is no longer maintained](python.package.cmip-ref.eol.html)
+
+
 ## Data
 
 This page is generated from [`registry/python.json`](https://github.com/arminazimi/evergreen/blob/main/registry/python.json), rule `python.package.datacommons.deprecated`, in the `evergreen.registry.v2` format ([how rules are written](../RULES.md)). A CLE (ECMA-428) export is not published yet. The same facts are embedded in this page as schema.org structured data.
@@ -54,36 +78,71 @@ This page is generated from [`registry/python.json`](https://github.com/arminazi
 <script type="application/ld+json">
 {
   "@context": "https://schema.org",
-  "@type": "TechArticle",
-  "@id": "https://arminazimi.github.io/evergreen/rules/python.package.datacommons.deprecated.html",
-  "url": "https://arminazimi.github.io/evergreen/rules/python.package.datacommons.deprecated.html",
-  "mainEntityOfPage": "https://arminazimi.github.io/evergreen/rules/python.package.datacommons.deprecated.html",
-  "headline": "datacommons is deprecated — dates, impact, migration",
-  "description": "The maintainers state that datacommons is no longer maintained or functional and direct users to datacommons-client.",
-  "inLanguage": "en",
-  "dateModified": "2026-10-16",
-  "keywords": [
-    "deprecated",
-    "python",
-    "high"
-  ],
-  "about": {
-    "@type": "Thing",
-    "name": "datacommons is deprecated",
-    "identifier": "pkg:pypi/datacommons"
-  },
-  "citation": [
+  "@graph": [
     {
-      "@type": "CreativeWork",
-      "name": "datacommons deprecation notice",
-      "url": "https://pypi.org/project/datacommons/"
+      "@type": "TechArticle",
+      "@id": "https://arminazimi.github.io/evergreen/rules/python.package.datacommons.deprecated.html",
+      "url": "https://arminazimi.github.io/evergreen/rules/python.package.datacommons.deprecated.html",
+      "mainEntityOfPage": "https://arminazimi.github.io/evergreen/rules/python.package.datacommons.deprecated.html",
+      "headline": "datacommons is deprecated — dates, impact, migration",
+      "description": "The maintainers state that datacommons is no longer maintained or functional and direct users to datacommons-client.",
+      "inLanguage": "en",
+      "dateModified": "2026-10-16",
+      "keywords": [
+        "deprecated",
+        "python",
+        "high"
+      ],
+      "about": {
+        "@type": "Thing",
+        "name": "datacommons is deprecated",
+        "identifier": "pkg:pypi/datacommons"
+      },
+      "citation": [
+        {
+          "@type": "CreativeWork",
+          "name": "datacommons deprecation notice",
+          "url": "https://pypi.org/project/datacommons/"
+        }
+      ],
+      "isBasedOn": "https://github.com/arminazimi/evergreen/blob/main/registry/python.json",
+      "publisher": {
+        "@type": "Organization",
+        "name": "Evergreen",
+        "url": "https://arminazimi.github.io/evergreen"
+      }
+    },
+    {
+      "@type": "FAQPage",
+      "@id": "https://arminazimi.github.io/evergreen/rules/python.package.datacommons.deprecated.html#faq",
+      "url": "https://arminazimi.github.io/evergreen/rules/python.package.datacommons.deprecated.html",
+      "mainEntity": [
+        {
+          "@type": "Question",
+          "name": "What is the lifecycle status of pkg:pypi/datacommons?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "Deprecated. The source gives no day. Affected versions: vers:pypi/*. Source: datacommons deprecation notice (https://pypi.org/project/datacommons/)."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "What replaces pkg:pypi/datacommons?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "datacommons-client"
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "How do I check pkg:pypi/datacommons?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "Run evergreen check pkg:pypi/datacommons."
+          }
+        }
+      ]
     }
-  ],
-  "isBasedOn": "https://github.com/arminazimi/evergreen/blob/main/registry/python.json",
-  "publisher": {
-    "@type": "Organization",
-    "name": "Evergreen",
-    "url": "https://arminazimi.github.io/evergreen"
-  }
+  ]
 }
 </script>

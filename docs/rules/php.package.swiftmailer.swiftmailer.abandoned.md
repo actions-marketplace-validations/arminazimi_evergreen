@@ -2,9 +2,19 @@
 title: "swiftmailer/swiftmailer is abandoned — dates, impact, migration"
 description: "Packagist marks swiftmailer/swiftmailer as abandoned and no longer maintained, and the author suggests using symfony/mailer instead."
 canonical_url: "https://arminazimi.github.io/evergreen/rules/php.package.swiftmailer.swiftmailer.abandoned.html"
+image: "/assets/og/php.package.swiftmailer.swiftmailer.abandoned.svg"
+json_twin: "/rules/php.package.swiftmailer.swiftmailer.abandoned.json"
 ---
 
 # swiftmailer/swiftmailer is abandoned
+
+**Deprecated** as of 2021-11-30. Replacement: symfony/mailer. Source: [swiftmailer/swiftmailer on Packagist](https://packagist.org/packages/swiftmailer/swiftmailer).
+
+Check a version:
+
+```bash
+evergreen check pkg:composer/swiftmailer/swiftmailer
+```
 
 Packagist marks swiftmailer/swiftmailer as abandoned and no longer maintained, and the author suggests using symfony/mailer instead. The Symfony project set Swiftmailer's end of maintenance for the end of November 2021.
 
@@ -50,6 +60,20 @@ Packagist marks swiftmailer/swiftmailer as abandoned and no longer maintained, a
 
 The `php` detector. See [Detectors](../DETECTORS.md) and [Compatibility](../COMPATIBILITY.md).
 
+## Related
+
+### Same ecosystem
+
+- [doctrine/cache is abandoned](php.package.doctrine.cache.abandoned.html)
+- [fzaninotto/faker is abandoned](php.package.fzaninotto.faker.abandoned.html)
+- [Laravel 10 is no longer supported](php.package.laravel.framework-10.end-of-support.html)
+- [Laravel 11 is no longer supported](php.package.laravel.framework-11.end-of-support.html)
+- [sensiolabs/security-checker is abandoned](php.package.sensiolabs.security-checker.abandoned.html)
+- [zendframework/zend-stdlib is abandoned](php.package.zendframework.zend-stdlib.abandoned.html)
+- [PHP 7.0 is end-of-life](php.runtime.eol-7.0.html)
+- [PHP 7.1 is end-of-life](php.runtime.eol-7.1.html)
+
+
 ## Data
 
 This page is generated from [`registry/php.json`](https://github.com/arminazimi/evergreen/blob/main/registry/php.json), rule `php.package.swiftmailer.swiftmailer.abandoned`, in the `evergreen.registry.v2` format ([how rules are written](../RULES.md)). A CLE (ECMA-428) export is not published yet. The same facts are embedded in this page as schema.org structured data.
@@ -57,41 +81,76 @@ This page is generated from [`registry/php.json`](https://github.com/arminazimi/
 <script type="application/ld+json">
 {
   "@context": "https://schema.org",
-  "@type": "TechArticle",
-  "@id": "https://arminazimi.github.io/evergreen/rules/php.package.swiftmailer.swiftmailer.abandoned.html",
-  "url": "https://arminazimi.github.io/evergreen/rules/php.package.swiftmailer.swiftmailer.abandoned.html",
-  "mainEntityOfPage": "https://arminazimi.github.io/evergreen/rules/php.package.swiftmailer.swiftmailer.abandoned.html",
-  "headline": "swiftmailer/swiftmailer is abandoned — dates, impact, migration",
-  "description": "Packagist marks swiftmailer/swiftmailer as abandoned and no longer maintained, and the author suggests using symfony/mailer instead.",
-  "inLanguage": "en",
-  "dateModified": "2026-10-19",
-  "keywords": [
-    "deprecated",
-    "php",
-    "high"
-  ],
-  "about": {
-    "@type": "Thing",
-    "name": "swiftmailer/swiftmailer is abandoned",
-    "identifier": "pkg:composer/swiftmailer/swiftmailer"
-  },
-  "citation": [
+  "@graph": [
     {
-      "@type": "CreativeWork",
-      "name": "swiftmailer/swiftmailer on Packagist",
-      "url": "https://packagist.org/packages/swiftmailer/swiftmailer"
+      "@type": "TechArticle",
+      "@id": "https://arminazimi.github.io/evergreen/rules/php.package.swiftmailer.swiftmailer.abandoned.html",
+      "url": "https://arminazimi.github.io/evergreen/rules/php.package.swiftmailer.swiftmailer.abandoned.html",
+      "mainEntityOfPage": "https://arminazimi.github.io/evergreen/rules/php.package.swiftmailer.swiftmailer.abandoned.html",
+      "headline": "swiftmailer/swiftmailer is abandoned — dates, impact, migration",
+      "description": "Packagist marks swiftmailer/swiftmailer as abandoned and no longer maintained, and the author suggests using symfony/mailer instead.",
+      "inLanguage": "en",
+      "dateModified": "2026-10-19",
+      "keywords": [
+        "deprecated",
+        "php",
+        "high"
+      ],
+      "about": {
+        "@type": "Thing",
+        "name": "swiftmailer/swiftmailer is abandoned",
+        "identifier": "pkg:composer/swiftmailer/swiftmailer"
+      },
+      "citation": [
+        {
+          "@type": "CreativeWork",
+          "name": "swiftmailer/swiftmailer on Packagist",
+          "url": "https://packagist.org/packages/swiftmailer/swiftmailer"
+        },
+        {
+          "@type": "CreativeWork",
+          "name": "The end of Swiftmailer (Symfony Blog)",
+          "url": "https://symfony.com/blog/the-end-of-swiftmailer"
+        }
+      ],
+      "isBasedOn": "https://github.com/arminazimi/evergreen/blob/main/registry/php.json",
+      "publisher": {
+        "@type": "Organization",
+        "name": "Evergreen",
+        "url": "https://arminazimi.github.io/evergreen"
+      }
     },
     {
-      "@type": "CreativeWork",
-      "name": "The end of Swiftmailer (Symfony Blog)",
-      "url": "https://symfony.com/blog/the-end-of-swiftmailer"
+      "@type": "FAQPage",
+      "@id": "https://arminazimi.github.io/evergreen/rules/php.package.swiftmailer.swiftmailer.abandoned.html#faq",
+      "url": "https://arminazimi.github.io/evergreen/rules/php.package.swiftmailer.swiftmailer.abandoned.html",
+      "mainEntity": [
+        {
+          "@type": "Question",
+          "name": "What is the lifecycle status of pkg:composer/swiftmailer/swiftmailer?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "Deprecated as of 2021-11-30. Affected versions: vers:composer/*. Source: swiftmailer/swiftmailer on Packagist (https://packagist.org/packages/swiftmailer/swiftmailer)."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "What replaces pkg:composer/swiftmailer/swiftmailer?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "symfony/mailer"
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "How do I check pkg:composer/swiftmailer/swiftmailer?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "Run evergreen check pkg:composer/swiftmailer/swiftmailer."
+          }
+        }
+      ]
     }
-  ],
-  "isBasedOn": "https://github.com/arminazimi/evergreen/blob/main/registry/php.json",
-  "publisher": {
-    "@type": "Organization",
-    "name": "Evergreen",
-    "url": "https://arminazimi.github.io/evergreen"
-  }
+  ]
 }
 </script>

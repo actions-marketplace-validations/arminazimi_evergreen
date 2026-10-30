@@ -2,9 +2,19 @@
 title: "@types/koa-useragent is deprecated — dates, impact, migration"
 description: "npm marks @types/koa-useragent as deprecated: \"This is a stub types definition. koa-useragent provides its own type definitions, so you do not need this installed.\""
 canonical_url: "https://arminazimi.github.io/evergreen/rules/npm.package.types.koa-useragent.deprecated.html"
+image: "/assets/og/npm.package.types.koa-useragent.deprecated.svg"
+json_twin: "/rules/npm.package.types.koa-useragent.deprecated.json"
 ---
 
 # @types/koa-useragent is deprecated
+
+**Deprecated.** The source gives no day. Replacement: koa-useragent. Source: [@types/koa-useragent on npm](https://www.npmjs.com/package/@types/koa-useragent).
+
+Check a version:
+
+```bash
+evergreen check pkg:npm/%40types/koa-useragent
+```
 
 npm marks @types/koa-useragent as deprecated: "This is a stub types definition. koa-useragent provides its own type definitions, so you do not need this installed."
 
@@ -49,6 +59,20 @@ npm marks @types/koa-useragent as deprecated: "This is a stub types definition. 
 
 The `npm` detector. See [Detectors](../DETECTORS.md) and [Compatibility](../COMPATIBILITY.md).
 
+## Related
+
+### Same ecosystem
+
+- [abab is deprecated](npm.package.abab.deprecated.html)
+- [@angular/core v18 and older are no longer supported](npm.package.angular.core.v18-and-older.end-of-support.html)
+- [@angular/core v19 is no longer supported](npm.package.angular.core.v19.end-of-support.html)
+- [@angular/core v20 reaches end of life on 2026-11-28](npm.package.angular.core.v20.scheduled-end-of-life.html)
+- [@angular/core v21 reaches end of life on 2027-06-30](npm.package.angular.core.v21.scheduled-end-of-life.html)
+- [@angular/core v22 reaches end of life on 2028-06-30](npm.package.angular.core.v22.scheduled-end-of-life.html)
+- [are-we-there-yet is no longer supported](npm.package.are-we-there-yet.eol.html)
+- [babel-eslint is deprecated](npm.package.babel-eslint.deprecated.html)
+
+
 ## Data
 
 This page is generated from [`registry/npm.json`](https://github.com/arminazimi/evergreen/blob/main/registry/npm.json), rule `npm.package.types.koa-useragent.deprecated`, in the `evergreen.registry.v2` format ([how rules are written](../RULES.md)). A CLE (ECMA-428) export is not published yet. The same facts are embedded in this page as schema.org structured data.
@@ -56,41 +80,76 @@ This page is generated from [`registry/npm.json`](https://github.com/arminazimi/
 <script type="application/ld+json">
 {
   "@context": "https://schema.org",
-  "@type": "TechArticle",
-  "@id": "https://arminazimi.github.io/evergreen/rules/npm.package.types.koa-useragent.deprecated.html",
-  "url": "https://arminazimi.github.io/evergreen/rules/npm.package.types.koa-useragent.deprecated.html",
-  "mainEntityOfPage": "https://arminazimi.github.io/evergreen/rules/npm.package.types.koa-useragent.deprecated.html",
-  "headline": "@types/koa-useragent is deprecated — dates, impact, migration",
-  "description": "npm marks @types/koa-useragent as deprecated: \"This is a stub types definition. koa-useragent provides its own type definitions, so you do not need this installed.\"",
-  "inLanguage": "en",
-  "dateModified": "2026-10-19",
-  "keywords": [
-    "deprecated",
-    "npm",
-    "low"
-  ],
-  "about": {
-    "@type": "Thing",
-    "name": "@types/koa-useragent is deprecated",
-    "identifier": "pkg:npm/%40types/koa-useragent"
-  },
-  "citation": [
+  "@graph": [
     {
-      "@type": "CreativeWork",
-      "name": "@types/koa-useragent on npm",
-      "url": "https://www.npmjs.com/package/@types/koa-useragent"
+      "@type": "TechArticle",
+      "@id": "https://arminazimi.github.io/evergreen/rules/npm.package.types.koa-useragent.deprecated.html",
+      "url": "https://arminazimi.github.io/evergreen/rules/npm.package.types.koa-useragent.deprecated.html",
+      "mainEntityOfPage": "https://arminazimi.github.io/evergreen/rules/npm.package.types.koa-useragent.deprecated.html",
+      "headline": "@types/koa-useragent is deprecated — dates, impact, migration",
+      "description": "npm marks @types/koa-useragent as deprecated: \"This is a stub types definition. koa-useragent provides its own type definitions, so you do not need this installed.\"",
+      "inLanguage": "en",
+      "dateModified": "2026-10-19",
+      "keywords": [
+        "deprecated",
+        "npm",
+        "low"
+      ],
+      "about": {
+        "@type": "Thing",
+        "name": "@types/koa-useragent is deprecated",
+        "identifier": "pkg:npm/%40types/koa-useragent"
+      },
+      "citation": [
+        {
+          "@type": "CreativeWork",
+          "name": "@types/koa-useragent on npm",
+          "url": "https://www.npmjs.com/package/@types/koa-useragent"
+        },
+        {
+          "@type": "CreativeWork",
+          "name": "@types/koa-useragent version metadata",
+          "url": "https://registry.npmjs.org/@types%2fkoa-useragent"
+        }
+      ],
+      "isBasedOn": "https://github.com/arminazimi/evergreen/blob/main/registry/npm.json",
+      "publisher": {
+        "@type": "Organization",
+        "name": "Evergreen",
+        "url": "https://arminazimi.github.io/evergreen"
+      }
     },
     {
-      "@type": "CreativeWork",
-      "name": "@types/koa-useragent version metadata",
-      "url": "https://registry.npmjs.org/@types%2fkoa-useragent"
+      "@type": "FAQPage",
+      "@id": "https://arminazimi.github.io/evergreen/rules/npm.package.types.koa-useragent.deprecated.html#faq",
+      "url": "https://arminazimi.github.io/evergreen/rules/npm.package.types.koa-useragent.deprecated.html",
+      "mainEntity": [
+        {
+          "@type": "Question",
+          "name": "What is the lifecycle status of pkg:npm/%40types/koa-useragent?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "Deprecated. The source gives no day. Affected versions: vers:npm/2.1.2. Source: @types/koa-useragent on npm (https://www.npmjs.com/package/@types/koa-useragent)."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "What replaces pkg:npm/%40types/koa-useragent?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "koa-useragent"
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "How do I check pkg:npm/%40types/koa-useragent?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "Run evergreen check pkg:npm/%40types/koa-useragent."
+          }
+        }
+      ]
     }
-  ],
-  "isBasedOn": "https://github.com/arminazimi/evergreen/blob/main/registry/npm.json",
-  "publisher": {
-    "@type": "Organization",
-    "name": "Evergreen",
-    "url": "https://arminazimi.github.io/evergreen"
-  }
+  ]
 }
 </script>

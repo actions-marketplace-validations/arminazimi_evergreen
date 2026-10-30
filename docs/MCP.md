@@ -84,7 +84,9 @@ Project-scoped copy of the same server entry: [`examples/agents/copilot/`](https
 
 ## What the server exposes
 
-Everything below is read-only and runs in the local process. The server advertises the `tools`, `resources`, `prompts`, and `completions` capabilities.
+Everything below is read-only and runs in the local process. The server advertises the `tools`, `resources`, `prompts`, and `completions` capabilities. The same evidence-backed findings the tools return also render as a shareable local HTML report (`evergreen scan --format html`):
+
+![Self-contained Evergreen HTML report showing finding counts and a high-severity deprecated package with location, replacement, and evidence](assets/screenshots/html-report.webp)
 
 ### Write safety
 
@@ -115,6 +117,7 @@ Each tool has an `outputSchema` (the published JSON Schema in [`schemas/`](https
 | `verify_migration` | `finding_id`, `repository_path?` | `evergreen.verification.v1` (`verification.v1.schema.json`) | Re-scan and check a finding observed earlier in the session. |
 | `check_dependency` | `purl`, `version?` | `evergreen.check.v1` (`check.v1.schema.json`) | Check one package before adding it; reads no repository. |
 | `forecast_repository` | `repository_path?`, `months?`, `as_of?` | `evergreen.forecast.v1` (`forecast.v1.schema.json`) | What reaches a dated end of life in the next months, grouped by month, with the repository's findings each event affects. |
+| `plan_migrations` | `repository_path?` | `evergreen.plan.v1` (`plan.v1.schema.json`) | Migration plan: waves of independent tasks a coordinating agent can hand out. |
 
 `repository_path` defaults to the server's current working directory. Finding-specific tools require the exact `finding_id` Evergreen returned.
 

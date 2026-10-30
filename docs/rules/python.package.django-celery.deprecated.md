@@ -2,9 +2,19 @@
 title: "django-celery is no longer required — dates, impact, migration"
 description: "The project states that django-celery is no longer required because Celery supports Django directly."
 canonical_url: "https://arminazimi.github.io/evergreen/rules/python.package.django-celery.deprecated.html"
+image: "/assets/og/python.package.django-celery.deprecated.svg"
+json_twin: "/rules/python.package.django-celery.deprecated.json"
 ---
 
 # django-celery is no longer required
+
+**Deprecated.** The source gives no day. Replacement: Celery's built-in Django integration. Source: [django-celery retirement notice](https://pypi.org/project/django-celery/).
+
+Check a version:
+
+```bash
+evergreen check pkg:pypi/django-celery
+```
 
 The project states that django-celery is no longer required because Celery supports Django directly.
 
@@ -47,6 +57,20 @@ The project states that django-celery is no longer required because Celery suppo
 
 The `python` detector. See [Detectors](../DETECTORS.md) and [Compatibility](../COMPATIBILITY.md).
 
+## Related
+
+### Same ecosystem
+
+- [agentops-toolkit was renamed and is no longer maintained](python.package.agentops-toolkit.eol.html)
+- [aiohttp-valera-validator was renamed and is no longer maintained](python.package.aiohttp-valera-validator.eol.html)
+- [api-shield is deprecated](python.package.api-shield.deprecated.html)
+- [apisec-code-bolt was renamed](python.package.apisec-code-bolt.deprecated.html)
+- [argparse is archived on PyPI](python.package.argparse.archived.html)
+- [asyncio-requests is retired](python.package.asyncio-requests.deprecated.html)
+- [BatchNotebook is deprecated](python.package.batchnotebook.deprecated.html)
+- [cmip_ref was renamed and is no longer maintained](python.package.cmip-ref.eol.html)
+
+
 ## Data
 
 This page is generated from [`registry/python.json`](https://github.com/arminazimi/evergreen/blob/main/registry/python.json), rule `python.package.django-celery.deprecated`, in the `evergreen.registry.v2` format ([how rules are written](../RULES.md)). A CLE (ECMA-428) export is not published yet. The same facts are embedded in this page as schema.org structured data.
@@ -54,36 +78,71 @@ This page is generated from [`registry/python.json`](https://github.com/arminazi
 <script type="application/ld+json">
 {
   "@context": "https://schema.org",
-  "@type": "TechArticle",
-  "@id": "https://arminazimi.github.io/evergreen/rules/python.package.django-celery.deprecated.html",
-  "url": "https://arminazimi.github.io/evergreen/rules/python.package.django-celery.deprecated.html",
-  "mainEntityOfPage": "https://arminazimi.github.io/evergreen/rules/python.package.django-celery.deprecated.html",
-  "headline": "django-celery is no longer required — dates, impact, migration",
-  "description": "The project states that django-celery is no longer required because Celery supports Django directly.",
-  "inLanguage": "en",
-  "dateModified": "2026-10-16",
-  "keywords": [
-    "deprecated",
-    "python",
-    "high"
-  ],
-  "about": {
-    "@type": "Thing",
-    "name": "django-celery is no longer required",
-    "identifier": "pkg:pypi/django-celery"
-  },
-  "citation": [
+  "@graph": [
     {
-      "@type": "CreativeWork",
-      "name": "django-celery retirement notice",
-      "url": "https://pypi.org/project/django-celery/"
+      "@type": "TechArticle",
+      "@id": "https://arminazimi.github.io/evergreen/rules/python.package.django-celery.deprecated.html",
+      "url": "https://arminazimi.github.io/evergreen/rules/python.package.django-celery.deprecated.html",
+      "mainEntityOfPage": "https://arminazimi.github.io/evergreen/rules/python.package.django-celery.deprecated.html",
+      "headline": "django-celery is no longer required — dates, impact, migration",
+      "description": "The project states that django-celery is no longer required because Celery supports Django directly.",
+      "inLanguage": "en",
+      "dateModified": "2026-10-16",
+      "keywords": [
+        "deprecated",
+        "python",
+        "high"
+      ],
+      "about": {
+        "@type": "Thing",
+        "name": "django-celery is no longer required",
+        "identifier": "pkg:pypi/django-celery"
+      },
+      "citation": [
+        {
+          "@type": "CreativeWork",
+          "name": "django-celery retirement notice",
+          "url": "https://pypi.org/project/django-celery/"
+        }
+      ],
+      "isBasedOn": "https://github.com/arminazimi/evergreen/blob/main/registry/python.json",
+      "publisher": {
+        "@type": "Organization",
+        "name": "Evergreen",
+        "url": "https://arminazimi.github.io/evergreen"
+      }
+    },
+    {
+      "@type": "FAQPage",
+      "@id": "https://arminazimi.github.io/evergreen/rules/python.package.django-celery.deprecated.html#faq",
+      "url": "https://arminazimi.github.io/evergreen/rules/python.package.django-celery.deprecated.html",
+      "mainEntity": [
+        {
+          "@type": "Question",
+          "name": "What is the lifecycle status of pkg:pypi/django-celery?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "Deprecated. The source gives no day. Affected versions: vers:pypi/*. Source: django-celery retirement notice (https://pypi.org/project/django-celery/)."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "What replaces pkg:pypi/django-celery?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "Celery's built-in Django integration"
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "How do I check pkg:pypi/django-celery?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "Run evergreen check pkg:pypi/django-celery."
+          }
+        }
+      ]
     }
-  ],
-  "isBasedOn": "https://github.com/arminazimi/evergreen/blob/main/registry/python.json",
-  "publisher": {
-    "@type": "Organization",
-    "name": "Evergreen",
-    "url": "https://arminazimi.github.io/evergreen"
-  }
+  ]
 }
 </script>

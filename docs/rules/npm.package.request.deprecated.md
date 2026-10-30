@@ -2,9 +2,19 @@
 title: "request is deprecated — dates, impact, migration"
 description: "The package is fully deprecated and no new changes are expected."
 canonical_url: "https://arminazimi.github.io/evergreen/rules/npm.package.request.deprecated.html"
+image: "/assets/og/npm.package.request.deprecated.svg"
+json_twin: "/rules/npm.package.request.deprecated.json"
 ---
 
 # request is deprecated
+
+**Deprecated** as of 2020-02-11. Replacement: Native fetch or a maintained HTTP client. Source: [request package deprecation notice](https://www.npmjs.com/package/request).
+
+Check a version:
+
+```bash
+evergreen check pkg:npm/request
+```
 
 The package is fully deprecated and no new changes are expected.
 
@@ -49,6 +59,20 @@ The package is fully deprecated and no new changes are expected.
 
 The `npm` detector. See [Detectors](../DETECTORS.md) and [Compatibility](../COMPATIBILITY.md).
 
+## Related
+
+### Same ecosystem
+
+- [abab is deprecated](npm.package.abab.deprecated.html)
+- [@angular/core v18 and older are no longer supported](npm.package.angular.core.v18-and-older.end-of-support.html)
+- [@angular/core v19 is no longer supported](npm.package.angular.core.v19.end-of-support.html)
+- [@angular/core v20 reaches end of life on 2026-11-28](npm.package.angular.core.v20.scheduled-end-of-life.html)
+- [@angular/core v21 reaches end of life on 2027-06-30](npm.package.angular.core.v21.scheduled-end-of-life.html)
+- [@angular/core v22 reaches end of life on 2028-06-30](npm.package.angular.core.v22.scheduled-end-of-life.html)
+- [are-we-there-yet is no longer supported](npm.package.are-we-there-yet.eol.html)
+- [babel-eslint is deprecated](npm.package.babel-eslint.deprecated.html)
+
+
 ## Data
 
 This page is generated from [`registry/npm.json`](https://github.com/arminazimi/evergreen/blob/main/registry/npm.json), rule `npm.package.request.deprecated`, in the `evergreen.registry.v2` format ([how rules are written](../RULES.md)). A CLE (ECMA-428) export is not published yet. The same facts are embedded in this page as schema.org structured data.
@@ -56,36 +80,71 @@ This page is generated from [`registry/npm.json`](https://github.com/arminazimi/
 <script type="application/ld+json">
 {
   "@context": "https://schema.org",
-  "@type": "TechArticle",
-  "@id": "https://arminazimi.github.io/evergreen/rules/npm.package.request.deprecated.html",
-  "url": "https://arminazimi.github.io/evergreen/rules/npm.package.request.deprecated.html",
-  "mainEntityOfPage": "https://arminazimi.github.io/evergreen/rules/npm.package.request.deprecated.html",
-  "headline": "request is deprecated — dates, impact, migration",
-  "description": "The package is fully deprecated and no new changes are expected.",
-  "inLanguage": "en",
-  "dateModified": "2026-10-14",
-  "keywords": [
-    "deprecated",
-    "npm",
-    "high"
-  ],
-  "about": {
-    "@type": "Thing",
-    "name": "request is deprecated",
-    "identifier": "pkg:npm/request"
-  },
-  "citation": [
+  "@graph": [
     {
-      "@type": "CreativeWork",
-      "name": "request package deprecation notice",
-      "url": "https://www.npmjs.com/package/request"
+      "@type": "TechArticle",
+      "@id": "https://arminazimi.github.io/evergreen/rules/npm.package.request.deprecated.html",
+      "url": "https://arminazimi.github.io/evergreen/rules/npm.package.request.deprecated.html",
+      "mainEntityOfPage": "https://arminazimi.github.io/evergreen/rules/npm.package.request.deprecated.html",
+      "headline": "request is deprecated — dates, impact, migration",
+      "description": "The package is fully deprecated and no new changes are expected.",
+      "inLanguage": "en",
+      "dateModified": "2026-10-14",
+      "keywords": [
+        "deprecated",
+        "npm",
+        "high"
+      ],
+      "about": {
+        "@type": "Thing",
+        "name": "request is deprecated",
+        "identifier": "pkg:npm/request"
+      },
+      "citation": [
+        {
+          "@type": "CreativeWork",
+          "name": "request package deprecation notice",
+          "url": "https://www.npmjs.com/package/request"
+        }
+      ],
+      "isBasedOn": "https://github.com/arminazimi/evergreen/blob/main/registry/npm.json",
+      "publisher": {
+        "@type": "Organization",
+        "name": "Evergreen",
+        "url": "https://arminazimi.github.io/evergreen"
+      }
+    },
+    {
+      "@type": "FAQPage",
+      "@id": "https://arminazimi.github.io/evergreen/rules/npm.package.request.deprecated.html#faq",
+      "url": "https://arminazimi.github.io/evergreen/rules/npm.package.request.deprecated.html",
+      "mainEntity": [
+        {
+          "@type": "Question",
+          "name": "What is the lifecycle status of pkg:npm/request?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "Deprecated as of 2020-02-11. Affected versions: vers:npm/*. Source: request package deprecation notice (https://www.npmjs.com/package/request)."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "What replaces pkg:npm/request?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "Native fetch or a maintained HTTP client"
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "How do I check pkg:npm/request?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "Run evergreen check pkg:npm/request."
+          }
+        }
+      ]
     }
-  ],
-  "isBasedOn": "https://github.com/arminazimi/evergreen/blob/main/registry/npm.json",
-  "publisher": {
-    "@type": "Organization",
-    "name": "Evergreen",
-    "url": "https://arminazimi.github.io/evergreen"
-  }
+  ]
 }
 </script>

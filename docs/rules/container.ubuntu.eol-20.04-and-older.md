@@ -2,9 +2,19 @@
 title: "Ubuntu image release lines 20.04 and older are past standard support end-of-life — dates, impact, migration"
 description: "These Ubuntu releases no longer receive standard security updates from the vendor."
 canonical_url: "https://arminazimi.github.io/evergreen/rules/container.ubuntu.eol-20.04-and-older.html"
+image: "/assets/og/container.ubuntu.eol-20.04-and-older.svg"
+json_twin: "/rules/container.ubuntu.eol-20.04-and-older.json"
 ---
 
 # Ubuntu image release lines 20.04 and older are past standard support end-of-life
+
+**End of life** as of 2025-05-31. Replacement: An ubuntu image on a supported release line. Source: [Ubuntu release cycle](https://ubuntu.com/about/release-cycle).
+
+Check a version:
+
+```bash
+evergreen check pkg:docker/library/ubuntu
+```
 
 These Ubuntu releases no longer receive standard security updates from the vendor.
 
@@ -49,6 +59,24 @@ These Ubuntu releases no longer receive standard security updates from the vendo
 
 The [`container`](../detectors/container.md) detector. See [Detectors](../DETECTORS.md) and [Compatibility](../COMPATIBILITY.md).
 
+## Related
+
+### Other versions of this product
+
+- [Ubuntu image release line 22.04 reaches standard support end-of-life on 2027-06-01](container.ubuntu.eol-22.04.html)
+
+### Same ecosystem
+
+- [Alpine Linux image release lines 3.20 and older are end-of-life](container.alpine.eol-3.20-and-older.html)
+- [Alpine Linux image release line 3.21 reaches end-of-life on 2026-11-01](container.alpine.eol-3.21.html)
+- [Caddy image release lines 1 and older are end-of-life](container.caddy.eol-1-and-older.html)
+- [ClickHouse image release lines 26.2 and older are end-of-life](container.clickhouse.eol-26.2-and-older.html)
+- [Couchbase Server image release lines 7.2 and older are end-of-life](container.couchbase.eol-7.2-and-older.html)
+- [Apache CouchDB image release lines 3.3 and older are end-of-life](container.couchdb.eol-3.3-and-older.html)
+- [Debian image release lines 11 and older are end-of-life](container.debian.eol-11-and-older.html)
+- [Drupal image release lines 10.5 and older are end-of-life](container.drupal.eol-10.5-and-older.html)
+
+
 ## Data
 
 This page is generated from [`registry/container.json`](https://github.com/arminazimi/evergreen/blob/main/registry/container.json), rule `container.ubuntu.eol-20.04-and-older`, in the `evergreen.registry.v2` format ([how rules are written](../RULES.md)). A CLE (ECMA-428) export is not published yet. The same facts are embedded in this page as schema.org structured data.
@@ -56,36 +84,71 @@ This page is generated from [`registry/container.json`](https://github.com/armin
 <script type="application/ld+json">
 {
   "@context": "https://schema.org",
-  "@type": "TechArticle",
-  "@id": "https://arminazimi.github.io/evergreen/rules/container.ubuntu.eol-20.04-and-older.html",
-  "url": "https://arminazimi.github.io/evergreen/rules/container.ubuntu.eol-20.04-and-older.html",
-  "mainEntityOfPage": "https://arminazimi.github.io/evergreen/rules/container.ubuntu.eol-20.04-and-older.html",
-  "headline": "Ubuntu image release lines 20.04 and older are past standard support end-of-life — dates, impact, migration",
-  "description": "These Ubuntu releases no longer receive standard security updates from the vendor.",
-  "inLanguage": "en",
-  "dateModified": "2026-10-26",
-  "keywords": [
-    "end-of-life",
-    "container",
-    "high"
-  ],
-  "about": {
-    "@type": "Thing",
-    "name": "Ubuntu image release lines 20.04 and older are past standard support end-of-life",
-    "identifier": "pkg:docker/library/ubuntu"
-  },
-  "citation": [
+  "@graph": [
     {
-      "@type": "CreativeWork",
-      "name": "Ubuntu release cycle",
-      "url": "https://ubuntu.com/about/release-cycle"
+      "@type": "TechArticle",
+      "@id": "https://arminazimi.github.io/evergreen/rules/container.ubuntu.eol-20.04-and-older.html",
+      "url": "https://arminazimi.github.io/evergreen/rules/container.ubuntu.eol-20.04-and-older.html",
+      "mainEntityOfPage": "https://arminazimi.github.io/evergreen/rules/container.ubuntu.eol-20.04-and-older.html",
+      "headline": "Ubuntu image release lines 20.04 and older are past standard support end-of-life — dates, impact, migration",
+      "description": "These Ubuntu releases no longer receive standard security updates from the vendor.",
+      "inLanguage": "en",
+      "dateModified": "2026-10-26",
+      "keywords": [
+        "end-of-life",
+        "container",
+        "high"
+      ],
+      "about": {
+        "@type": "Thing",
+        "name": "Ubuntu image release lines 20.04 and older are past standard support end-of-life",
+        "identifier": "pkg:docker/library/ubuntu"
+      },
+      "citation": [
+        {
+          "@type": "CreativeWork",
+          "name": "Ubuntu release cycle",
+          "url": "https://ubuntu.com/about/release-cycle"
+        }
+      ],
+      "isBasedOn": "https://github.com/arminazimi/evergreen/blob/main/registry/container.json",
+      "publisher": {
+        "@type": "Organization",
+        "name": "Evergreen",
+        "url": "https://arminazimi.github.io/evergreen"
+      }
+    },
+    {
+      "@type": "FAQPage",
+      "@id": "https://arminazimi.github.io/evergreen/rules/container.ubuntu.eol-20.04-and-older.html#faq",
+      "url": "https://arminazimi.github.io/evergreen/rules/container.ubuntu.eol-20.04-and-older.html",
+      "mainEntity": [
+        {
+          "@type": "Question",
+          "name": "What is the lifecycle status of pkg:docker/library/ubuntu?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "End of life as of 2025-05-31. Affected versions: vers:semver/\u003c20.10.0. Source: Ubuntu release cycle (https://ubuntu.com/about/release-cycle)."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "What replaces pkg:docker/library/ubuntu?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "An ubuntu image on a supported release line"
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "How do I check pkg:docker/library/ubuntu?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "Run evergreen check pkg:docker/library/ubuntu."
+          }
+        }
+      ]
     }
-  ],
-  "isBasedOn": "https://github.com/arminazimi/evergreen/blob/main/registry/container.json",
-  "publisher": {
-    "@type": "Organization",
-    "name": "Evergreen",
-    "url": "https://arminazimi.github.io/evergreen"
-  }
+  ]
 }
 </script>

@@ -2,9 +2,19 @@
 title: "Django 3.2 LTS is end-of-life — dates, impact, migration"
 description: "The Django project lists the 3.2 release series as unsupported: it no longer receives security updates or bug fixes, and its end of extended support was April 1, 2024."
 canonical_url: "https://arminazimi.github.io/evergreen/rules/python.package.django-3.2.eol.html"
+image: "/assets/og/python.package.django-3.2.eol.svg"
+json_twin: "/rules/python.package.django-3.2.eol.json"
 ---
 
 # Django 3.2 LTS is end-of-life
+
+**End of life** as of 2024-04-01. Replacement: Django 5.2 LTS or a newer supported release. Source: [Django supported versions](https://www.djangoproject.com/download/#supported-versions).
+
+Check a version:
+
+```bash
+evergreen check pkg:pypi/django
+```
 
 The Django project lists the 3.2 release series as unsupported: it no longer receives security updates or bug fixes, and its end of extended support was April 1, 2024.
 
@@ -53,6 +63,35 @@ The Django project lists the 3.2 release series as unsupported: it no longer rec
 
 The `python` detector. See [Detectors](../DETECTORS.md) and [Compatibility](../COMPATIBILITY.md).
 
+## Related
+
+### Other versions of this product
+
+- [Django 1.10 is end-of-life](python.package.django-1.10.eol.html)
+- [Django 1.11 LTS is end-of-life](python.package.django-1.11.eol.html)
+- [Django 1.3 is end-of-life](python.package.django-1.3.eol.html)
+- [Django 1.4 LTS is end-of-life](python.package.django-1.4.eol.html)
+- [Django 1.5 is end-of-life](python.package.django-1.5.eol.html)
+- [Django 1.6 is end-of-life](python.package.django-1.6.eol.html)
+- [Django 1.7 is end-of-life](python.package.django-1.7.eol.html)
+- [Django 1.8 LTS is end-of-life](python.package.django-1.8.eol.html)
+- [Django 1.9 is end-of-life](python.package.django-1.9.eol.html)
+- [Django 2.0 is end-of-life](python.package.django-2.0.eol.html)
+- [Django 2.1 is end-of-life](python.package.django-2.1.eol.html)
+- [Django 2.2 LTS is end-of-life](python.package.django-2.2.eol.html)
+
+### Same ecosystem
+
+- [agentops-toolkit was renamed and is no longer maintained](python.package.agentops-toolkit.eol.html)
+- [aiohttp-valera-validator was renamed and is no longer maintained](python.package.aiohttp-valera-validator.eol.html)
+- [api-shield is deprecated](python.package.api-shield.deprecated.html)
+- [apisec-code-bolt was renamed](python.package.apisec-code-bolt.deprecated.html)
+- [argparse is archived on PyPI](python.package.argparse.archived.html)
+- [asyncio-requests is retired](python.package.asyncio-requests.deprecated.html)
+- [BatchNotebook is deprecated](python.package.batchnotebook.deprecated.html)
+- [cmip_ref was renamed and is no longer maintained](python.package.cmip-ref.eol.html)
+
+
 ## Data
 
 This page is generated from [`registry/python.json`](https://github.com/arminazimi/evergreen/blob/main/registry/python.json), rule `python.package.django-3.2.eol`, in the `evergreen.registry.v2` format ([how rules are written](../RULES.md)). A CLE (ECMA-428) export is not published yet. The same facts are embedded in this page as schema.org structured data.
@@ -60,46 +99,81 @@ This page is generated from [`registry/python.json`](https://github.com/arminazi
 <script type="application/ld+json">
 {
   "@context": "https://schema.org",
-  "@type": "TechArticle",
-  "@id": "https://arminazimi.github.io/evergreen/rules/python.package.django-3.2.eol.html",
-  "url": "https://arminazimi.github.io/evergreen/rules/python.package.django-3.2.eol.html",
-  "mainEntityOfPage": "https://arminazimi.github.io/evergreen/rules/python.package.django-3.2.eol.html",
-  "headline": "Django 3.2 LTS is end-of-life — dates, impact, migration",
-  "description": "The Django project lists the 3.2 release series as unsupported: it no longer receives security updates or bug fixes, and its end of extended support was April 1, 2024.",
-  "inLanguage": "en",
-  "dateModified": "2026-10-21",
-  "keywords": [
-    "end-of-life",
-    "python",
-    "high"
-  ],
-  "about": {
-    "@type": "Thing",
-    "name": "Django 3.2 LTS is end-of-life",
-    "identifier": "pkg:pypi/django"
-  },
-  "citation": [
+  "@graph": [
     {
-      "@type": "CreativeWork",
-      "name": "Django supported versions",
-      "url": "https://www.djangoproject.com/download/#supported-versions"
+      "@type": "TechArticle",
+      "@id": "https://arminazimi.github.io/evergreen/rules/python.package.django-3.2.eol.html",
+      "url": "https://arminazimi.github.io/evergreen/rules/python.package.django-3.2.eol.html",
+      "mainEntityOfPage": "https://arminazimi.github.io/evergreen/rules/python.package.django-3.2.eol.html",
+      "headline": "Django 3.2 LTS is end-of-life — dates, impact, migration",
+      "description": "The Django project lists the 3.2 release series as unsupported: it no longer receives security updates or bug fixes, and its end of extended support was April 1, 2024.",
+      "inLanguage": "en",
+      "dateModified": "2026-10-21",
+      "keywords": [
+        "end-of-life",
+        "python",
+        "high"
+      ],
+      "about": {
+        "@type": "Thing",
+        "name": "Django 3.2 LTS is end-of-life",
+        "identifier": "pkg:pypi/django"
+      },
+      "citation": [
+        {
+          "@type": "CreativeWork",
+          "name": "Django supported versions",
+          "url": "https://www.djangoproject.com/download/#supported-versions"
+        },
+        {
+          "@type": "CreativeWork",
+          "name": "Django 3.2 release notes (3.2.25)",
+          "url": "https://docs.djangoproject.com/en/3.2/releases/3.2.25/"
+        },
+        {
+          "@type": "CreativeWork",
+          "name": "Django upgrade guide",
+          "url": "https://docs.djangoproject.com/en/5.2/howto/upgrade-version/"
+        }
+      ],
+      "isBasedOn": "https://github.com/arminazimi/evergreen/blob/main/registry/python.json",
+      "publisher": {
+        "@type": "Organization",
+        "name": "Evergreen",
+        "url": "https://arminazimi.github.io/evergreen"
+      }
     },
     {
-      "@type": "CreativeWork",
-      "name": "Django 3.2 release notes (3.2.25)",
-      "url": "https://docs.djangoproject.com/en/3.2/releases/3.2.25/"
-    },
-    {
-      "@type": "CreativeWork",
-      "name": "Django upgrade guide",
-      "url": "https://docs.djangoproject.com/en/5.2/howto/upgrade-version/"
+      "@type": "FAQPage",
+      "@id": "https://arminazimi.github.io/evergreen/rules/python.package.django-3.2.eol.html#faq",
+      "url": "https://arminazimi.github.io/evergreen/rules/python.package.django-3.2.eol.html",
+      "mainEntity": [
+        {
+          "@type": "Question",
+          "name": "What is the lifecycle status of pkg:pypi/django?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "End of life as of 2024-04-01. Affected versions: vers:pypi/>=3.2|\u003c4.0.dev0. Source: Django supported versions (https://www.djangoproject.com/download/#supported-versions)."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "What replaces pkg:pypi/django?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "Django 5.2 LTS or a newer supported release"
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "How do I check pkg:pypi/django?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "Run evergreen check pkg:pypi/django."
+          }
+        }
+      ]
     }
-  ],
-  "isBasedOn": "https://github.com/arminazimi/evergreen/blob/main/registry/python.json",
-  "publisher": {
-    "@type": "Organization",
-    "name": "Evergreen",
-    "url": "https://arminazimi.github.io/evergreen"
-  }
+  ]
 }
 </script>

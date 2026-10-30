@@ -2,9 +2,19 @@
 title: "fennec is retired on Hex — dates, impact, migration"
 description: "Hex marks every published fennec release as retired with reason renamed, and the retirement message says the package was renamed to mongooseice."
 canonical_url: "https://arminazimi.github.io/evergreen/rules/elixir.package.fennec.retired.html"
+image: "/assets/og/elixir.package.fennec.retired.svg"
+json_twin: "/rules/elixir.package.fennec.retired.json"
 ---
 
 # fennec is retired on Hex
+
+**Deprecated.** The source gives no day. Replacement: mongooseice. Source: [fennec on Hex](https://hex.pm/packages/fennec).
+
+Check a version:
+
+```bash
+evergreen check pkg:hex/fennec
+```
 
 Hex marks every published fennec release as retired with reason renamed, and the retirement message says the package was renamed to mongooseice.
 
@@ -50,6 +60,16 @@ Hex marks every published fennec release as retired with reason renamed, and the
 
 The `elixir` detector. See [Detectors](../DETECTORS.md) and [Compatibility](../COMPATIBILITY.md).
 
+## Related
+
+### Same ecosystem
+
+- [Erlang/OTP 25 no longer receives security updates](elixir.erlang.eol-25.html)
+- [Erlang/OTP 26 no longer receives security updates](elixir.erlang.eol-26.html)
+- [Elixir 1.14 no longer receives security updates](elixir.runtime.eol-1.14.html)
+- [Elixir 1.15 no longer receives security updates](elixir.runtime.eol-1.15.html)
+
+
 ## Data
 
 This page is generated from [`registry/elixir.json`](https://github.com/arminazimi/evergreen/blob/main/registry/elixir.json), rule `elixir.package.fennec.retired`, in the `evergreen.registry.v2` format ([how rules are written](../RULES.md)). A CLE (ECMA-428) export is not published yet. The same facts are embedded in this page as schema.org structured data.
@@ -57,41 +77,76 @@ This page is generated from [`registry/elixir.json`](https://github.com/arminazi
 <script type="application/ld+json">
 {
   "@context": "https://schema.org",
-  "@type": "TechArticle",
-  "@id": "https://arminazimi.github.io/evergreen/rules/elixir.package.fennec.retired.html",
-  "url": "https://arminazimi.github.io/evergreen/rules/elixir.package.fennec.retired.html",
-  "mainEntityOfPage": "https://arminazimi.github.io/evergreen/rules/elixir.package.fennec.retired.html",
-  "headline": "fennec is retired on Hex — dates, impact, migration",
-  "description": "Hex marks every published fennec release as retired with reason renamed, and the retirement message says the package was renamed to mongooseice.",
-  "inLanguage": "en",
-  "dateModified": "2026-10-26",
-  "keywords": [
-    "deprecated",
-    "elixir",
-    "high"
-  ],
-  "about": {
-    "@type": "Thing",
-    "name": "fennec is retired on Hex",
-    "identifier": "pkg:hex/fennec"
-  },
-  "citation": [
+  "@graph": [
     {
-      "@type": "CreativeWork",
-      "name": "fennec on Hex",
-      "url": "https://hex.pm/packages/fennec"
+      "@type": "TechArticle",
+      "@id": "https://arminazimi.github.io/evergreen/rules/elixir.package.fennec.retired.html",
+      "url": "https://arminazimi.github.io/evergreen/rules/elixir.package.fennec.retired.html",
+      "mainEntityOfPage": "https://arminazimi.github.io/evergreen/rules/elixir.package.fennec.retired.html",
+      "headline": "fennec is retired on Hex — dates, impact, migration",
+      "description": "Hex marks every published fennec release as retired with reason renamed, and the retirement message says the package was renamed to mongooseice.",
+      "inLanguage": "en",
+      "dateModified": "2026-10-26",
+      "keywords": [
+        "deprecated",
+        "elixir",
+        "high"
+      ],
+      "about": {
+        "@type": "Thing",
+        "name": "fennec is retired on Hex",
+        "identifier": "pkg:hex/fennec"
+      },
+      "citation": [
+        {
+          "@type": "CreativeWork",
+          "name": "fennec on Hex",
+          "url": "https://hex.pm/packages/fennec"
+        },
+        {
+          "@type": "CreativeWork",
+          "name": "mongooseice on Hex",
+          "url": "https://hex.pm/packages/mongooseice"
+        }
+      ],
+      "isBasedOn": "https://github.com/arminazimi/evergreen/blob/main/registry/elixir.json",
+      "publisher": {
+        "@type": "Organization",
+        "name": "Evergreen",
+        "url": "https://arminazimi.github.io/evergreen"
+      }
     },
     {
-      "@type": "CreativeWork",
-      "name": "mongooseice on Hex",
-      "url": "https://hex.pm/packages/mongooseice"
+      "@type": "FAQPage",
+      "@id": "https://arminazimi.github.io/evergreen/rules/elixir.package.fennec.retired.html#faq",
+      "url": "https://arminazimi.github.io/evergreen/rules/elixir.package.fennec.retired.html",
+      "mainEntity": [
+        {
+          "@type": "Question",
+          "name": "What is the lifecycle status of pkg:hex/fennec?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "Deprecated. The source gives no day. Affected versions: vers:semver/*. Source: fennec on Hex (https://hex.pm/packages/fennec)."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "What replaces pkg:hex/fennec?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "mongooseice"
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "How do I check pkg:hex/fennec?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "Run evergreen check pkg:hex/fennec."
+          }
+        }
+      ]
     }
-  ],
-  "isBasedOn": "https://github.com/arminazimi/evergreen/blob/main/registry/elixir.json",
-  "publisher": {
-    "@type": "Organization",
-    "name": "Evergreen",
-    "url": "https://arminazimi.github.io/evergreen"
-  }
+  ]
 }
 </script>

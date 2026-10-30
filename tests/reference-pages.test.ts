@@ -12,19 +12,26 @@ import type { RegistryV2, RegistryV2Rule } from "../src/registry.js";
 import {
   LOOKUP_PAGE,
   SITE_URL,
+  answerLead,
   buildFiles,
+  checkCommand,
   drift,
+  faqMainEntity,
   loadRegistries,
   lookupEntries,
   lookupUrl,
   pageTitle,
+  relatedRules,
   renderIndex,
   renderLookupPage,
+  renderRuleData,
   renderRulePage,
   renderSitemap,
+  ruleDataUrl,
   ruleUrl,
   write,
 } from "../tools/build-reference-pages.js";
+import { answerPageEntries } from "../tools/build-answer-pages.js";
 
 const temporaryRoots: string[] = [];
 
@@ -55,34 +62,108 @@ const registry = (rules: RegistryV2Rule[], maxReviewAgeDays?: number): RegistryV
   rules,
 });
 
-function structuredData(page: string): Record<string, unknown> {
+function structuredDataRoot(page: string): Record<string, unknown> {
   const match = /<script type="application\/ld\+json">\n([\s\S]*?)\n<\/script>/.exec(page);
   assert.ok(match, "the page has no JSON-LD block");
   return JSON.parse(match[1]!) as Record<string, unknown>;
 }
 
-test("every bundled rule has a page, and the committed pages match the registry", async () => {
+function structuredData(page: string, type: string): Record<string, unknown> {
+  const root = structuredDataRoot(page);
+  if (root["@type"] === type) return root;
+  const graph = root["@graph"];
+  assert.ok(Array.isArray(graph), `structured data has no @graph for ${type}`);
+  const node = (graph as Array<Record<string, unknown>>).find((entry) => entry["@type"] === type);
+  assert.ok(node, `structured data has no ${type}`);
+  return node;
+}
+
+test("every bundled rule has a page and a JSON twin, and the committed files match the registry", async () => {
   const registries = await loadRegistries();
   const total = registries.reduce((sum, item) => sum + item.rules.length, 0);
   assert.ok(total >= 100);
   const files = buildFiles(registries);
-  assert.equal(files.filter((file) => file.path.startsWith("docs/rules/") && !file.path.endsWith("index.md")).length, total);
+  const pages = files.filter((file) => file.path.startsWith("docs/rules/") && file.path.endsWith(".md") && !file.path.endsWith("index.md"));
+  const twins = files.filter((file) => file.path.startsWith("docs/rules/") && file.path.endsWith(".json"));
+  assert.equal(pages.length, total);
+  assert.equal(twins.length, total);
+  assert.deepEqual(
+    twins.map((file) => file.path),
+    pages.map((file) => file.path.replace(/\.md$/, ".json")),
+  );
   assert.deepEqual(await drift(files), []);
 });
 
+test("a page links its JSON twin, and the twin is the evergreen.rule.v1 document", () => {
+  const fixture = rule({
+    sources: [{ title: "Demo lifecycle", url: "https://example.com/demo", accessedAt: "2026-10-03" }],
+    migration: {
+      constraints: ["Keep behavior."],
+      steps: [{ id: "change", title: "Change it", instructions: "Do the change.", targets: "declaration" }],
+      verification: [{ command: "make test", purpose: "Run the tests." }],
+    },
+  });
+  const page = renderRulePage(fixture, 180);
+  const frontMatter = parse(page.slice(4, page.indexOf("\n---\n", 4))) as { json_twin: string };
+  assert.equal(frontMatter.json_twin, "/rules/demo.thing.eol-1.json");
+  assert.equal(ruleDataUrl(fixture.id), `${SITE_URL}/rules/demo.thing.eol-1.json`);
+
+  const contents = renderRuleData(fixture);
+  assert.ok(contents.endsWith("\n"));
+  const twin = JSON.parse(contents) as Record<string, unknown>;
+  assert.equal(twin.schemaVersion, "evergreen.rule.v1");
+  assert.equal(twin.id, fixture.id);
+  assert.equal(twin.ecosystem, fixture.ecosystem);
+  assert.equal(twin.purl, fixture.purl);
+  assert.equal(twin.affectedVersions, fixture.vers);
+  assert.equal(twin.event, fixture.event);
+  assert.equal(twin.severity, fixture.severity);
+  assert.equal(twin.title, fixture.title);
+  assert.equal(twin.summary, fixture.summary);
+  assert.equal(twin.deadline, fixture.deadline);
+  assert.equal(twin.replacement, fixture.replacement);
+  assert.deepEqual(twin.sources, fixture.sources);
+  assert.deepEqual(twin.provenance, fixture.provenance);
+  assert.deepEqual(twin.migration, fixture.migration);
+});
+
+test("every published rule twin is a valid evergreen.rule.v1 document", async () => {
+  const { Ajv2020 } = await import("ajv/dist/2020.js");
+  const validate = new Ajv2020({ allErrors: true }).compile(JSON.parse(await readFile(resolve("schemas/rule.v1.schema.json"), "utf8")) as object);
+  for (const item of await loadRegistries()) {
+    for (const entry of item.rules) {
+      const twin = JSON.parse(renderRuleData(entry)) as unknown;
+      assert.equal(validate(twin), true, `${entry.id}: ${JSON.stringify(validate.errors)}`);
+    }
+  }
+});
+
+test("the site head links a page's JSON twin when its front matter names one", async () => {
+  const include = await readFile("docs/_includes/head-custom.html", "utf8");
+  assert.match(include, /\{%-\s*if page\.json_twin\s*%\}/);
+  assert.match(include, /<link rel="alternate" type="application\/json" href="\{\{ page\.json_twin \| relative_url \}\}">/);
+});
+
 test("a page states status, versions, dates, sources, freshness, migration, and detectors", () => {
-  const page = renderRulePage(
-    rule({
-      migration: {
-        constraints: ["Keep behavior."],
-        steps: [{ id: "change", title: "Change it", instructions: "Do the change.", targets: "declaration" }],
-        verification: [{ command: "make test", purpose: "Run the tests." }],
-      },
-    }),
-    180,
-  );
+  const fixture = rule({
+    migration: {
+      constraints: ["Keep behavior."],
+      steps: [{ id: "change", title: "Change it", instructions: "Do the change.", targets: "declaration" }],
+      verification: [{ command: "make test", purpose: "Run the tests." }],
+    },
+  });
+  const page = renderRulePage(fixture, 180);
   assert.match(page, /^---\ntitle: "Demo 1 is end of life — dates, impact, migration"\n/);
   assert.match(page, /canonical_url: "https:\/\/arminazimi\.github\.io\/evergreen\/rules\/demo\.thing\.eol-1\.html"/);
+  assert.match(page, /image: "\/assets\/og\/demo\.thing\.eol-1\.svg"/);
+  // The first paragraph answers status, date, and replacement, with the source linked.
+  assert.match(
+    page,
+    /^# Demo 1 is end of life\n\n\*\*End of life\*\* as of 2026-01-31\. Replacement: Demo 2 \| or later\. Source: \[Demo lifecycle\]\(https:\/\/example\.com\/demo\)\.\n/m,
+  );
+  assert.match(page, /Check a version:\n\n```bash\nevergreen check pkg:generic\/demo\n```/);
+  assert.equal(answerLead(fixture), "**End of life** as of 2026-01-31. Replacement: Demo 2 | or later. Source: [Demo lifecycle](https://example.com/demo).");
+  assert.equal(checkCommand(fixture), "evergreen check pkg:generic/demo");
   assert.match(page, /\| Status \| End of life \|/);
   assert.match(page, /\| Affected versions \| `vers:semver\/<2\.0\.0` \|/);
   assert.match(page, /\| Date from the source \| 2026-01-31 \|/);
@@ -104,6 +185,8 @@ test("a range with a pipe does not break the table", () => {
 test("a rule with no day or migration says so instead of inventing one", () => {
   const { deadline: _deadline, replacement: _replacement, ...bare } = rule();
   const page = renderRulePage(bare, 365);
+  assert.match(page, /^\*\*End of life\.\*\* The source gives no day\. Source: \[Demo lifecycle\]\(https:\/\/example\.com\/demo\)\.$/m);
+  assert.doesNotMatch(page, /Replacement:/);
   assert.match(page, /\| Date from the source \| The source gives no day \|/);
   assert.doesNotMatch(page, /## Migration/);
   assert.doesNotMatch(page, /\| Replacement \|/);
@@ -127,21 +210,98 @@ test("titles are unique, follow the search-friendly pattern, and every page name
       assert.equal(titles.has(title), false, `${entry.id} repeats the title of ${titles.get(title)}`);
       titles.set(title, entry.id);
       assert.ok(page.includes(`canonical_url: "${ruleUrl(entry.id)}"`), entry.id);
+      assert.ok(page.includes(`image: "/assets/og/${entry.id}.svg"`), entry.id);
       assert.ok(entry.title.length > 0 && JSON.parse(title).length <= 120, `${entry.id}: the title is too long for a search result`);
     }
   }
 });
 
-test("the sitemap lists the site, the lookup page, the index, and every rule once, with the review date", async () => {
+test("every rule page answers status, date, and replacement first, then offers evergreen check", async () => {
+  for (const item of await loadRegistries()) {
+    for (const entry of item.rules) {
+      const page = renderRulePage(entry, 365);
+      const lead = answerLead(entry);
+      const command = checkCommand(entry);
+      assert.ok(page.includes(lead), `${entry.id}: missing answer lead`);
+      assert.ok(page.includes(`\`\`\`bash\n${command}\n\`\`\``), `${entry.id}: missing check command`);
+      assert.ok(page.indexOf(lead) < page.indexOf(command), `${entry.id}: check should follow the answer`);
+      if (entry.deadline) assert.match(lead, new RegExp(`as of ${entry.deadline}`));
+      else assert.match(lead, /The source gives no day/);
+      if (entry.replacement) assert.ok(lead.includes("Replacement:"), entry.id);
+      assert.match(lead, /Source: \[/);
+    }
+  }
+});
+
+test("related links list other product versions and same-ecosystem rules", () => {
+  const v1 = rule({ id: "demo.thing.eol-1", title: "Demo 1 is end of life", purl: "pkg:generic/demo" });
+  const v2 = rule({ id: "demo.thing.eol-2", title: "Demo 2 is end of life", purl: "pkg:generic/demo", deadline: "2027-01-01" });
+  const other = rule({
+    id: "demo.other.eol-1",
+    title: "Other thing is end of life",
+    purl: "pkg:generic/other",
+  });
+  const foreign = rule({
+    id: "elsewhere.thing.eol-1",
+    ecosystem: "elsewhere",
+    title: "Elsewhere is end of life",
+    purl: "pkg:generic/elsewhere",
+  });
+  const catalog = [v1, v2, other, foreign];
+  const related = relatedRules(v1, catalog);
+  assert.deepEqual(
+    related.otherVersions.map((entry) => entry.id),
+    ["demo.thing.eol-2"],
+  );
+  assert.deepEqual(
+    related.sameEcosystem.map((entry) => entry.id),
+    ["demo.other.eol-1"],
+  );
+
+  const page = renderRulePage(v1, 365, catalog);
+  assert.match(page, /## Related\n\n### Other versions of this product\n\n- \[Demo 2 is end of life\]\(demo\.thing\.eol-2\.html\)/);
+  assert.match(page, /### Same ecosystem\n\n- \[Other thing is end of life\]\(demo\.other\.eol-1\.html\)/);
+  assert.doesNotMatch(page, /elsewhere\.thing\.eol-1/);
+  assert.ok(page.indexOf("## Related") < page.indexOf("## Data"));
+});
+
+test("a shared runtime PURL does not list symbols as other versions of a runtime rule", async () => {
+  const registries = await loadRegistries();
+  const nodejs = registries.find((item) => item.ecosystem === "nodejs");
+  assert.ok(nodejs);
+  const catalog = nodejs.rules;
+  const runtime = catalog.find((entry) => entry.id === "nodejs.runtime.eol-20");
+  assert.ok(runtime);
+  const related = relatedRules(runtime, catalog);
+  assert.ok(related.otherVersions.length >= 1);
+  assert.ok(related.otherVersions.every((entry) => entry.id.startsWith("nodejs.runtime.")));
+  assert.ok(related.sameEcosystem.some((entry) => entry.id.startsWith("nodejs.symbol.")));
+});
+
+test("every generated rule page links at least one related rule page", async () => {
+  const registries = await loadRegistries();
+  const catalog = registries.flatMap((item) => item.rules);
+  for (const entry of catalog) {
+    const page = renderRulePage(entry, 365, catalog);
+    assert.match(page, /## Related\n/, `${entry.id}: missing Related section`);
+    const links = [...page.matchAll(/## Related\n[\s\S]*?(?=\n## Data\n)/g)][0]?.[0] ?? "";
+    assert.match(links, /\]\([a-z0-9][a-z0-9.-]*\.html\)/, `${entry.id}: Related section has no rule link`);
+  }
+});
+
+test("the sitemap lists the site, the lookup page, both indexes, every rule, and every answer page once", async () => {
   const registries = await loadRegistries();
   const sitemap = renderSitemap(registries);
+  const answers = answerPageEntries(registries);
   const locations = [...sitemap.matchAll(/<loc>([^<]+)<\/loc>/g)].map((match) => match[1]!);
   assert.equal(new Set(locations).size, locations.length);
   assert.deepEqual(locations, [...locations].sort());
   assert.ok(locations.includes(`${SITE_URL}/`));
   assert.ok(locations.includes(lookupUrl()));
   assert.ok(locations.includes(`${SITE_URL}/rules/`));
-  assert.equal(locations.length, registries.reduce((sum, item) => sum + item.rules.length, 0) + 3);
+  assert.ok(locations.includes(`${SITE_URL}/eol/`));
+  for (const page of answers) assert.ok(locations.includes(page.loc), page.loc);
+  assert.equal(locations.length, registries.reduce((sum, item) => sum + item.rules.length, 0) + answers.length + 4);
   assert.match(sitemap, /<url><loc>[^<]+<\/loc><lastmod>\d{4}-\d{2}-\d{2}<\/lastmod><\/url>/);
   assert.match(sitemap, /^<\?xml version="1\.0" encoding="UTF-8"\?>\n<urlset xmlns="http:\/\/www\.sitemaps\.org\/schemas\/sitemap\/0\.9">/);
   assert.ok(sitemap.length < 50_000_000 && locations.length < 50_000);
@@ -154,6 +314,7 @@ test("the lookup page inlines every rule with sources and makes no requests", as
   assert.ok(entries.length >= 100);
   assert.match(page, /^<!doctype html>\n<html lang="en">/);
   assert.match(page, /<link rel="canonical" href="https:\/\/arminazimi\.github\.io\/evergreen\/lookup\.html" \/>/);
+  assert.match(page, /<meta property="og:image" content="https:\/\/arminazimi\.github\.io\/evergreen\/assets\/og\/default\.svg" \/>/);
   assert.match(page, /<script type="application\/json" id="lookup-data">/);
   assert.doesNotMatch(page, /\bfetch\s*\(|XMLHttpRequest|navigator\.sendBeacon/);
   assert.match(page, /makes no network requests after it loads/);
@@ -196,8 +357,13 @@ test("lookup data can never close the embedded JSON element", () => {
 });
 
 test("the site configuration gives the absolute URL the canonical links rely on", async () => {
-  const config = parse(await readFile("docs/_config.yml", "utf8")) as { url: string; baseurl: string };
+  const config = parse(await readFile("docs/_config.yml", "utf8")) as {
+    url: string;
+    baseurl: string;
+    defaults: Array<{ values: { image?: string } }>;
+  };
   assert.equal(`${config.url}${config.baseurl}`, SITE_URL);
+  assert.equal(config.defaults[0]?.values.image, "/assets/og/default.svg");
 });
 
 test("a long summary is cut at a sentence for the description", () => {
@@ -222,15 +388,23 @@ test("drift names a changed page, a missing page, and a stale page", async () =>
     "differs: docs/rules/demo.thing.eol-1.md",
     "differs: docs/rules/index.md",
     "differs: docs/sitemap.xml",
+    "stale: docs/rules/demo.other.eol-2.json",
     "stale: docs/rules/demo.other.eol-2.md",
   ]);
 
   await write(fewer, root);
   assert.deepEqual(await drift(fewer, root), []);
+
+  await writeFile(join(root, "docs/rules/demo.thing.eol-1.json"), "{}\n");
+  assert.deepEqual(await drift(fewer, root), ["differs: docs/rules/demo.thing.eol-1.json"]);
+  await write(fewer, root);
+
   assert.deepEqual(await drift(buildFiles([registry([rule(), rule({ id: "demo.new.eol-3" })])]), root), [
     "differs: docs/lookup.html",
+    "differs: docs/rules/demo.thing.eol-1.md",
     "differs: docs/rules/index.md",
     "differs: docs/sitemap.xml",
+    "missing: docs/rules/demo.new.eol-3.json",
     "missing: docs/rules/demo.new.eol-3.md",
   ]);
 });
@@ -253,13 +427,23 @@ test("every rule field is rendered in its context and escaped there", () => {
   const page = renderRulePage(fixture, 180);
 
   // Front matter stays a quoted YAML scalar, and the structured data gets the unescaped facts.
-  const frontMatter = parse(page.slice(4, page.indexOf("\n---\n", 4))) as { title: string; description: string; canonical_url: string };
+  const frontMatter = parse(page.slice(4, page.indexOf("\n---\n", 4))) as {
+    title: string;
+    description: string;
+    canonical_url: string;
+    image: string;
+  };
   assert.equal(frontMatter.title, pageTitle(fixture));
   assert.equal(frontMatter.description, fixture.summary);
   assert.equal(frontMatter.canonical_url, ruleUrl(fixture.id));
+  assert.equal(frontMatter.image, `/assets/og/${fixture.id}.svg`);
 
   // Prose is HTML-escaped, so a rule can never inject markup into the page.
   assert.match(page, /^# Demo 1 &lt;script&gt;alert\(1\)&lt;\/script&gt; \| upgrade$/m);
+  assert.match(
+    page,
+    /^\*\*End of life\*\* as of 2026-01-31\. Replacement: Demo 2 &lt;new&gt; \| later\. Source: \[Demo \\\[lifecycle\\\] &lt;doc&gt;\]\(https:\/\/example\.com\/demo\)\.$/m,
+  );
   assert.match(page, /^The vendor says &lt;\/script&gt;&lt;script&gt;alert\(2\)&lt;\/script&gt; &amp; more\.$/m);
   assert.match(page, /\| Replacement \| Demo 2 &lt;new&gt; \\\| later \|/);
   assert.match(page, /\| Replacement requires \| Node\.js 18\.0\.0 or newer and Python 3\.10 or newer \|/);
@@ -317,8 +501,11 @@ test("each page carries valid structured data that agrees with the page", async 
   for (const item of await loadRegistries()) {
     for (const entry of item.rules) {
       const page = renderRulePage(entry, 365);
-      const data = structuredData(page);
-      assert.equal(data["@context"], "https://schema.org");
+      const root = structuredDataRoot(page);
+      assert.equal(root["@context"], "https://schema.org");
+      assert.ok(Array.isArray(root["@graph"]));
+
+      const data = structuredData(page, "TechArticle");
       assert.equal(data["@type"], "TechArticle");
       assert.equal(data.url, ruleUrl(entry.id));
       assert.equal(data["@id"], data.url);
@@ -330,17 +517,64 @@ test("each page carries valid structured data that agrees with the page", async 
       assert.ok((data.description as string).length <= 201);
       assert.match(data.isBasedOn as string, new RegExp(`/registry/${entry.ecosystem}\\.json$`));
       assert.equal((data.publisher as { url: string }).url, "https://arminazimi.github.io/evergreen");
+
+      const faq = structuredData(page, "FAQPage");
+      assert.equal(faq["@type"], "FAQPage");
+      assert.equal(faq.url, ruleUrl(entry.id));
+      assert.equal(faq["@id"], `${ruleUrl(entry.id)}#faq`);
+      assert.deepEqual(faq.mainEntity, faqMainEntity(entry));
+      const questions = faq.mainEntity as Array<{ name: string; acceptedAnswer: { text: string } }>;
+      assert.ok(questions.length >= 2);
+      assert.ok(questions.every((question) => question.name.length > 0 && question.acceptedAnswer.text.length > 0));
+      assert.ok(questions.some((question) => question.acceptedAnswer.text.includes(checkCommand(entry))));
+      if (entry.replacement) {
+        assert.ok(questions.some((question) => question.acceptedAnswer.text === entry.replacement));
+      }
     }
   }
 });
 
+test("the home page publishes SoftwareApplication structured data", async () => {
+  const home = await readFile("docs/index.md", "utf8");
+  const data = structuredData(home, "SoftwareApplication");
+  assert.equal(structuredDataRoot(home)["@context"], "https://schema.org");
+  assert.equal(data["@type"], "SoftwareApplication");
+  assert.equal(data.name, "Evergreen");
+  assert.equal(data.alternateName, "evergreen-deprecation");
+  assert.equal(data.applicationCategory, "DeveloperApplication");
+  assert.equal(data.operatingSystem, "Node.js 22 or newer");
+  assert.equal(data.url, "https://arminazimi.github.io/evergreen/");
+  assert.equal(data.downloadUrl, "https://www.npmjs.com/package/evergreen-deprecation");
+  assert.equal((data.offers as { price: string; priceCurrency: string }).price, "0");
+  assert.equal((data.offers as { price: string; priceCurrency: string }).priceCurrency, "USD");
+  assert.deepEqual(data.sameAs, [
+    "https://github.com/arminazimi/evergreen",
+    "https://www.npmjs.com/package/evergreen-deprecation",
+  ]);
+  assert.equal(typeof data.description, "string");
+  assert.ok((data.description as string).length > 40);
+});
+
 test("data can never close the structured-data element", () => {
-  const page = renderRulePage(rule({ summary: "Bad </script><script>alert(1)</script> text", title: "A </script> title" }), 365);
+  const page = renderRulePage(
+    rule({
+      summary: "Bad </script><script>alert(1)</script> text",
+      title: "A </script> title",
+      replacement: "Use </script><script>alert(2)</script>",
+    }),
+    365,
+  );
   const block = page.slice(page.indexOf('<script type="application/ld+json">'));
   // Only the closing tag the generator writes: no `</` appears inside the JSON.
   assert.equal(block.indexOf("</"), block.lastIndexOf("</script>"));
-  assert.equal(structuredData(page).headline, "A </script> title — dates, impact, migration");
-  assert.equal(structuredData(page).description, "Bad </script><script>alert(1)</script> text");
+  assert.equal(structuredData(page, "TechArticle").headline, "A </script> title — dates, impact, migration");
+  assert.equal(structuredData(page, "TechArticle").description, "Bad </script><script>alert(1)</script> text");
+  assert.equal(
+    (structuredData(page, "FAQPage").mainEntity as Array<{ acceptedAnswer: { text: string } }>).find(
+      (question) => question.acceptedAnswer.text.startsWith("Use "),
+    )?.acceptedAnswer.text,
+    "Use </script><script>alert(2)</script>",
+  );
 });
 
 test("the page says where the machine-readable data lives and that no CLE export exists yet", () => {
@@ -375,11 +609,13 @@ test("--check passes on fresh pages and fails, naming the page, when one drifts"
   const drifted = await checkIn(root);
   assert.equal(drifted.code, 1);
   assert.match(drifted.stderr, /differs: docs\/rules\/demo\.thing\.eol-1\.md/);
+  assert.match(drifted.stderr, /differs: docs\/rules\/demo\.thing\.eol-1\.json/);
   assert.match(drifted.stderr, /npm run build:reference/);
 
-  // A rule is removed: its page is stale.
+  // A rule is removed: its page and its JSON twin are stale.
   await writeFile(join(root, "registry/demo.json"), JSON.stringify(registry([])));
   assert.match((await checkIn(root)).stderr, /stale: docs\/rules\/demo\.thing\.eol-1\.md/);
+  assert.match((await checkIn(root)).stderr, /stale: docs\/rules\/demo\.thing\.eol-1\.json/);
 });
 
 test("CI runs the drift check", async () => {
@@ -389,4 +625,7 @@ test("CI runs the drift check", async () => {
   const step = workflow.jobs.check.steps.find((item) => item.run === "node dist/tools/build-reference-pages.js --check");
   assert.ok(step, "ci.yml has no reference-page drift step");
   assert.match(step.if ?? "", /runner\.os == 'Linux'/);
+  const og = workflow.jobs.check.steps.find((item) => item.run === "node dist/tools/build-og-images.js --check");
+  assert.ok(og, "ci.yml has no OG-image drift step");
+  assert.match(og.if ?? "", /runner\.os == 'Linux'/);
 });

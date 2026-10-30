@@ -2,9 +2,19 @@
 title: "Amazon EKS 1.33 is past end of standard support — dates, impact, migration"
 description: "Amazon EKS 1.33 reached the end of standard support on 2026-07-29 and is in extended support until 2027-07-29."
 canonical_url: "https://arminazimi.github.io/evergreen/rules/terraform.eks.end-of-support-1.33.html"
+image: "/assets/og/terraform.eks.end-of-support-1.33.svg"
+json_twin: "/rules/terraform.eks.end-of-support-1.33.json"
 ---
 
 # Amazon EKS 1.33 is past end of standard support
+
+**End of support** as of 2026-07-29. Replacement: Amazon EKS 1.35 or later. Source: [Amazon EKS: Understand the Kubernetes version lifecycle](https://docs.aws.amazon.com/eks/latest/userguide/kubernetes-versions.html).
+
+Check a version:
+
+```bash
+evergreen check pkg:generic/amazon-eks
+```
 
 Amazon EKS 1.33 reached the end of standard support on 2026-07-29 and is in extended support until 2027-07-29. Amazon EKS gives a minor version 14 months of standard support and then up to 12 months of extended support at an additional cost per cluster hour.
 
@@ -53,6 +63,26 @@ Amazon EKS 1.33 reached the end of standard support on 2026-07-29 and is in exte
 
 The `terraform` detector. See [Detectors](../DETECTORS.md) and [Compatibility](../COMPATIBILITY.md).
 
+## Related
+
+### Other versions of this product
+
+- [Amazon EKS 1.30 and earlier are past end of extended support](terraform.eks.end-of-life-1.30-and-older.html)
+- [Amazon EKS 1.31 is past end of standard support](terraform.eks.end-of-support-1.31.html)
+- [Amazon EKS 1.32 is past end of standard support](terraform.eks.end-of-support-1.32.html)
+
+### Same ecosystem
+
+- [AKS 1.28 and earlier are no longer supported](terraform.aks.end-of-life-1.28-and-older.html)
+- [AKS 1.29 is past long-term support](terraform.aks.end-of-life-1.29.html)
+- [AKS 1.30 is past long-term support](terraform.aks.end-of-life-1.30.html)
+- [AKS 1.31 is past its 12-month support window](terraform.aks.end-of-support-1.31.html)
+- [AKS 1.32 is past its 12-month support window](terraform.aks.end-of-support-1.32.html)
+- [AKS 1.33 is past its 12-month support window](terraform.aks.end-of-support-1.33.html)
+- [Terraform CLI 1.10 is no longer a supported release line](terraform.cli.end-of-support-1.10.html)
+- [Terraform CLI 1.11 is no longer a supported release line](terraform.cli.end-of-support-1.11.html)
+
+
 ## Data
 
 This page is generated from [`registry/terraform.json`](https://github.com/arminazimi/evergreen/blob/main/registry/terraform.json), rule `terraform.eks.end-of-support-1.33`, in the `evergreen.registry.v2` format ([how rules are written](../RULES.md)). A CLE (ECMA-428) export is not published yet. The same facts are embedded in this page as schema.org structured data.
@@ -60,36 +90,71 @@ This page is generated from [`registry/terraform.json`](https://github.com/armin
 <script type="application/ld+json">
 {
   "@context": "https://schema.org",
-  "@type": "TechArticle",
-  "@id": "https://arminazimi.github.io/evergreen/rules/terraform.eks.end-of-support-1.33.html",
-  "url": "https://arminazimi.github.io/evergreen/rules/terraform.eks.end-of-support-1.33.html",
-  "mainEntityOfPage": "https://arminazimi.github.io/evergreen/rules/terraform.eks.end-of-support-1.33.html",
-  "headline": "Amazon EKS 1.33 is past end of standard support — dates, impact, migration",
-  "description": "Amazon EKS 1.33 reached the end of standard support on 2026-07-29 and is in extended support until 2027-07-29.",
-  "inLanguage": "en",
-  "dateModified": "2026-10-26",
-  "keywords": [
-    "end-of-support",
-    "terraform",
-    "medium"
-  ],
-  "about": {
-    "@type": "Thing",
-    "name": "Amazon EKS 1.33 is past end of standard support",
-    "identifier": "pkg:generic/amazon-eks"
-  },
-  "citation": [
+  "@graph": [
     {
-      "@type": "CreativeWork",
-      "name": "Amazon EKS: Understand the Kubernetes version lifecycle",
-      "url": "https://docs.aws.amazon.com/eks/latest/userguide/kubernetes-versions.html"
+      "@type": "TechArticle",
+      "@id": "https://arminazimi.github.io/evergreen/rules/terraform.eks.end-of-support-1.33.html",
+      "url": "https://arminazimi.github.io/evergreen/rules/terraform.eks.end-of-support-1.33.html",
+      "mainEntityOfPage": "https://arminazimi.github.io/evergreen/rules/terraform.eks.end-of-support-1.33.html",
+      "headline": "Amazon EKS 1.33 is past end of standard support — dates, impact, migration",
+      "description": "Amazon EKS 1.33 reached the end of standard support on 2026-07-29 and is in extended support until 2027-07-29.",
+      "inLanguage": "en",
+      "dateModified": "2026-10-26",
+      "keywords": [
+        "end-of-support",
+        "terraform",
+        "medium"
+      ],
+      "about": {
+        "@type": "Thing",
+        "name": "Amazon EKS 1.33 is past end of standard support",
+        "identifier": "pkg:generic/amazon-eks"
+      },
+      "citation": [
+        {
+          "@type": "CreativeWork",
+          "name": "Amazon EKS: Understand the Kubernetes version lifecycle",
+          "url": "https://docs.aws.amazon.com/eks/latest/userguide/kubernetes-versions.html"
+        }
+      ],
+      "isBasedOn": "https://github.com/arminazimi/evergreen/blob/main/registry/terraform.json",
+      "publisher": {
+        "@type": "Organization",
+        "name": "Evergreen",
+        "url": "https://arminazimi.github.io/evergreen"
+      }
+    },
+    {
+      "@type": "FAQPage",
+      "@id": "https://arminazimi.github.io/evergreen/rules/terraform.eks.end-of-support-1.33.html#faq",
+      "url": "https://arminazimi.github.io/evergreen/rules/terraform.eks.end-of-support-1.33.html",
+      "mainEntity": [
+        {
+          "@type": "Question",
+          "name": "What is the lifecycle status of pkg:generic/amazon-eks?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "End of support as of 2026-07-29. Affected versions: vers:semver/>=1.33.0|\u003c1.34.0. Source: Amazon EKS: Understand the Kubernetes version lifecycle (https://docs.aws.amazon.com/eks/latest/userguide/kubernetes-versions.html)."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "What replaces pkg:generic/amazon-eks?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "Amazon EKS 1.35 or later"
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "How do I check pkg:generic/amazon-eks?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "Run evergreen check pkg:generic/amazon-eks."
+          }
+        }
+      ]
     }
-  ],
-  "isBasedOn": "https://github.com/arminazimi/evergreen/blob/main/registry/terraform.json",
-  "publisher": {
-    "@type": "Organization",
-    "name": "Evergreen",
-    "url": "https://arminazimi.github.io/evergreen"
-  }
+  ]
 }
 </script>

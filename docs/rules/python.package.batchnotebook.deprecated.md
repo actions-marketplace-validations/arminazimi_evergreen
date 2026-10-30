@@ -2,9 +2,19 @@
 title: "BatchNotebook is deprecated — dates, impact, migration"
 description: "The maintainer says not to use BatchNotebook, marks it deprecated, and recommends runipy."
 canonical_url: "https://arminazimi.github.io/evergreen/rules/python.package.batchnotebook.deprecated.html"
+image: "/assets/og/python.package.batchnotebook.deprecated.svg"
+json_twin: "/rules/python.package.batchnotebook.deprecated.json"
 ---
 
 # BatchNotebook is deprecated
+
+**Deprecated.** The source gives no day. Replacement: runipy. Source: [BatchNotebook deprecation notice](https://pypi.org/project/BatchNotebook/).
+
+Check a version:
+
+```bash
+evergreen check pkg:pypi/batchnotebook
+```
 
 The maintainer says not to use BatchNotebook, marks it deprecated, and recommends runipy.
 
@@ -46,6 +56,20 @@ The maintainer says not to use BatchNotebook, marks it deprecated, and recommend
 
 The `python` detector. See [Detectors](../DETECTORS.md) and [Compatibility](../COMPATIBILITY.md).
 
+## Related
+
+### Same ecosystem
+
+- [agentops-toolkit was renamed and is no longer maintained](python.package.agentops-toolkit.eol.html)
+- [aiohttp-valera-validator was renamed and is no longer maintained](python.package.aiohttp-valera-validator.eol.html)
+- [api-shield is deprecated](python.package.api-shield.deprecated.html)
+- [apisec-code-bolt was renamed](python.package.apisec-code-bolt.deprecated.html)
+- [argparse is archived on PyPI](python.package.argparse.archived.html)
+- [asyncio-requests is retired](python.package.asyncio-requests.deprecated.html)
+- [cmip_ref was renamed and is no longer maintained](python.package.cmip-ref.eol.html)
+- [datacommons is deprecated](python.package.datacommons.deprecated.html)
+
+
 ## Data
 
 This page is generated from [`registry/python.json`](https://github.com/arminazimi/evergreen/blob/main/registry/python.json), rule `python.package.batchnotebook.deprecated`, in the `evergreen.registry.v2` format ([how rules are written](../RULES.md)). A CLE (ECMA-428) export is not published yet. The same facts are embedded in this page as schema.org structured data.
@@ -53,36 +77,71 @@ This page is generated from [`registry/python.json`](https://github.com/arminazi
 <script type="application/ld+json">
 {
   "@context": "https://schema.org",
-  "@type": "TechArticle",
-  "@id": "https://arminazimi.github.io/evergreen/rules/python.package.batchnotebook.deprecated.html",
-  "url": "https://arminazimi.github.io/evergreen/rules/python.package.batchnotebook.deprecated.html",
-  "mainEntityOfPage": "https://arminazimi.github.io/evergreen/rules/python.package.batchnotebook.deprecated.html",
-  "headline": "BatchNotebook is deprecated — dates, impact, migration",
-  "description": "The maintainer says not to use BatchNotebook, marks it deprecated, and recommends runipy.",
-  "inLanguage": "en",
-  "dateModified": "2026-10-16",
-  "keywords": [
-    "deprecated",
-    "python",
-    "medium"
-  ],
-  "about": {
-    "@type": "Thing",
-    "name": "BatchNotebook is deprecated",
-    "identifier": "pkg:pypi/batchnotebook"
-  },
-  "citation": [
+  "@graph": [
     {
-      "@type": "CreativeWork",
-      "name": "BatchNotebook deprecation notice",
-      "url": "https://pypi.org/project/BatchNotebook/"
+      "@type": "TechArticle",
+      "@id": "https://arminazimi.github.io/evergreen/rules/python.package.batchnotebook.deprecated.html",
+      "url": "https://arminazimi.github.io/evergreen/rules/python.package.batchnotebook.deprecated.html",
+      "mainEntityOfPage": "https://arminazimi.github.io/evergreen/rules/python.package.batchnotebook.deprecated.html",
+      "headline": "BatchNotebook is deprecated — dates, impact, migration",
+      "description": "The maintainer says not to use BatchNotebook, marks it deprecated, and recommends runipy.",
+      "inLanguage": "en",
+      "dateModified": "2026-10-16",
+      "keywords": [
+        "deprecated",
+        "python",
+        "medium"
+      ],
+      "about": {
+        "@type": "Thing",
+        "name": "BatchNotebook is deprecated",
+        "identifier": "pkg:pypi/batchnotebook"
+      },
+      "citation": [
+        {
+          "@type": "CreativeWork",
+          "name": "BatchNotebook deprecation notice",
+          "url": "https://pypi.org/project/BatchNotebook/"
+        }
+      ],
+      "isBasedOn": "https://github.com/arminazimi/evergreen/blob/main/registry/python.json",
+      "publisher": {
+        "@type": "Organization",
+        "name": "Evergreen",
+        "url": "https://arminazimi.github.io/evergreen"
+      }
+    },
+    {
+      "@type": "FAQPage",
+      "@id": "https://arminazimi.github.io/evergreen/rules/python.package.batchnotebook.deprecated.html#faq",
+      "url": "https://arminazimi.github.io/evergreen/rules/python.package.batchnotebook.deprecated.html",
+      "mainEntity": [
+        {
+          "@type": "Question",
+          "name": "What is the lifecycle status of pkg:pypi/batchnotebook?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "Deprecated. The source gives no day. Affected versions: vers:pypi/*. Source: BatchNotebook deprecation notice (https://pypi.org/project/BatchNotebook/)."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "What replaces pkg:pypi/batchnotebook?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "runipy"
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "How do I check pkg:pypi/batchnotebook?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "Run evergreen check pkg:pypi/batchnotebook."
+          }
+        }
+      ]
     }
-  ],
-  "isBasedOn": "https://github.com/arminazimi/evergreen/blob/main/registry/python.json",
-  "publisher": {
-    "@type": "Organization",
-    "name": "Evergreen",
-    "url": "https://arminazimi.github.io/evergreen"
-  }
+  ]
 }
 </script>

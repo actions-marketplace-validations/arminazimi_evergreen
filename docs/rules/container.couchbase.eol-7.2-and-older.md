@@ -2,9 +2,19 @@
 title: "Couchbase Server image release lines 7.2 and older are end-of-life — dates, impact, migration"
 description: "These Couchbase Server release lines are past their end-of-life date in the vendor's lifecycle schedule (7.2 reached end of life in July 2026; 7.6 is supported until March 2027)."
 canonical_url: "https://arminazimi.github.io/evergreen/rules/container.couchbase.eol-7.2-and-older.html"
+image: "/assets/og/container.couchbase.eol-7.2-and-older.svg"
+json_twin: "/rules/container.couchbase.eol-7.2-and-older.json"
 ---
 
 # Couchbase Server image release lines 7.2 and older are end-of-life
+
+**End of life** as of 2026-07-31. Replacement: A couchbase image on a supported release line. Source: [Couchbase software lifecycle schedules](https://www.couchbase.com/support-policy/EOL/).
+
+Check a version:
+
+```bash
+evergreen check pkg:docker/library/couchbase
+```
 
 These Couchbase Server release lines are past their end-of-life date in the vendor's lifecycle schedule (7.2 reached end of life in July 2026; 7.6 is supported until March 2027).
 
@@ -50,6 +60,20 @@ These Couchbase Server release lines are past their end-of-life date in the vend
 
 The [`container`](../detectors/container.md) detector. See [Detectors](../DETECTORS.md) and [Compatibility](../COMPATIBILITY.md).
 
+## Related
+
+### Same ecosystem
+
+- [Alpine Linux image release lines 3.20 and older are end-of-life](container.alpine.eol-3.20-and-older.html)
+- [Alpine Linux image release line 3.21 reaches end-of-life on 2026-11-01](container.alpine.eol-3.21.html)
+- [Caddy image release lines 1 and older are end-of-life](container.caddy.eol-1-and-older.html)
+- [ClickHouse image release lines 26.2 and older are end-of-life](container.clickhouse.eol-26.2-and-older.html)
+- [Apache CouchDB image release lines 3.3 and older are end-of-life](container.couchdb.eol-3.3-and-older.html)
+- [Debian image release lines 11 and older are end-of-life](container.debian.eol-11-and-older.html)
+- [Drupal image release lines 10.5 and older are end-of-life](container.drupal.eol-10.5-and-older.html)
+- [Go image release lines 1.25 and older are end-of-life](container.golang.eol-1.25-and-older.html)
+
+
 ## Data
 
 This page is generated from [`registry/container.json`](https://github.com/arminazimi/evergreen/blob/main/registry/container.json), rule `container.couchbase.eol-7.2-and-older`, in the `evergreen.registry.v2` format ([how rules are written](../RULES.md)). A CLE (ECMA-428) export is not published yet. The same facts are embedded in this page as schema.org structured data.
@@ -57,41 +81,76 @@ This page is generated from [`registry/container.json`](https://github.com/armin
 <script type="application/ld+json">
 {
   "@context": "https://schema.org",
-  "@type": "TechArticle",
-  "@id": "https://arminazimi.github.io/evergreen/rules/container.couchbase.eol-7.2-and-older.html",
-  "url": "https://arminazimi.github.io/evergreen/rules/container.couchbase.eol-7.2-and-older.html",
-  "mainEntityOfPage": "https://arminazimi.github.io/evergreen/rules/container.couchbase.eol-7.2-and-older.html",
-  "headline": "Couchbase Server image release lines 7.2 and older are end-of-life — dates, impact, migration",
-  "description": "These Couchbase Server release lines are past their end-of-life date in the vendor's lifecycle schedule (7.2 reached end of life in July 2026; 7.6 is supported until March 2027).",
-  "inLanguage": "en",
-  "dateModified": "2026-10-20",
-  "keywords": [
-    "end-of-life",
-    "container",
-    "high"
-  ],
-  "about": {
-    "@type": "Thing",
-    "name": "Couchbase Server image release lines 7.2 and older are end-of-life",
-    "identifier": "pkg:docker/library/couchbase"
-  },
-  "citation": [
+  "@graph": [
     {
-      "@type": "CreativeWork",
-      "name": "Couchbase software lifecycle schedules",
-      "url": "https://www.couchbase.com/support-policy/EOL/"
+      "@type": "TechArticle",
+      "@id": "https://arminazimi.github.io/evergreen/rules/container.couchbase.eol-7.2-and-older.html",
+      "url": "https://arminazimi.github.io/evergreen/rules/container.couchbase.eol-7.2-and-older.html",
+      "mainEntityOfPage": "https://arminazimi.github.io/evergreen/rules/container.couchbase.eol-7.2-and-older.html",
+      "headline": "Couchbase Server image release lines 7.2 and older are end-of-life — dates, impact, migration",
+      "description": "These Couchbase Server release lines are past their end-of-life date in the vendor's lifecycle schedule (7.2 reached end of life in July 2026; 7.6 is supported until March 2027).",
+      "inLanguage": "en",
+      "dateModified": "2026-10-20",
+      "keywords": [
+        "end-of-life",
+        "container",
+        "high"
+      ],
+      "about": {
+        "@type": "Thing",
+        "name": "Couchbase Server image release lines 7.2 and older are end-of-life",
+        "identifier": "pkg:docker/library/couchbase"
+      },
+      "citation": [
+        {
+          "@type": "CreativeWork",
+          "name": "Couchbase software lifecycle schedules",
+          "url": "https://www.couchbase.com/support-policy/EOL/"
+        },
+        {
+          "@type": "CreativeWork",
+          "name": "Couchbase enterprise software support policy",
+          "url": "https://www.couchbase.com/support-policy/enterprise-software/"
+        }
+      ],
+      "isBasedOn": "https://github.com/arminazimi/evergreen/blob/main/registry/container.json",
+      "publisher": {
+        "@type": "Organization",
+        "name": "Evergreen",
+        "url": "https://arminazimi.github.io/evergreen"
+      }
     },
     {
-      "@type": "CreativeWork",
-      "name": "Couchbase enterprise software support policy",
-      "url": "https://www.couchbase.com/support-policy/enterprise-software/"
+      "@type": "FAQPage",
+      "@id": "https://arminazimi.github.io/evergreen/rules/container.couchbase.eol-7.2-and-older.html#faq",
+      "url": "https://arminazimi.github.io/evergreen/rules/container.couchbase.eol-7.2-and-older.html",
+      "mainEntity": [
+        {
+          "@type": "Question",
+          "name": "What is the lifecycle status of pkg:docker/library/couchbase?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "End of life as of 2026-07-31. Affected versions: vers:semver/\u003c7.6.0. Source: Couchbase software lifecycle schedules (https://www.couchbase.com/support-policy/EOL/)."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "What replaces pkg:docker/library/couchbase?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "A couchbase image on a supported release line"
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "How do I check pkg:docker/library/couchbase?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "Run evergreen check pkg:docker/library/couchbase."
+          }
+        }
+      ]
     }
-  ],
-  "isBasedOn": "https://github.com/arminazimi/evergreen/blob/main/registry/container.json",
-  "publisher": {
-    "@type": "Organization",
-    "name": "Evergreen",
-    "url": "https://arminazimi.github.io/evergreen"
-  }
+  ]
 }
 </script>

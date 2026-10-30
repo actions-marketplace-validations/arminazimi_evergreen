@@ -2,9 +2,19 @@
 title: "Bun 0.x pre-release is end-of-life — dates, impact, migration"
 description: "Bun 0.x pre-release versions are obsolete and end-of-life following the Bun 1.0.0 release."
 canonical_url: "https://arminazimi.github.io/evergreen/rules/deno.bun.runtime.eol-0.x.html"
+image: "/assets/og/deno.bun.runtime.eol-0.x.svg"
+json_twin: "/rules/deno.bun.runtime.eol-0.x.json"
 ---
 
 # Bun 0.x pre-release is end-of-life
+
+**End of life** as of 2023-09-08. Replacement: Bun 1.1 or later. Source: [Bun 1.0.0 Release](https://github.com/oven-sh/bun/releases/tag/bun-v1.0.0).
+
+Check a version:
+
+```bash
+evergreen check pkg:generic/bun
+```
 
 Bun 0.x pre-release versions are obsolete and end-of-life following the Bun 1.0.0 release.
 
@@ -46,6 +56,18 @@ Bun 0.x pre-release versions are obsolete and end-of-life following the Bun 1.0.
 
 The `deno` detector. See [Detectors](../DETECTORS.md) and [Compatibility](../COMPATIBILITY.md).
 
+## Related
+
+### Other versions of this product
+
+- [Bun 1.0.x is end-of-life](deno.bun.runtime.eol-1.0.html)
+
+### Same ecosystem
+
+- [Deno 0.x pre-release is end-of-life](deno.runtime.eol-0.x.html)
+- [Deno 1.x is end-of-life](deno.runtime.eol-1.x.html)
+
+
 ## Data
 
 This page is generated from [`registry/deno.json`](https://github.com/arminazimi/evergreen/blob/main/registry/deno.json), rule `deno.bun.runtime.eol-0.x`, in the `evergreen.registry.v2` format ([how rules are written](../RULES.md)). A CLE (ECMA-428) export is not published yet. The same facts are embedded in this page as schema.org structured data.
@@ -53,36 +75,71 @@ This page is generated from [`registry/deno.json`](https://github.com/arminazimi
 <script type="application/ld+json">
 {
   "@context": "https://schema.org",
-  "@type": "TechArticle",
-  "@id": "https://arminazimi.github.io/evergreen/rules/deno.bun.runtime.eol-0.x.html",
-  "url": "https://arminazimi.github.io/evergreen/rules/deno.bun.runtime.eol-0.x.html",
-  "mainEntityOfPage": "https://arminazimi.github.io/evergreen/rules/deno.bun.runtime.eol-0.x.html",
-  "headline": "Bun 0.x pre-release is end-of-life — dates, impact, migration",
-  "description": "Bun 0.x pre-release versions are obsolete and end-of-life following the Bun 1.0.0 release.",
-  "inLanguage": "en",
-  "dateModified": "2026-10-26",
-  "keywords": [
-    "end-of-life",
-    "deno",
-    "high"
-  ],
-  "about": {
-    "@type": "Thing",
-    "name": "Bun 0.x pre-release is end-of-life",
-    "identifier": "pkg:generic/bun"
-  },
-  "citation": [
+  "@graph": [
     {
-      "@type": "CreativeWork",
-      "name": "Bun 1.0.0 Release",
-      "url": "https://github.com/oven-sh/bun/releases/tag/bun-v1.0.0"
+      "@type": "TechArticle",
+      "@id": "https://arminazimi.github.io/evergreen/rules/deno.bun.runtime.eol-0.x.html",
+      "url": "https://arminazimi.github.io/evergreen/rules/deno.bun.runtime.eol-0.x.html",
+      "mainEntityOfPage": "https://arminazimi.github.io/evergreen/rules/deno.bun.runtime.eol-0.x.html",
+      "headline": "Bun 0.x pre-release is end-of-life — dates, impact, migration",
+      "description": "Bun 0.x pre-release versions are obsolete and end-of-life following the Bun 1.0.0 release.",
+      "inLanguage": "en",
+      "dateModified": "2026-10-26",
+      "keywords": [
+        "end-of-life",
+        "deno",
+        "high"
+      ],
+      "about": {
+        "@type": "Thing",
+        "name": "Bun 0.x pre-release is end-of-life",
+        "identifier": "pkg:generic/bun"
+      },
+      "citation": [
+        {
+          "@type": "CreativeWork",
+          "name": "Bun 1.0.0 Release",
+          "url": "https://github.com/oven-sh/bun/releases/tag/bun-v1.0.0"
+        }
+      ],
+      "isBasedOn": "https://github.com/arminazimi/evergreen/blob/main/registry/deno.json",
+      "publisher": {
+        "@type": "Organization",
+        "name": "Evergreen",
+        "url": "https://arminazimi.github.io/evergreen"
+      }
+    },
+    {
+      "@type": "FAQPage",
+      "@id": "https://arminazimi.github.io/evergreen/rules/deno.bun.runtime.eol-0.x.html#faq",
+      "url": "https://arminazimi.github.io/evergreen/rules/deno.bun.runtime.eol-0.x.html",
+      "mainEntity": [
+        {
+          "@type": "Question",
+          "name": "What is the lifecycle status of pkg:generic/bun?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "End of life as of 2023-09-08. Affected versions: vers:semver/>=0.1.0|\u003c1.0.0. Source: Bun 1.0.0 Release (https://github.com/oven-sh/bun/releases/tag/bun-v1.0.0)."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "What replaces pkg:generic/bun?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "Bun 1.1 or later"
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "How do I check pkg:generic/bun?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "Run evergreen check pkg:generic/bun."
+          }
+        }
+      ]
     }
-  ],
-  "isBasedOn": "https://github.com/arminazimi/evergreen/blob/main/registry/deno.json",
-  "publisher": {
-    "@type": "Organization",
-    "name": "Evergreen",
-    "url": "https://arminazimi.github.io/evergreen"
-  }
+  ]
 }
 </script>

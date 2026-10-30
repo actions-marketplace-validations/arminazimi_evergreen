@@ -2,9 +2,19 @@
 title: "ghops is deprecated and no longer maintained — dates, impact, migration"
 description: "The maintainer states that ghops is deprecated and no longer maintained, and directs users to repoindex."
 canonical_url: "https://arminazimi.github.io/evergreen/rules/python.package.ghops.eol.html"
+image: "/assets/og/python.package.ghops.eol.svg"
+json_twin: "/rules/python.package.ghops.eol.json"
 ---
 
 # ghops is deprecated and no longer maintained
+
+**End of life.** The source gives no day. Replacement: repoindex. Source: [ghops deprecation notice](https://pypi.org/project/ghops/).
+
+Check a version:
+
+```bash
+evergreen check pkg:pypi/ghops
+```
 
 The maintainer states that ghops is deprecated and no longer maintained, and directs users to repoindex.
 
@@ -46,6 +56,20 @@ The maintainer states that ghops is deprecated and no longer maintained, and dir
 
 The `python` detector. See [Detectors](../DETECTORS.md) and [Compatibility](../COMPATIBILITY.md).
 
+## Related
+
+### Same ecosystem
+
+- [agentops-toolkit was renamed and is no longer maintained](python.package.agentops-toolkit.eol.html)
+- [aiohttp-valera-validator was renamed and is no longer maintained](python.package.aiohttp-valera-validator.eol.html)
+- [api-shield is deprecated](python.package.api-shield.deprecated.html)
+- [apisec-code-bolt was renamed](python.package.apisec-code-bolt.deprecated.html)
+- [argparse is archived on PyPI](python.package.argparse.archived.html)
+- [asyncio-requests is retired](python.package.asyncio-requests.deprecated.html)
+- [BatchNotebook is deprecated](python.package.batchnotebook.deprecated.html)
+- [cmip_ref was renamed and is no longer maintained](python.package.cmip-ref.eol.html)
+
+
 ## Data
 
 This page is generated from [`registry/python.json`](https://github.com/arminazimi/evergreen/blob/main/registry/python.json), rule `python.package.ghops.eol`, in the `evergreen.registry.v2` format ([how rules are written](../RULES.md)). A CLE (ECMA-428) export is not published yet. The same facts are embedded in this page as schema.org structured data.
@@ -53,36 +77,71 @@ This page is generated from [`registry/python.json`](https://github.com/arminazi
 <script type="application/ld+json">
 {
   "@context": "https://schema.org",
-  "@type": "TechArticle",
-  "@id": "https://arminazimi.github.io/evergreen/rules/python.package.ghops.eol.html",
-  "url": "https://arminazimi.github.io/evergreen/rules/python.package.ghops.eol.html",
-  "mainEntityOfPage": "https://arminazimi.github.io/evergreen/rules/python.package.ghops.eol.html",
-  "headline": "ghops is deprecated and no longer maintained — dates, impact, migration",
-  "description": "The maintainer states that ghops is deprecated and no longer maintained, and directs users to repoindex.",
-  "inLanguage": "en",
-  "dateModified": "2026-10-16",
-  "keywords": [
-    "end-of-life",
-    "python",
-    "high"
-  ],
-  "about": {
-    "@type": "Thing",
-    "name": "ghops is deprecated and no longer maintained",
-    "identifier": "pkg:pypi/ghops"
-  },
-  "citation": [
+  "@graph": [
     {
-      "@type": "CreativeWork",
-      "name": "ghops deprecation notice",
-      "url": "https://pypi.org/project/ghops/"
+      "@type": "TechArticle",
+      "@id": "https://arminazimi.github.io/evergreen/rules/python.package.ghops.eol.html",
+      "url": "https://arminazimi.github.io/evergreen/rules/python.package.ghops.eol.html",
+      "mainEntityOfPage": "https://arminazimi.github.io/evergreen/rules/python.package.ghops.eol.html",
+      "headline": "ghops is deprecated and no longer maintained — dates, impact, migration",
+      "description": "The maintainer states that ghops is deprecated and no longer maintained, and directs users to repoindex.",
+      "inLanguage": "en",
+      "dateModified": "2026-10-16",
+      "keywords": [
+        "end-of-life",
+        "python",
+        "high"
+      ],
+      "about": {
+        "@type": "Thing",
+        "name": "ghops is deprecated and no longer maintained",
+        "identifier": "pkg:pypi/ghops"
+      },
+      "citation": [
+        {
+          "@type": "CreativeWork",
+          "name": "ghops deprecation notice",
+          "url": "https://pypi.org/project/ghops/"
+        }
+      ],
+      "isBasedOn": "https://github.com/arminazimi/evergreen/blob/main/registry/python.json",
+      "publisher": {
+        "@type": "Organization",
+        "name": "Evergreen",
+        "url": "https://arminazimi.github.io/evergreen"
+      }
+    },
+    {
+      "@type": "FAQPage",
+      "@id": "https://arminazimi.github.io/evergreen/rules/python.package.ghops.eol.html#faq",
+      "url": "https://arminazimi.github.io/evergreen/rules/python.package.ghops.eol.html",
+      "mainEntity": [
+        {
+          "@type": "Question",
+          "name": "What is the lifecycle status of pkg:pypi/ghops?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "End of life. The source gives no day. Affected versions: vers:pypi/*. Source: ghops deprecation notice (https://pypi.org/project/ghops/)."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "What replaces pkg:pypi/ghops?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "repoindex"
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "How do I check pkg:pypi/ghops?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "Run evergreen check pkg:pypi/ghops."
+          }
+        }
+      ]
     }
-  ],
-  "isBasedOn": "https://github.com/arminazimi/evergreen/blob/main/registry/python.json",
-  "publisher": {
-    "@type": "Organization",
-    "name": "Evergreen",
-    "url": "https://arminazimi.github.io/evergreen"
-  }
+  ]
 }
 </script>

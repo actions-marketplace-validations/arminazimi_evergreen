@@ -5,7 +5,8 @@ name: Rules (changed)
 # Offline: it reads the checkout only. There is no network step, no secret, and no write scope.
 
 on:
-  pull_request:
+  push:
+    branches: [main]
     paths:
       - "registry/**"
       - "tests/fixtures/**"
@@ -18,8 +19,8 @@ permissions:
   contents: read
 
 concurrency:
-  group: rules-${{ github.event.pull_request.number }}
-  cancel-in-progress: true
+  group: rules-${{ github.sha }}
+  cancel-in-progress: false
 
 jobs:
   rules:
@@ -31,6 +32,7 @@ jobs:
         with:
           # The changed rules come from the diff against the base branch, which needs its history.
           fetch-depth: 0
+          persist-credentials: false
       - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7
         with:
           node-version: 24
@@ -40,7 +42,7 @@ jobs:
       - name: Lint and test the changed rules
         shell: bash
         env:
-          BASE_REF: ${{ github.base_ref }}
+          BASE_SHA: ${{ github.event.before }}
         run: |
-          git fetch --no-tags origin "$BASE_REF"
-          node dist/tools/changed-rules.js --base "origin/$BASE_REF" --summary "$GITHUB_STEP_SUMMARY"
+          git fetch --no-tags origin "$BASE_SHA"
+          node dist/tools/changed-rules.js --base "$BASE_SHA" --summary "$GITHUB_STEP_SUMMARY"

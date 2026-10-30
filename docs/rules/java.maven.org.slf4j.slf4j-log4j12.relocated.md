@@ -2,9 +2,19 @@
 title: "org.slf4j:slf4j-log4j12 has moved to org.slf4j:slf4j-reload4j — dates, impact, migration"
 description: "The POM of org.slf4j:slf4j-log4j12 2.1.0-alpha1 declares a relocation to org.slf4j:slf4j-reload4j."
 canonical_url: "https://arminazimi.github.io/evergreen/rules/java.maven.org.slf4j.slf4j-log4j12.relocated.html"
+image: "/assets/og/java.maven.org.slf4j.slf4j-log4j12.relocated.svg"
+json_twin: "/rules/java.maven.org.slf4j.slf4j-log4j12.relocated.json"
 ---
 
 # org.slf4j:slf4j-log4j12 has moved to org.slf4j:slf4j-reload4j
+
+**Deprecated.** The source gives no day. Replacement: org.slf4j:slf4j-reload4j. Source: [org.slf4j:slf4j-log4j12 2.1.0-alpha1 POM on Maven Central](https://repo1.maven.org/maven2/org/slf4j/slf4j-log4j12/2.1.0-alpha1/slf4j-log4j12-2.1.0-alpha1.pom).
+
+Check a version:
+
+```bash
+evergreen check pkg:maven/org.slf4j/slf4j-log4j12
+```
 
 The POM of org.slf4j:slf4j-log4j12 2.1.0-alpha1 declares a relocation to org.slf4j:slf4j-reload4j.
 
@@ -49,6 +59,20 @@ The POM of org.slf4j:slf4j-log4j12 2.1.0-alpha1 declares a relocation to org.slf
 
 The [`java`](../detectors/java.md) detector. See [Detectors](../DETECTORS.md) and [Compatibility](../COMPATIBILITY.md).
 
+## Related
+
+### Same ecosystem
+
+- [Java 12 to 16 are no longer supported](java.jdk.end-of-support-12-16.html)
+- [Java 18 to 20 are no longer supported](java.jdk.end-of-support-18-20.html)
+- [Java 22 to 24 are no longer supported](java.jdk.end-of-support-22-24.html)
+- [Java 26 is no longer supported](java.jdk.end-of-support-26.html)
+- [Java 9 and 10 are no longer supported](java.jdk.end-of-support-9-10.html)
+- [mysql:mysql-connector-java has moved to com.mysql:mysql-connector-j](java.maven.mysql.mysql-connector-java.relocated.html)
+- [org.hibernate:hibernate-entitymanager has moved to org.hibernate.orm:hibernate-entitymanager](java.maven.org.hibernate.hibernate-entitymanager.relocated.html)
+- [Spring Boot 1.x is out of open-source support](java.maven.spring-boot.legacy-1x.end-of-support.html)
+
+
 ## Data
 
 This page is generated from [`registry/java.json`](https://github.com/arminazimi/evergreen/blob/main/registry/java.json), rule `java.maven.org.slf4j.slf4j-log4j12.relocated`, in the `evergreen.registry.v2` format ([how rules are written](../RULES.md)). A CLE (ECMA-428) export is not published yet. The same facts are embedded in this page as schema.org structured data.
@@ -56,36 +80,71 @@ This page is generated from [`registry/java.json`](https://github.com/arminazimi
 <script type="application/ld+json">
 {
   "@context": "https://schema.org",
-  "@type": "TechArticle",
-  "@id": "https://arminazimi.github.io/evergreen/rules/java.maven.org.slf4j.slf4j-log4j12.relocated.html",
-  "url": "https://arminazimi.github.io/evergreen/rules/java.maven.org.slf4j.slf4j-log4j12.relocated.html",
-  "mainEntityOfPage": "https://arminazimi.github.io/evergreen/rules/java.maven.org.slf4j.slf4j-log4j12.relocated.html",
-  "headline": "org.slf4j:slf4j-log4j12 has moved to org.slf4j:slf4j-reload4j — dates, impact, migration",
-  "description": "The POM of org.slf4j:slf4j-log4j12 2.1.0-alpha1 declares a relocation to org.slf4j:slf4j-reload4j.",
-  "inLanguage": "en",
-  "dateModified": "2026-10-17",
-  "keywords": [
-    "deprecated",
-    "java",
-    "medium"
-  ],
-  "about": {
-    "@type": "Thing",
-    "name": "org.slf4j:slf4j-log4j12 has moved to org.slf4j:slf4j-reload4j",
-    "identifier": "pkg:maven/org.slf4j/slf4j-log4j12"
-  },
-  "citation": [
+  "@graph": [
     {
-      "@type": "CreativeWork",
-      "name": "org.slf4j:slf4j-log4j12 2.1.0-alpha1 POM on Maven Central",
-      "url": "https://repo1.maven.org/maven2/org/slf4j/slf4j-log4j12/2.1.0-alpha1/slf4j-log4j12-2.1.0-alpha1.pom"
+      "@type": "TechArticle",
+      "@id": "https://arminazimi.github.io/evergreen/rules/java.maven.org.slf4j.slf4j-log4j12.relocated.html",
+      "url": "https://arminazimi.github.io/evergreen/rules/java.maven.org.slf4j.slf4j-log4j12.relocated.html",
+      "mainEntityOfPage": "https://arminazimi.github.io/evergreen/rules/java.maven.org.slf4j.slf4j-log4j12.relocated.html",
+      "headline": "org.slf4j:slf4j-log4j12 has moved to org.slf4j:slf4j-reload4j — dates, impact, migration",
+      "description": "The POM of org.slf4j:slf4j-log4j12 2.1.0-alpha1 declares a relocation to org.slf4j:slf4j-reload4j.",
+      "inLanguage": "en",
+      "dateModified": "2026-10-17",
+      "keywords": [
+        "deprecated",
+        "java",
+        "medium"
+      ],
+      "about": {
+        "@type": "Thing",
+        "name": "org.slf4j:slf4j-log4j12 has moved to org.slf4j:slf4j-reload4j",
+        "identifier": "pkg:maven/org.slf4j/slf4j-log4j12"
+      },
+      "citation": [
+        {
+          "@type": "CreativeWork",
+          "name": "org.slf4j:slf4j-log4j12 2.1.0-alpha1 POM on Maven Central",
+          "url": "https://repo1.maven.org/maven2/org/slf4j/slf4j-log4j12/2.1.0-alpha1/slf4j-log4j12-2.1.0-alpha1.pom"
+        }
+      ],
+      "isBasedOn": "https://github.com/arminazimi/evergreen/blob/main/registry/java.json",
+      "publisher": {
+        "@type": "Organization",
+        "name": "Evergreen",
+        "url": "https://arminazimi.github.io/evergreen"
+      }
+    },
+    {
+      "@type": "FAQPage",
+      "@id": "https://arminazimi.github.io/evergreen/rules/java.maven.org.slf4j.slf4j-log4j12.relocated.html#faq",
+      "url": "https://arminazimi.github.io/evergreen/rules/java.maven.org.slf4j.slf4j-log4j12.relocated.html",
+      "mainEntity": [
+        {
+          "@type": "Question",
+          "name": "What is the lifecycle status of pkg:maven/org.slf4j/slf4j-log4j12?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "Deprecated. The source gives no day. Affected versions: vers:maven/>=2.0.13. Source: org.slf4j:slf4j-log4j12 2.1.0-alpha1 POM on Maven Central (https://repo1.maven.org/maven2/org/slf4j/slf4j-log4j12/2.1.0-alpha1/slf4j-log4j12-2.1.0-alpha1.pom)."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "What replaces pkg:maven/org.slf4j/slf4j-log4j12?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "org.slf4j:slf4j-reload4j"
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "How do I check pkg:maven/org.slf4j/slf4j-log4j12?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "Run evergreen check pkg:maven/org.slf4j/slf4j-log4j12."
+          }
+        }
+      ]
     }
-  ],
-  "isBasedOn": "https://github.com/arminazimi/evergreen/blob/main/registry/java.json",
-  "publisher": {
-    "@type": "Organization",
-    "name": "Evergreen",
-    "url": "https://arminazimi.github.io/evergreen"
-  }
+  ]
 }
 </script>

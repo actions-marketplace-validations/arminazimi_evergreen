@@ -2,9 +2,19 @@
 title: "aiohttp-valera-validator was renamed and is no longer maintained — dates, impact, migration"
 description: "The maintainer states that aiohttp-valera-validator is no longer maintained and was renamed to aiohttp-d42-validator."
 canonical_url: "https://arminazimi.github.io/evergreen/rules/python.package.aiohttp-valera-validator.eol.html"
+image: "/assets/og/python.package.aiohttp-valera-validator.eol.svg"
+json_twin: "/rules/python.package.aiohttp-valera-validator.eol.json"
 ---
 
 # aiohttp-valera-validator was renamed and is no longer maintained
+
+**End of life.** The source gives no day. Replacement: aiohttp-d42-validator. Source: [aiohttp-valera-validator rename notice](https://pypi.org/project/aiohttp-valera-validator/).
+
+Check a version:
+
+```bash
+evergreen check pkg:pypi/aiohttp-valera-validator
+```
 
 The maintainer states that aiohttp-valera-validator is no longer maintained and was renamed to aiohttp-d42-validator.
 
@@ -46,6 +56,20 @@ The maintainer states that aiohttp-valera-validator is no longer maintained and 
 
 The `python` detector. See [Detectors](../DETECTORS.md) and [Compatibility](../COMPATIBILITY.md).
 
+## Related
+
+### Same ecosystem
+
+- [agentops-toolkit was renamed and is no longer maintained](python.package.agentops-toolkit.eol.html)
+- [api-shield is deprecated](python.package.api-shield.deprecated.html)
+- [apisec-code-bolt was renamed](python.package.apisec-code-bolt.deprecated.html)
+- [argparse is archived on PyPI](python.package.argparse.archived.html)
+- [asyncio-requests is retired](python.package.asyncio-requests.deprecated.html)
+- [BatchNotebook is deprecated](python.package.batchnotebook.deprecated.html)
+- [cmip_ref was renamed and is no longer maintained](python.package.cmip-ref.eol.html)
+- [datacommons is deprecated](python.package.datacommons.deprecated.html)
+
+
 ## Data
 
 This page is generated from [`registry/python.json`](https://github.com/arminazimi/evergreen/blob/main/registry/python.json), rule `python.package.aiohttp-valera-validator.eol`, in the `evergreen.registry.v2` format ([how rules are written](../RULES.md)). A CLE (ECMA-428) export is not published yet. The same facts are embedded in this page as schema.org structured data.
@@ -53,36 +77,71 @@ This page is generated from [`registry/python.json`](https://github.com/arminazi
 <script type="application/ld+json">
 {
   "@context": "https://schema.org",
-  "@type": "TechArticle",
-  "@id": "https://arminazimi.github.io/evergreen/rules/python.package.aiohttp-valera-validator.eol.html",
-  "url": "https://arminazimi.github.io/evergreen/rules/python.package.aiohttp-valera-validator.eol.html",
-  "mainEntityOfPage": "https://arminazimi.github.io/evergreen/rules/python.package.aiohttp-valera-validator.eol.html",
-  "headline": "aiohttp-valera-validator was renamed and is no longer maintained — dates, impact, migration",
-  "description": "The maintainer states that aiohttp-valera-validator is no longer maintained and was renamed to aiohttp-d42-validator.",
-  "inLanguage": "en",
-  "dateModified": "2026-10-16",
-  "keywords": [
-    "end-of-life",
-    "python",
-    "high"
-  ],
-  "about": {
-    "@type": "Thing",
-    "name": "aiohttp-valera-validator was renamed and is no longer maintained",
-    "identifier": "pkg:pypi/aiohttp-valera-validator"
-  },
-  "citation": [
+  "@graph": [
     {
-      "@type": "CreativeWork",
-      "name": "aiohttp-valera-validator rename notice",
-      "url": "https://pypi.org/project/aiohttp-valera-validator/"
+      "@type": "TechArticle",
+      "@id": "https://arminazimi.github.io/evergreen/rules/python.package.aiohttp-valera-validator.eol.html",
+      "url": "https://arminazimi.github.io/evergreen/rules/python.package.aiohttp-valera-validator.eol.html",
+      "mainEntityOfPage": "https://arminazimi.github.io/evergreen/rules/python.package.aiohttp-valera-validator.eol.html",
+      "headline": "aiohttp-valera-validator was renamed and is no longer maintained — dates, impact, migration",
+      "description": "The maintainer states that aiohttp-valera-validator is no longer maintained and was renamed to aiohttp-d42-validator.",
+      "inLanguage": "en",
+      "dateModified": "2026-10-16",
+      "keywords": [
+        "end-of-life",
+        "python",
+        "high"
+      ],
+      "about": {
+        "@type": "Thing",
+        "name": "aiohttp-valera-validator was renamed and is no longer maintained",
+        "identifier": "pkg:pypi/aiohttp-valera-validator"
+      },
+      "citation": [
+        {
+          "@type": "CreativeWork",
+          "name": "aiohttp-valera-validator rename notice",
+          "url": "https://pypi.org/project/aiohttp-valera-validator/"
+        }
+      ],
+      "isBasedOn": "https://github.com/arminazimi/evergreen/blob/main/registry/python.json",
+      "publisher": {
+        "@type": "Organization",
+        "name": "Evergreen",
+        "url": "https://arminazimi.github.io/evergreen"
+      }
+    },
+    {
+      "@type": "FAQPage",
+      "@id": "https://arminazimi.github.io/evergreen/rules/python.package.aiohttp-valera-validator.eol.html#faq",
+      "url": "https://arminazimi.github.io/evergreen/rules/python.package.aiohttp-valera-validator.eol.html",
+      "mainEntity": [
+        {
+          "@type": "Question",
+          "name": "What is the lifecycle status of pkg:pypi/aiohttp-valera-validator?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "End of life. The source gives no day. Affected versions: vers:pypi/*. Source: aiohttp-valera-validator rename notice (https://pypi.org/project/aiohttp-valera-validator/)."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "What replaces pkg:pypi/aiohttp-valera-validator?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "aiohttp-d42-validator"
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "How do I check pkg:pypi/aiohttp-valera-validator?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "Run evergreen check pkg:pypi/aiohttp-valera-validator."
+          }
+        }
+      ]
     }
-  ],
-  "isBasedOn": "https://github.com/arminazimi/evergreen/blob/main/registry/python.json",
-  "publisher": {
-    "@type": "Organization",
-    "name": "Evergreen",
-    "url": "https://arminazimi.github.io/evergreen"
-  }
+  ]
 }
 </script>

@@ -2,9 +2,19 @@
 title: "Retired actions/upload-artifact release — dates, impact, migration"
 description: "This release uses a retired artifact service or JavaScript runtime. Version 7 runs on Node.js 24."
 canonical_url: "https://arminazimi.github.io/evergreen/rules/github-actions.upload-artifact.retired.html"
+image: "/assets/og/github-actions.upload-artifact.retired.svg"
+json_twin: "/rules/github-actions.upload-artifact.retired.json"
 ---
 
 # Retired actions/upload-artifact release
+
+**Removed** as of 2026-09-23. Replacement: actions/upload-artifact@v7 or later. Source: [Node 20 is no longer available in GitHub Actions](https://github.blog/changelog/2026-09-23-node-20-is-no-longer-available-in-github-actions/).
+
+Check a version:
+
+```bash
+evergreen check pkg:github/actions/upload-artifact
+```
 
 This release uses a retired artifact service or JavaScript runtime. Version 7 runs on Node.js 24.
 
@@ -48,6 +58,20 @@ This release uses a retired artifact service or JavaScript runtime. Version 7 ru
 
 The `github-actions` detector. See [Detectors](../DETECTORS.md) and [Compatibility](../COMPATIBILITY.md).
 
+## Related
+
+### Same ecosystem
+
+- [Unsupported softprops/action-gh-release runtime](github-actions.action-gh-release.node20.html)
+- [Unsupported docker/bake-action runtime](github-actions.bake-action.node20.html)
+- [Unsupported docker/build-push-action runtime](github-actions.build-push-action.node20.html)
+- [Unsupported actions/cache runtime](github-actions.cache.node20.html)
+- [Unsupported actions/checkout runtime](github-actions.checkout.node20.html)
+- [Unsupported actions/configure-pages runtime](github-actions.configure-pages.node20.html)
+- [Unsupported actions/create-github-app-token runtime](github-actions.create-github-app-token.node20.html)
+- [Unsupported actions/deploy-pages runtime](github-actions.deploy-pages.node20.html)
+
+
 ## Data
 
 This page is generated from [`registry/github-actions.json`](https://github.com/arminazimi/evergreen/blob/main/registry/github-actions.json), rule `github-actions.upload-artifact.retired`, in the `evergreen.registry.v2` format ([how rules are written](../RULES.md)). A CLE (ECMA-428) export is not published yet. The same facts are embedded in this page as schema.org structured data.
@@ -55,41 +79,76 @@ This page is generated from [`registry/github-actions.json`](https://github.com/
 <script type="application/ld+json">
 {
   "@context": "https://schema.org",
-  "@type": "TechArticle",
-  "@id": "https://arminazimi.github.io/evergreen/rules/github-actions.upload-artifact.retired.html",
-  "url": "https://arminazimi.github.io/evergreen/rules/github-actions.upload-artifact.retired.html",
-  "mainEntityOfPage": "https://arminazimi.github.io/evergreen/rules/github-actions.upload-artifact.retired.html",
-  "headline": "Retired actions/upload-artifact release — dates, impact, migration",
-  "description": "This release uses a retired artifact service or JavaScript runtime. Version 7 runs on Node.js 24.",
-  "inLanguage": "en",
-  "dateModified": "2026-10-14",
-  "keywords": [
-    "removed",
-    "github-actions",
-    "critical"
-  ],
-  "about": {
-    "@type": "Thing",
-    "name": "Retired actions/upload-artifact release",
-    "identifier": "pkg:github/actions/upload-artifact"
-  },
-  "citation": [
+  "@graph": [
     {
-      "@type": "CreativeWork",
-      "name": "Node 20 is no longer available in GitHub Actions",
-      "url": "https://github.blog/changelog/2026-09-23-node-20-is-no-longer-available-in-github-actions/"
+      "@type": "TechArticle",
+      "@id": "https://arminazimi.github.io/evergreen/rules/github-actions.upload-artifact.retired.html",
+      "url": "https://arminazimi.github.io/evergreen/rules/github-actions.upload-artifact.retired.html",
+      "mainEntityOfPage": "https://arminazimi.github.io/evergreen/rules/github-actions.upload-artifact.retired.html",
+      "headline": "Retired actions/upload-artifact release — dates, impact, migration",
+      "description": "This release uses a retired artifact service or JavaScript runtime. Version 7 runs on Node.js 24.",
+      "inLanguage": "en",
+      "dateModified": "2026-10-14",
+      "keywords": [
+        "removed",
+        "github-actions",
+        "critical"
+      ],
+      "about": {
+        "@type": "Thing",
+        "name": "Retired actions/upload-artifact release",
+        "identifier": "pkg:github/actions/upload-artifact"
+      },
+      "citation": [
+        {
+          "@type": "CreativeWork",
+          "name": "Node 20 is no longer available in GitHub Actions",
+          "url": "https://github.blog/changelog/2026-09-23-node-20-is-no-longer-available-in-github-actions/"
+        },
+        {
+          "@type": "CreativeWork",
+          "name": "Deprecation notice for artifact actions v3",
+          "url": "https://github.blog/changelog/2024-04-16-deprecation-notice-v3-of-the-artifact-actions/"
+        }
+      ],
+      "isBasedOn": "https://github.com/arminazimi/evergreen/blob/main/registry/github-actions.json",
+      "publisher": {
+        "@type": "Organization",
+        "name": "Evergreen",
+        "url": "https://arminazimi.github.io/evergreen"
+      }
     },
     {
-      "@type": "CreativeWork",
-      "name": "Deprecation notice for artifact actions v3",
-      "url": "https://github.blog/changelog/2024-04-16-deprecation-notice-v3-of-the-artifact-actions/"
+      "@type": "FAQPage",
+      "@id": "https://arminazimi.github.io/evergreen/rules/github-actions.upload-artifact.retired.html#faq",
+      "url": "https://arminazimi.github.io/evergreen/rules/github-actions.upload-artifact.retired.html",
+      "mainEntity": [
+        {
+          "@type": "Question",
+          "name": "What is the lifecycle status of pkg:github/actions/upload-artifact?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "Removed as of 2026-09-23. Affected versions: vers:semver/\u003c7.0.0. Source: Node 20 is no longer available in GitHub Actions (https://github.blog/changelog/2026-09-23-node-20-is-no-longer-available-in-github-actions/)."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "What replaces pkg:github/actions/upload-artifact?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "actions/upload-artifact@v7 or later"
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "How do I check pkg:github/actions/upload-artifact?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "Run evergreen check pkg:github/actions/upload-artifact."
+          }
+        }
+      ]
     }
-  ],
-  "isBasedOn": "https://github.com/arminazimi/evergreen/blob/main/registry/github-actions.json",
-  "publisher": {
-    "@type": "Organization",
-    "name": "Evergreen",
-    "url": "https://arminazimi.github.io/evergreen"
-  }
+  ]
 }
 </script>

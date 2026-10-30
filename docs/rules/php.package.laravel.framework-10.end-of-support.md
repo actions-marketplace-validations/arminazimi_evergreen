@@ -2,9 +2,19 @@
 title: "Laravel 10 is no longer supported — dates, impact, migration"
 description: "Laravel's support policy states that security fixes for Laravel 10 ended on 2025-02-04; the release no longer receives security or bug fixes from the Laravel project."
 canonical_url: "https://arminazimi.github.io/evergreen/rules/php.package.laravel.framework-10.end-of-support.html"
+image: "/assets/og/php.package.laravel.framework-10.end-of-support.svg"
+json_twin: "/rules/php.package.laravel.framework-10.end-of-support.json"
 ---
 
 # Laravel 10 is no longer supported
+
+**End of support** as of 2025-02-04. Replacement: Laravel 13. Source: [Laravel support policy](https://laravel.com/docs/releases#support-policy).
+
+Check a version:
+
+```bash
+evergreen check pkg:composer/laravel/framework
+```
 
 Laravel's support policy states that security fixes for Laravel 10 ended on 2025-02-04; the release no longer receives security or bug fixes from the Laravel project.
 
@@ -55,6 +65,24 @@ Laravel's support policy states that security fixes for Laravel 10 ended on 2025
 
 The `php` detector. See [Detectors](../DETECTORS.md) and [Compatibility](../COMPATIBILITY.md).
 
+## Related
+
+### Other versions of this product
+
+- [Laravel 11 is no longer supported](php.package.laravel.framework-11.end-of-support.html)
+
+### Same ecosystem
+
+- [doctrine/cache is abandoned](php.package.doctrine.cache.abandoned.html)
+- [fzaninotto/faker is abandoned](php.package.fzaninotto.faker.abandoned.html)
+- [sensiolabs/security-checker is abandoned](php.package.sensiolabs.security-checker.abandoned.html)
+- [swiftmailer/swiftmailer is abandoned](php.package.swiftmailer.swiftmailer.abandoned.html)
+- [zendframework/zend-stdlib is abandoned](php.package.zendframework.zend-stdlib.abandoned.html)
+- [PHP 7.0 is end-of-life](php.runtime.eol-7.0.html)
+- [PHP 7.1 is end-of-life](php.runtime.eol-7.1.html)
+- [PHP 7.2 is end-of-life](php.runtime.eol-7.2.html)
+
+
 ## Data
 
 This page is generated from [`registry/php.json`](https://github.com/arminazimi/evergreen/blob/main/registry/php.json), rule `php.package.laravel.framework-10.end-of-support`, in the `evergreen.registry.v2` format ([how rules are written](../RULES.md)). A CLE (ECMA-428) export is not published yet. The same facts are embedded in this page as schema.org structured data.
@@ -62,51 +90,86 @@ This page is generated from [`registry/php.json`](https://github.com/arminazimi/
 <script type="application/ld+json">
 {
   "@context": "https://schema.org",
-  "@type": "TechArticle",
-  "@id": "https://arminazimi.github.io/evergreen/rules/php.package.laravel.framework-10.end-of-support.html",
-  "url": "https://arminazimi.github.io/evergreen/rules/php.package.laravel.framework-10.end-of-support.html",
-  "mainEntityOfPage": "https://arminazimi.github.io/evergreen/rules/php.package.laravel.framework-10.end-of-support.html",
-  "headline": "Laravel 10 is no longer supported — dates, impact, migration",
-  "description": "Laravel's support policy states that security fixes for Laravel 10 ended on 2025-02-04; the release no longer receives security or bug fixes from the Laravel project.",
-  "inLanguage": "en",
-  "dateModified": "2026-10-23",
-  "keywords": [
-    "end-of-support",
-    "php",
-    "high"
-  ],
-  "about": {
-    "@type": "Thing",
-    "name": "Laravel 10 is no longer supported",
-    "identifier": "pkg:composer/laravel/framework"
-  },
-  "citation": [
+  "@graph": [
     {
-      "@type": "CreativeWork",
-      "name": "Laravel support policy",
-      "url": "https://laravel.com/docs/releases#support-policy"
+      "@type": "TechArticle",
+      "@id": "https://arminazimi.github.io/evergreen/rules/php.package.laravel.framework-10.end-of-support.html",
+      "url": "https://arminazimi.github.io/evergreen/rules/php.package.laravel.framework-10.end-of-support.html",
+      "mainEntityOfPage": "https://arminazimi.github.io/evergreen/rules/php.package.laravel.framework-10.end-of-support.html",
+      "headline": "Laravel 10 is no longer supported — dates, impact, migration",
+      "description": "Laravel's support policy states that security fixes for Laravel 10 ended on 2025-02-04; the release no longer receives security or bug fixes from the Laravel project.",
+      "inLanguage": "en",
+      "dateModified": "2026-10-23",
+      "keywords": [
+        "end-of-support",
+        "php",
+        "high"
+      ],
+      "about": {
+        "@type": "Thing",
+        "name": "Laravel 10 is no longer supported",
+        "identifier": "pkg:composer/laravel/framework"
+      },
+      "citation": [
+        {
+          "@type": "CreativeWork",
+          "name": "Laravel support policy",
+          "url": "https://laravel.com/docs/releases#support-policy"
+        },
+        {
+          "@type": "CreativeWork",
+          "name": "Laravel 11 upgrade guide",
+          "url": "https://laravel.com/docs/11.x/upgrade"
+        },
+        {
+          "@type": "CreativeWork",
+          "name": "Laravel 12 upgrade guide",
+          "url": "https://laravel.com/docs/12.x/upgrade"
+        },
+        {
+          "@type": "CreativeWork",
+          "name": "Laravel 13 upgrade guide",
+          "url": "https://laravel.com/docs/13.x/upgrade"
+        }
+      ],
+      "isBasedOn": "https://github.com/arminazimi/evergreen/blob/main/registry/php.json",
+      "publisher": {
+        "@type": "Organization",
+        "name": "Evergreen",
+        "url": "https://arminazimi.github.io/evergreen"
+      }
     },
     {
-      "@type": "CreativeWork",
-      "name": "Laravel 11 upgrade guide",
-      "url": "https://laravel.com/docs/11.x/upgrade"
-    },
-    {
-      "@type": "CreativeWork",
-      "name": "Laravel 12 upgrade guide",
-      "url": "https://laravel.com/docs/12.x/upgrade"
-    },
-    {
-      "@type": "CreativeWork",
-      "name": "Laravel 13 upgrade guide",
-      "url": "https://laravel.com/docs/13.x/upgrade"
+      "@type": "FAQPage",
+      "@id": "https://arminazimi.github.io/evergreen/rules/php.package.laravel.framework-10.end-of-support.html#faq",
+      "url": "https://arminazimi.github.io/evergreen/rules/php.package.laravel.framework-10.end-of-support.html",
+      "mainEntity": [
+        {
+          "@type": "Question",
+          "name": "What is the lifecycle status of pkg:composer/laravel/framework?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "End of support as of 2025-02-04. Affected versions: vers:composer/>=10.0.0|\u003c11.0.0. Source: Laravel support policy (https://laravel.com/docs/releases#support-policy)."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "What replaces pkg:composer/laravel/framework?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "Laravel 13"
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "How do I check pkg:composer/laravel/framework?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "Run evergreen check pkg:composer/laravel/framework."
+          }
+        }
+      ]
     }
-  ],
-  "isBasedOn": "https://github.com/arminazimi/evergreen/blob/main/registry/php.json",
-  "publisher": {
-    "@type": "Organization",
-    "name": "Evergreen",
-    "url": "https://arminazimi.github.io/evergreen"
-  }
+  ]
 }
 </script>

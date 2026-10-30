@@ -2,9 +2,19 @@
 title: "PIL is archived on PyPI — dates, impact, migration"
 description: "PyPI marks PIL as archived: the project does not expect to be updated in the future."
 canonical_url: "https://arminazimi.github.io/evergreen/rules/python.package.pil.archived.html"
+image: "/assets/og/python.package.pil.archived.svg"
+json_twin: "/rules/python.package.pil.archived.json"
 ---
 
 # PIL is archived on PyPI
+
+**End of life.** The source gives no day. Source: [PIL on PyPI](https://pypi.org/project/pil/).
+
+Check a version:
+
+```bash
+evergreen check pkg:pypi/pil
+```
 
 PyPI marks PIL as archived: the project does not expect to be updated in the future.
 
@@ -48,6 +58,20 @@ PyPI marks PIL as archived: the project does not expect to be updated in the fut
 
 The `python` detector. See [Detectors](../DETECTORS.md) and [Compatibility](../COMPATIBILITY.md).
 
+## Related
+
+### Same ecosystem
+
+- [agentops-toolkit was renamed and is no longer maintained](python.package.agentops-toolkit.eol.html)
+- [aiohttp-valera-validator was renamed and is no longer maintained](python.package.aiohttp-valera-validator.eol.html)
+- [api-shield is deprecated](python.package.api-shield.deprecated.html)
+- [apisec-code-bolt was renamed](python.package.apisec-code-bolt.deprecated.html)
+- [argparse is archived on PyPI](python.package.argparse.archived.html)
+- [asyncio-requests is retired](python.package.asyncio-requests.deprecated.html)
+- [BatchNotebook is deprecated](python.package.batchnotebook.deprecated.html)
+- [cmip_ref was renamed and is no longer maintained](python.package.cmip-ref.eol.html)
+
+
 ## Data
 
 This page is generated from [`registry/python.json`](https://github.com/arminazimi/evergreen/blob/main/registry/python.json), rule `python.package.pil.archived`, in the `evergreen.registry.v2` format ([how rules are written](../RULES.md)). A CLE (ECMA-428) export is not published yet. The same facts are embedded in this page as schema.org structured data.
@@ -55,46 +79,73 @@ This page is generated from [`registry/python.json`](https://github.com/arminazi
 <script type="application/ld+json">
 {
   "@context": "https://schema.org",
-  "@type": "TechArticle",
-  "@id": "https://arminazimi.github.io/evergreen/rules/python.package.pil.archived.html",
-  "url": "https://arminazimi.github.io/evergreen/rules/python.package.pil.archived.html",
-  "mainEntityOfPage": "https://arminazimi.github.io/evergreen/rules/python.package.pil.archived.html",
-  "headline": "PIL is archived on PyPI — dates, impact, migration",
-  "description": "PyPI marks PIL as archived: the project does not expect to be updated in the future.",
-  "inLanguage": "en",
-  "dateModified": "2026-10-20",
-  "keywords": [
-    "end-of-life",
-    "python",
-    "medium"
-  ],
-  "about": {
-    "@type": "Thing",
-    "name": "PIL is archived on PyPI",
-    "identifier": "pkg:pypi/pil"
-  },
-  "citation": [
+  "@graph": [
     {
-      "@type": "CreativeWork",
-      "name": "PIL on PyPI",
-      "url": "https://pypi.org/project/pil/"
+      "@type": "TechArticle",
+      "@id": "https://arminazimi.github.io/evergreen/rules/python.package.pil.archived.html",
+      "url": "https://arminazimi.github.io/evergreen/rules/python.package.pil.archived.html",
+      "mainEntityOfPage": "https://arminazimi.github.io/evergreen/rules/python.package.pil.archived.html",
+      "headline": "PIL is archived on PyPI — dates, impact, migration",
+      "description": "PyPI marks PIL as archived: the project does not expect to be updated in the future.",
+      "inLanguage": "en",
+      "dateModified": "2026-10-20",
+      "keywords": [
+        "end-of-life",
+        "python",
+        "medium"
+      ],
+      "about": {
+        "@type": "Thing",
+        "name": "PIL is archived on PyPI",
+        "identifier": "pkg:pypi/pil"
+      },
+      "citation": [
+        {
+          "@type": "CreativeWork",
+          "name": "PIL on PyPI",
+          "url": "https://pypi.org/project/pil/"
+        },
+        {
+          "@type": "CreativeWork",
+          "name": "PIL project status (PyPI Simple API)",
+          "url": "https://pypi.org/simple/pil/"
+        },
+        {
+          "@type": "CreativeWork",
+          "name": "Project status markers (PEP 792)",
+          "url": "https://packaging.python.org/specifications/project-status-markers/"
+        }
+      ],
+      "isBasedOn": "https://github.com/arminazimi/evergreen/blob/main/registry/python.json",
+      "publisher": {
+        "@type": "Organization",
+        "name": "Evergreen",
+        "url": "https://arminazimi.github.io/evergreen"
+      }
     },
     {
-      "@type": "CreativeWork",
-      "name": "PIL project status (PyPI Simple API)",
-      "url": "https://pypi.org/simple/pil/"
-    },
-    {
-      "@type": "CreativeWork",
-      "name": "Project status markers (PEP 792)",
-      "url": "https://packaging.python.org/specifications/project-status-markers/"
+      "@type": "FAQPage",
+      "@id": "https://arminazimi.github.io/evergreen/rules/python.package.pil.archived.html#faq",
+      "url": "https://arminazimi.github.io/evergreen/rules/python.package.pil.archived.html",
+      "mainEntity": [
+        {
+          "@type": "Question",
+          "name": "What is the lifecycle status of pkg:pypi/pil?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "End of life. The source gives no day. Affected versions: vers:pypi/*. Source: PIL on PyPI (https://pypi.org/project/pil/)."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "How do I check pkg:pypi/pil?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "Run evergreen check pkg:pypi/pil."
+          }
+        }
+      ]
     }
-  ],
-  "isBasedOn": "https://github.com/arminazimi/evergreen/blob/main/registry/python.json",
-  "publisher": {
-    "@type": "Organization",
-    "name": "Evergreen",
-    "url": "https://arminazimi.github.io/evergreen"
-  }
+  ]
 }
 </script>

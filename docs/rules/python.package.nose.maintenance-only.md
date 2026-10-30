@@ -2,9 +2,19 @@
 title: "nose is maintenance-only — dates, impact, migration"
 description: "The project warns that nose has been in maintenance mode for years and recommends alternatives for new projects."
 canonical_url: "https://arminazimi.github.io/evergreen/rules/python.package.nose.maintenance-only.html"
+image: "/assets/og/python.package.nose.maintenance-only.svg"
+json_twin: "/rules/python.package.nose.maintenance-only.json"
 ---
 
 # nose is maintenance-only
+
+**Deprecated.** The source gives no day. Replacement: pytest, nose2, or unittest. Source: [nose note to users](https://nose.readthedocs.io/en/latest/).
+
+Check a version:
+
+```bash
+evergreen check pkg:pypi/nose
+```
 
 The project warns that nose has been in maintenance mode for years and recommends alternatives for new projects.
 
@@ -50,6 +60,20 @@ The project warns that nose has been in maintenance mode for years and recommend
 
 The `python` detector. See [Detectors](../DETECTORS.md) and [Compatibility](../COMPATIBILITY.md).
 
+## Related
+
+### Same ecosystem
+
+- [agentops-toolkit was renamed and is no longer maintained](python.package.agentops-toolkit.eol.html)
+- [aiohttp-valera-validator was renamed and is no longer maintained](python.package.aiohttp-valera-validator.eol.html)
+- [api-shield is deprecated](python.package.api-shield.deprecated.html)
+- [apisec-code-bolt was renamed](python.package.apisec-code-bolt.deprecated.html)
+- [argparse is archived on PyPI](python.package.argparse.archived.html)
+- [asyncio-requests is retired](python.package.asyncio-requests.deprecated.html)
+- [BatchNotebook is deprecated](python.package.batchnotebook.deprecated.html)
+- [cmip_ref was renamed and is no longer maintained](python.package.cmip-ref.eol.html)
+
+
 ## Data
 
 This page is generated from [`registry/python.json`](https://github.com/arminazimi/evergreen/blob/main/registry/python.json), rule `python.package.nose.maintenance-only`, in the `evergreen.registry.v2` format ([how rules are written](../RULES.md)). A CLE (ECMA-428) export is not published yet. The same facts are embedded in this page as schema.org structured data.
@@ -57,36 +81,71 @@ This page is generated from [`registry/python.json`](https://github.com/arminazi
 <script type="application/ld+json">
 {
   "@context": "https://schema.org",
-  "@type": "TechArticle",
-  "@id": "https://arminazimi.github.io/evergreen/rules/python.package.nose.maintenance-only.html",
-  "url": "https://arminazimi.github.io/evergreen/rules/python.package.nose.maintenance-only.html",
-  "mainEntityOfPage": "https://arminazimi.github.io/evergreen/rules/python.package.nose.maintenance-only.html",
-  "headline": "nose is maintenance-only — dates, impact, migration",
-  "description": "The project warns that nose has been in maintenance mode for years and recommends alternatives for new projects.",
-  "inLanguage": "en",
-  "dateModified": "2026-10-14",
-  "keywords": [
-    "deprecated",
-    "python",
-    "high"
-  ],
-  "about": {
-    "@type": "Thing",
-    "name": "nose is maintenance-only",
-    "identifier": "pkg:pypi/nose"
-  },
-  "citation": [
+  "@graph": [
     {
-      "@type": "CreativeWork",
-      "name": "nose note to users",
-      "url": "https://nose.readthedocs.io/en/latest/"
+      "@type": "TechArticle",
+      "@id": "https://arminazimi.github.io/evergreen/rules/python.package.nose.maintenance-only.html",
+      "url": "https://arminazimi.github.io/evergreen/rules/python.package.nose.maintenance-only.html",
+      "mainEntityOfPage": "https://arminazimi.github.io/evergreen/rules/python.package.nose.maintenance-only.html",
+      "headline": "nose is maintenance-only — dates, impact, migration",
+      "description": "The project warns that nose has been in maintenance mode for years and recommends alternatives for new projects.",
+      "inLanguage": "en",
+      "dateModified": "2026-10-14",
+      "keywords": [
+        "deprecated",
+        "python",
+        "high"
+      ],
+      "about": {
+        "@type": "Thing",
+        "name": "nose is maintenance-only",
+        "identifier": "pkg:pypi/nose"
+      },
+      "citation": [
+        {
+          "@type": "CreativeWork",
+          "name": "nose note to users",
+          "url": "https://nose.readthedocs.io/en/latest/"
+        }
+      ],
+      "isBasedOn": "https://github.com/arminazimi/evergreen/blob/main/registry/python.json",
+      "publisher": {
+        "@type": "Organization",
+        "name": "Evergreen",
+        "url": "https://arminazimi.github.io/evergreen"
+      }
+    },
+    {
+      "@type": "FAQPage",
+      "@id": "https://arminazimi.github.io/evergreen/rules/python.package.nose.maintenance-only.html#faq",
+      "url": "https://arminazimi.github.io/evergreen/rules/python.package.nose.maintenance-only.html",
+      "mainEntity": [
+        {
+          "@type": "Question",
+          "name": "What is the lifecycle status of pkg:pypi/nose?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "Deprecated. The source gives no day. Affected versions: vers:pypi/*. Source: nose note to users (https://nose.readthedocs.io/en/latest/)."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "What replaces pkg:pypi/nose?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "pytest, nose2, or unittest"
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "How do I check pkg:pypi/nose?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "Run evergreen check pkg:pypi/nose."
+          }
+        }
+      ]
     }
-  ],
-  "isBasedOn": "https://github.com/arminazimi/evergreen/blob/main/registry/python.json",
-  "publisher": {
-    "@type": "Organization",
-    "name": "Evergreen",
-    "url": "https://arminazimi.github.io/evergreen"
-  }
+  ]
 }
 </script>
