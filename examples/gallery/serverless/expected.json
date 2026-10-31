@@ -22,6 +22,11 @@
       "severity": "high"
     },
     {
+      "ruleId": "serverless.aws-lambda.nodejs16.x",
+      "path": "template.yml",
+      "severity": "high"
+    },
+    {
       "ruleId": "serverless.aws-lambda.python3.8",
       "path": "serverless.yml",
       "severity": "high"
@@ -38,6 +43,11 @@
     },
     {
       "ruleId": "serverless.google-cloud-functions.nodejs14",
+      "path": "main.tf",
+      "severity": "high"
+    },
+    {
+      "ruleId": "serverless.google-cloud-functions.python38",
       "path": "main.tf",
       "severity": "high"
     }

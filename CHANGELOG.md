@@ -2,6 +2,11 @@
 
 ## Unreleased
 
+- Add a Google Cloud importer to `evergreen inventory`. It reads `gcloud functions list`, `gcloud app versions list`, `gcloud container clusters list`, and `gcloud run services list` output; it calls no cloud API and reads only the files given to it. (#1877)
+- Add an AWS Lambda importer to `evergreen inventory`, which reads the exports the cloud tools already produce and names the JSON Pointer each claim rests on. The importer covers `aws lambda list-functions --output json`, and `registry/serverless.json` now has a sourced rule for every runtime the AWS Lambda runtimes page dates. (#1874)
+- Add an AWS importer to `evergreen inventory` for RDS instances, Aurora clusters, and ElastiCache clusters from `aws rds describe-*` and `aws elasticache describe-cache-clusters` exports. It reads only the files given and never calls a provider API. The first importer reads `aws rds describe-db-instances`, `aws rds describe-db-clusters`, and `aws elasticache describe-cache-clusters` output for RDS, Aurora, and ElastiCache engines. (#1875)
+- Add a Docker importer to `evergreen inventory`, reporting the lifecycle of containers and images from `docker inspect` and `docker compose ps --format json`; it reads only the files given to it and never uses the network. (#1873)
+- Add `evergreen inventory` and its host operating systems importer: read `/etc/os-release` from one host or a multi-host bundle and report end-of-life Ubuntu, Debian, RHEL, CentOS, Amazon Linux, Alpine, and SLES releases with the line each version came from. It reads only the files given and calls no cloud API. (#1879)
 - Add `evergreen drift`, which reports every runtime version a repository states and whether the values agree, with `--align` patches and a `--check` gate; the first collector covers Ruby pins, floors, and the `Gemfile.lock` refusal. (#1836, #1841)
 - Add `evergreen drift`, which reports every runtime version a repository states and whether the values agree, and `--align`, which prints a patch without writing it. This release includes the Java collector. (#1840)
 - Add `evergreen drift`, which reports every place a repository states a runtime version, whether those versions agree, and `--align` patches that make them select one release. (#1838)
