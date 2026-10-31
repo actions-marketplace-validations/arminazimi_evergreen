@@ -176,7 +176,7 @@ test("docker is registered, so the default run picks it", async () => {
 
 test("docker detect rejects every other importer's fixture", async () => {
   for await (const file of glob("tests/fixtures/inventory/**/*", { cwd: process.cwd() })) {
-    if (file.startsWith("tests/fixtures/inventory/docker/")) continue;
+    if (file.replaceAll("\\", "/").startsWith("tests/fixtures/inventory/docker/")) continue;
     if (!(await stat(resolve(file))).isFile()) continue;
     const raw = await readFile(resolve(file), "utf8");
     assert.equal(dockerInventoryImporter.detect(parseExport(raw), file), false, file);
