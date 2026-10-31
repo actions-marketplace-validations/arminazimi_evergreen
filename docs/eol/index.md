@@ -9,7 +9,7 @@ canonical_url: "https://arminazimi.github.io/evergreen/eol/"
 These 50 pages answer “Is it end of life?” for products people search for. Each page lists every reviewed lifecycle rule for that Package URL: status, date, affected versions, and sources. The pages are generated from the lifecycle registry (`registry/`), not written by hand.
 
 - [Is Node.js end of life?](nodejs.html) — `pkg:generic/nodejs`, 80 rules
-- [Is Python end of life?](python.html) — `pkg:generic/python`, 44 rules
+- [Is Python end of life?](python.html) — `pkg:generic/python`, 69 rules
 - [Is PHP end of life?](php.html) — `pkg:generic/php`, 7 rules
 - [Is Ruby end of life?](ruby.html) — `pkg:generic/ruby`, 12 rules
 - [Is Java end of life?](java.html) — `pkg:generic/java`, 5 rules
@@ -25,7 +25,7 @@ These 50 pages answer “Is it end of life?” for products people search for. E
 - [Is Rails end of life?](rails.html) — `pkg:gem/rails`, 2 rules
 - [Is Next.js end of life?](next.html) — `pkg:npm/next`, 4 rules
 - [Is Angular end of life?](npm-angular-core.html) — `pkg:npm/%40angular/core`, 5 rules
-- [Is Terraform end of life?](terraform.html) — `pkg:generic/terraform`, 6 rules
+- [Is Terraform end of life?](terraform.html) — `pkg:generic/terraform`, 8 rules
 - [Is Deno end of life?](deno.html) — `pkg:generic/deno`, 2 rules
 - [Is Bun end of life?](bun.html) — `pkg:generic/bun`, 2 rules
 - [Is Elixir end of life?](elixir.html) — `pkg:generic/elixir`, 2 rules
