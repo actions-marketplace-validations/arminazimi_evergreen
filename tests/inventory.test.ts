@@ -2,7 +2,7 @@ import assert from "node:assert/strict";
 import { createHash } from "node:crypto";
 import { mkdtemp, readFile, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
-import { join, resolve } from "node:path";
+import { basename, join, resolve } from "node:path";
 import { test } from "node:test";
 
 import { Ajv2020 } from "ajv/dist/2020.js";
@@ -88,7 +88,7 @@ test("runInventory sorts results by file and pointer", async (t) => {
   const report = await runInventory([paths[0]!, paths[1]!], [fakeImporter()]);
 
   assert.deepEqual(
-    report.results.map((result) => `${result.item.file.split("/").pop()}:${result.item.pointer}`),
+    report.results.map((result) => `${basename(result.item.file)}:${result.item.pointer}`),
     ["a.json:/entries/0/version", "b.json:/entries/0/version", "b.json:/entries/1/version"],
   );
 });

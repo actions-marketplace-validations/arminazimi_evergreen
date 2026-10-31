@@ -2,7 +2,7 @@ import assert from "node:assert/strict";
 import { execFile } from "node:child_process";
 import { mkdtemp, readFile, readdir, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
-import { relative, resolve } from "node:path";
+import { join, relative, resolve } from "node:path";
 import { test } from "node:test";
 import { promisify } from "node:util";
 
@@ -170,7 +170,7 @@ test("detect rejects every other fixture under tests/fixtures/inventory", async 
   assert.ok(files.length > 1, "expected fixtures to compare against");
   for (const entry of files) {
     const path = resolve(fixtures, entry);
-    const expected = relative(fixtures, path) === "k8s-workloads/workloads.json";
+    const expected = relative(fixtures, path) === join("k8s-workloads", "workloads.json");
     assert.equal(k8sWorkloadsImporter.detect(parseExport(await readFile(path, "utf8")), entry), expected, entry);
   }
 });

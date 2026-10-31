@@ -2,7 +2,7 @@ import assert from "node:assert/strict";
 import { spawnSync } from "node:child_process";
 import { cp, mkdtemp, readFile, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
-import { join, resolve } from "node:path";
+import { basename, join, resolve } from "node:path";
 import { test } from "node:test";
 
 import { Ajv2020 } from "ajv/dist/2020.js";
@@ -167,7 +167,7 @@ test("--align patches apply, remove the drift, and refuse multi-targeting and pr
     assert.match(aligned.stdout, /^\+\+\+ b\/\.github\/workflows\/ci\.yml/m);
     assert.match(aligned.stdout, /^\+\+\+ b\/App\/App\.csproj/m);
 
-    const patch = join(temporary, "..", `${temporary.split("/").pop()}.patch`);
+    const patch = join(temporary, "..", `${basename(temporary)}.patch`);
     await writeFile(patch, aligned.stdout);
     const applied = spawnSync("git", ["apply", "--check", patch], { cwd: temporary, encoding: "utf8" });
     assert.equal(applied.status, 0, applied.stderr);
