@@ -11,6 +11,7 @@ import { join, relative } from "node:path";
 import { builtInDetectors } from "./detectors/index.js";
 import type { Finding, SourceUsage, UsageMatcher } from "./domain.js";
 import { scanRepository } from "./engine.js";
+import { runInventory } from "./inventory/index.js";
 import { analyzeSourceUsage } from "./source-usage.js";
 
 export class RuleTestError extends Error {
@@ -101,6 +102,35 @@ function findingObservations(findings: readonly Finding[]): FixtureObservation[]
   return findings.map((finding) => ({ path: finding.location.path, line: finding.location.line ?? 1, label: finding.title }));
 }
 
+/** The JSON exports under a fixture, to the depth fixtures use; the inventory importers read only these. */
+async function exportFiles(directory: string, depth = 0): Promise<string[]> {
+  if (depth > 3) return [];
+  const files: string[] = [];
+  let entries;
+  try {
+    entries = await readdir(directory, { withFileTypes: true });
+  } catch {
+    return files;
+  }
+  for (const entry of entries.sort((left, right) => left.name.localeCompare(right.name))) {
+    const path = join(directory, entry.name);
+    if (entry.isSymbolicLink()) continue;
+    if (entry.isDirectory()) files.push(...(await exportFiles(path, depth + 1)));
+    else if (entry.isFile() && entry.name.endsWith(".json")) files.push(path);
+  }
+  return files;
+}
+
+/** The items an inventory importer reads from the fixture's exports that the rule reports; a rule judged only by `evergreen inventory` is observed this way. */
+async function inventoryObservations(directory: string, ruleId: string): Promise<FixtureObservation[]> {
+  const files = await exportFiles(directory);
+  if (files.length === 0) return [];
+  const report = await runInventory(files);
+  return report.results
+    .filter((result) => result.check.findings.some((finding) => finding.ruleId === ruleId))
+    .map((result) => ({ path: relative(directory, result.item.file).replaceAll("\\", "/"), line: 1, label: `${result.item.resource} ${result.item.pointer}` }));
+}
+
 async function isDirectory(path: string): Promise<boolean> {
   try {
     return (await stat(path)).isDirectory();
@@ -143,7 +173,10 @@ export async function testRule(ruleId: string, options: RuleTestOptions = {}): P
       continue;
     }
     const scan = await scanRepository(fixture, builtInDetectors, { noCache: true });
-    const findings = findingObservations(scan.findings.filter((finding) => finding.ruleId === ruleId));
+    const findings = [
+      ...findingObservations(scan.findings.filter((finding) => finding.ruleId === ruleId)),
+      ...(await inventoryObservations(fixture, ruleId)),
+    ];
     const usages = findings.length > 0 ? [] : await usageObservations(fixture, ruleId, found.rule);
     const observed = findings.length > 0 || usages.length > 0;
     if (kind === "match") {

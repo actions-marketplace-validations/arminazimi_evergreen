@@ -4105,6 +4105,7 @@ npm run check
 
 - `rules lint` checks every registry under `registry/` (or the files you pass) and prints each problem with its file, line, and a fix hint.
 - `rules test` scans both fixtures and prints the expected and actual observations. It needs both directories, so when you edit a rule that predates the fixture harness, add the two fixtures in the same pull request instead of skipping the check.
+- A rule that only `evergreen inventory` judges (Google App Engine runtimes, GKE cluster versions) has no repository file for a detector to read. Put the cloud export in each fixture as a `.json` file, such as `app-engine-versions.json` or `gke-clusters.json`; `rules test` runs the inventory importers over those files and observes the rule when an item matches it.
 - `build:reference` rewrites `docs/rules/<rule-id>.md` from the registry; CI fails when the committed pages drift.
 - `npm run check` is the same gate CI runs: build, full tests, plugin checks, and evals.
 
@@ -4711,6 +4712,8 @@ Blind (rule below): `serverless/examples` and `AnomalyInnovations/serverless-sta
 
 Because the corpus scans every detector, every finding in these repositories is recorded, not only the Serverless ones. Each expected finding was checked by reading its line at the pinned commit, and its `groundTruthSource` is a `maintainer-review` note naming the path and line; none of these repositories has a reviewed migration entry in the mining log for the finding, so none is cited as `migration-commit`. The AWS Lambda and Google Cloud Functions end-of-life dates come from the [AWS Lambda runtimes](https://docs.aws.amazon.com/lambda/latest/dg/lambda-runtimes.html) table and the [Cloud Run functions runtime support](https://cloud.google.com/functions/docs/runtime-support) schedule, not from these repositories.
 
+**Correction (new rules, 2026-10-31).** Rules added after these entries were pinned now report on them, and the first corpus run listed each as unexpected: the Dockerfile `legacy-env-format` and `maintainer` rules on `hasura/skor` and `kubernetes/examples`, and the AWS Lambda rules for runtimes that are still supported (for example `nodejs22.x`, `nodejs24.x`, `provided.al2`) on `serverless/examples`, `aws-samples/aws-lambda-extensions`, `serverlesspub/imagemagick-aws-lambda-2`, and `slackapi/bolt-js`. Each was confirmed by reading the line at the pinned commit and added to `expected` with a `maintainer-review` note. That left `hasura/skor` and `serverless/examples` as no longer empty, so three targeted zero-finding entries were added to keep the beta evidence of decision 0013: `kubernetes-up-and-running/examples` (plain manifests), and `BauplanLabs/quack-reduce` and `dvalbuena1/visa_rescheduler_aws` (container-image and runtime-less Serverless Framework services, which declare no runtime for a rule to judge).
+
 ## Serverless blind selection
 
 The five earliest Serverless corpus repositories were chosen knowing their result, so each records `selection: "targeted"`. The five below record `selection: "blind"`.
@@ -5108,14 +5111,14 @@ A citable summary of lifecycle risk in Evergreen's public benchmark corpus: ever
 ## Findings
 
 <!-- state-of-eol:start -->
-Measured on the public corpus of 457 pinned repositories (2331 expected findings). The last full corpus run was commit `c7b4e14` on 2026-10-24 (456 repositories, precision 1, recall 1). Method: [Validation](VALIDATION.md). Corpus: [`benchmarks/public-repositories.json`](../benchmarks/public-repositories.json). Regenerate with `npm run build:coverage` after `npm run record:corpus-run`.
+Measured on the public corpus of 460 pinned repositories (2469 expected findings). The last full corpus run was commit `c7b4e14` on 2026-10-24 (456 repositories, precision 1, recall 1). Method: [Validation](VALIDATION.md). Corpus: [`benchmarks/public-repositories.json`](../benchmarks/public-repositories.json). Regenerate with `npm run build:coverage` after `npm run record:corpus-run`.
 
 | Measure | Value |
 | --- | ---: |
-| Repositories | 457 |
-| Expected findings | 2331 |
-| Products with findings | 123 |
-| Release lines with findings | 174 |
+| Repositories | 460 |
+| Expected findings | 2469 |
+| Products with findings | 135 |
+| Release lines with findings | 187 |
 
 ### By product
 
@@ -5128,6 +5131,7 @@ Measured on the public corpus of 457 pinned repositories (2331 expected findings
 | actions/setup-python | 106 | 1 | 46 |
 | actions/upload-artifact | 90 | 1 | 33 |
 | actions/setup-node | 86 | 1 | 39 |
+| aws-lambda-runtime/nodejs24.x | 74 | 1 | 1 |
 | actions/cache | 71 | 1 | 23 |
 | java | 60 | 3 | 13 |
 | golang | 52 | 6 | 20 |
@@ -5135,7 +5139,9 @@ Measured on the public corpus of 457 pinned repositories (2331 expected findings
 | actions/download-artifact | 25 | 1 | 16 |
 | ruby | 24 | 5 | 14 |
 | softprops/action-gh-release | 22 | 1 | 15 |
+| aws-lambda-runtime/python3.14 | 21 | 1 | 1 |
 | babel-eslint | 19 | 1 | 18 |
+| dockerfile | 19 | 2 | 4 |
 | library/python | 19 | 1 | 16 |
 | library/ubuntu | 19 | 2 | 9 |
 | cmake | 18 | 1 | 13 |
@@ -5160,13 +5166,15 @@ Measured on the public corpus of 457 pinned repositories (2331 expected findings
 | postgresql | 9 | 3 | 8 |
 | aws-lambda-runtime/nodejs12.x | 8 | 1 | 2 |
 | aws-lambda-runtime/python3.8 | 8 | 1 | 3 |
+| aws-lambda-runtime/ruby4.0 | 8 | 1 | 1 |
 | dart | 8 | 1 | 4 |
 | library/golang | 8 | 1 | 7 |
 | node-sass | 8 | 1 | 8 |
 | atty | 7 | 1 | 6 |
+| aws-lambda-runtime/nodejs22.x | 7 | 1 | 3 |
+| aws-lambda-runtime/provided.al2023 | 7 | 1 | 1 |
 | docker/metadata-action | 7 | 1 | 3 |
 | docker/setup-qemu-action | 7 | 1 | 6 |
-| dockerfile | 7 | 1 | 2 |
 | mysql | 7 | 1 | 4 |
 | actions/stale | 6 | 1 | 6 |
 | astral-sh/setup-uv | 6 | 1 | 3 |
@@ -5191,6 +5199,8 @@ Measured on the public corpus of 457 pinned repositories (2331 expected findings
 | vue | 3 | 1 | 3 |
 | actions/deploy-pages | 2 | 1 | 2 |
 | actions/labeler | 2 | 1 | 2 |
+| aws-lambda-runtime/nodejs16.x | 2 | 1 | 1 |
+| aws-lambda-runtime/provided.al2 | 2 | 1 | 1 |
 | crypto-js | 2 | 1 | 2 |
 | hashicorp/setup-terraform | 2 | 1 | 2 |
 | istanbul | 2 | 1 | 2 |
@@ -5216,6 +5226,11 @@ Measured on the public corpus of 457 pinned repositories (2331 expected findings
 | actions/configure-pages | 1 | 1 | 1 |
 | amazon-eks | 1 | 1 | 1 |
 | android/targetSdk | 1 | 1 | 1 |
+| aws-lambda-runtime/dotnet10 | 1 | 1 | 1 |
+| aws-lambda-runtime/java25 | 1 | 1 | 1 |
+| aws-lambda-runtime/nodejs10.x | 1 | 1 | 1 |
+| aws-lambda-runtime/nodejs18.x | 1 | 1 | 1 |
+| aws-lambda-runtime/python3.13 | 1 | 1 | 1 |
 | aws-lambda-runtime/ruby2.7 | 1 | 1 | 1 |
 | cloud.google.com/go/pubsub | 1 | 1 | 1 |
 | doctrine/cache | 1 | 1 | 1 |
@@ -5257,6 +5272,7 @@ Measured on the public corpus of 457 pinned repositories (2331 expected findings
 | actions/upload-artifact | Retired actions/upload-artifact release | [`github-actions.upload-artifact.retired`](rules/github-actions.upload-artifact.retired.html) | removed | 90 | 33 |
 | actions/setup-node | Unsupported actions/setup-node runtime | [`github-actions.setup-node.node20`](rules/github-actions.setup-node.node20.html) | end-of-support | 86 | 39 |
 | nodejs | Legacy Node.js runtime is end-of-life | [`nodejs.runtime.legacy`](rules/nodejs.runtime.legacy.html) | end-of-life | 76 | 40 |
+| aws-lambda-runtime/nodejs24.x | AWS Lambda Node.js 24 runtime reaches end of life on 2028-04-30 | [`serverless.aws-lambda.nodejs24.x`](rules/serverless.aws-lambda.nodejs24.x.html) | scheduled-end-of-life | 74 | 1 |
 | actions/cache | Unsupported actions/cache runtime | [`github-actions.cache.node20`](rules/github-actions.cache.node20.html) | end-of-support | 71 | 23 |
 | nodejs | Node.js 18 is end-of-life | [`nodejs.runtime.eol-18`](rules/nodejs.runtime.eol-18.html) | end-of-life | 60 | 42 |
 | dotnet | .NET 9 reaches end of support on 2026-11-10 | [`dotnet.runtime.end-of-support-9.0`](rules/dotnet.runtime.end-of-support-9.0.html) | scheduled-end-of-life | 52 | 4 |
@@ -5272,9 +5288,11 @@ Measured on the public corpus of 457 pinned repositories (2331 expected findings
 | actions/download-artifact | Retired actions/download-artifact release | [`github-actions.download-artifact.retired`](rules/github-actions.download-artifact.retired.html) | removed | 25 | 16 |
 | python | Python 3.10 and older are end-of-life | [`python.runtime.eol-3.10-and-older`](rules/python.runtime.eol-3.10-and-older.html) | end-of-life | 25 | 19 |
 | softprops/action-gh-release | Unsupported softprops/action-gh-release runtime | [`github-actions.action-gh-release.node20`](rules/github-actions.action-gh-release.node20.html) | end-of-support | 22 | 15 |
+| aws-lambda-runtime/python3.14 | AWS Lambda Python 3.14 runtime reaches end of life on 2029-06-30 | [`serverless.aws-lambda.python3.14`](rules/serverless.aws-lambda.python3.14.html) | scheduled-end-of-life | 21 | 1 |
 | babel-eslint | babel-eslint is deprecated | [`npm.package.babel-eslint.deprecated`](rules/npm.package.babel-eslint.deprecated.html) | deprecated | 19 | 18 |
 | library/python | Python image release lines 3.10 and older are end-of-life | [`container.python.eol-3.10-and-older`](rules/container.python.eol-3.10-and-older.html) | end-of-life | 19 | 16 |
 | cmake | CMake policy versions older than 3.5 are removed | [`cpp.cmake.policy-below-3.5.removed`](rules/cpp.cmake.policy-below-3.5.removed.html) | removed | 18 | 13 |
+| dockerfile | The Dockerfile legacy "ENV key value" form is deprecated | [`container.dockerfile.legacy-env-format`](rules/container.dockerfile.legacy-env-format.html) | deprecated | 18 | 4 |
 | actions/setup-java | Unsupported actions/setup-java runtime | [`github-actions.setup-java.node20`](rules/github-actions.setup-java.node20.html) | end-of-support | 17 | 8 |
 | library/ubuntu | Ubuntu image release lines 20.04 and older are past standard support end-of-life | [`container.ubuntu.eol-20.04-and-older`](rules/container.ubuntu.eol-20.04-and-older.html) | end-of-life | 17 | 7 |
 | aws-lambda-runtime/nodejs14.x | AWS Lambda Node.js 14 runtime is end-of-life | [`serverless.aws-lambda.nodejs14.x`](rules/serverless.aws-lambda.nodejs14.x.html) | end-of-life | 16 | 9 |
@@ -5293,6 +5311,7 @@ Measured on the public corpus of 457 pinned repositories (2331 expected findings
 | ruby | Ruby 3.1 is end-of-life | [`ruby.runtime.eol-3.1`](rules/ruby.runtime.eol-3.1.html) | end-of-life | 10 | 4 |
 | aws-lambda-runtime/nodejs12.x | AWS Lambda Node.js 12 runtime is end-of-life | [`serverless.aws-lambda.nodejs12.x`](rules/serverless.aws-lambda.nodejs12.x.html) | end-of-life | 8 | 2 |
 | aws-lambda-runtime/python3.8 | AWS Lambda Python 3.8 runtime is end-of-life | [`serverless.aws-lambda.python3.8`](rules/serverless.aws-lambda.python3.8.html) | end-of-life | 8 | 3 |
+| aws-lambda-runtime/ruby4.0 | AWS Lambda Ruby 4.0 runtime reaches end of life on 2029-03-31 | [`serverless.aws-lambda.ruby4.0`](rules/serverless.aws-lambda.ruby4.0.html) | scheduled-end-of-life | 8 | 1 |
 | azure-pipelines/ubuntu-image | Azure Pipelines Ubuntu 22.04 hosted image is scheduled for removal | [`ci-images.azure-pipelines.ubuntu-22.04`](rules/ci-images.azure-pipelines.ubuntu-22.04.html) | scheduled-end-of-life | 8 | 5 |
 | dart | Dart 3.8 no longer receives security updates | [`dart.sdk.end-of-support-3.8`](rules/dart.sdk.end-of-support-3.8.html) | end-of-support | 8 | 4 |
 | golang | Go 1.24 is no longer supported | [`go.runtime.end-of-support-1.24`](rules/go.runtime.end-of-support-1.24.html) | end-of-support | 8 | 5 |
@@ -5302,9 +5321,10 @@ Measured on the public corpus of 457 pinned repositories (2331 expected findings
 | node-sass | Node Sass is end-of-life | [`npm.package.node-sass.eol`](rules/npm.package.node-sass.eol.html) | end-of-life | 8 | 8 |
 | terraform | Interpolation-only strings are deprecated | [`terraform.syntax.interpolation-only`](rules/terraform.syntax.interpolation-only.html) | deprecated | 8 | 1 |
 | atty | atty is no longer maintained | [`rust.crate.atty.unmaintained`](rules/rust.crate.atty.unmaintained.html) | deprecated | 7 | 6 |
+| aws-lambda-runtime/nodejs22.x | AWS Lambda Node.js 22 runtime reaches end of life on 2027-04-30 | [`serverless.aws-lambda.nodejs22.x`](rules/serverless.aws-lambda.nodejs22.x.html) | scheduled-end-of-life | 7 | 3 |
+| aws-lambda-runtime/provided.al2023 | AWS Lambda OS-only runtime provided.al2023 runtime reaches end of life on 2029-06-30 | [`serverless.aws-lambda.provided.al2023`](rules/serverless.aws-lambda.provided.al2023.html) | scheduled-end-of-life | 7 | 1 |
 | docker/metadata-action | Unsupported docker/metadata-action runtime | [`github-actions.metadata-action.node20`](rules/github-actions.metadata-action.node20.html) | end-of-support | 7 | 3 |
 | docker/setup-qemu-action | Unsupported docker/setup-qemu-action runtime | [`github-actions.setup-qemu-action.node20`](rules/github-actions.setup-qemu-action.node20.html) | end-of-support | 7 | 6 |
-| dockerfile | The Dockerfile legacy "ENV key value" form is deprecated | [`container.dockerfile.legacy-env-format`](rules/container.dockerfile.legacy-env-format.html) | deprecated | 7 | 2 |
 | mysql | MySQL 5.7 is end-of-life | [`database.mysql.end-of-life-5.7`](rules/database.mysql.end-of-life-5.7.html) | end-of-life | 7 | 4 |
 | ruby | Ruby 2.7 is end-of-life | [`ruby.runtime.eol-2.7`](rules/ruby.runtime.eol-2.7.html) | end-of-life | 7 | 4 |
 | actions/stale | Unsupported actions/stale runtime | [`github-actions.stale.node20`](rules/github-actions.stale.node20.html) | end-of-support | 6 | 6 |
@@ -5343,6 +5363,8 @@ Measured on the public corpus of 457 pinned repositories (2331 expected findings
 | vue | Vue 2 is end-of-life | [`npm.package.vue.eol-2`](rules/npm.package.vue.eol-2.html) | end-of-life | 3 | 3 |
 | actions/deploy-pages | Unsupported actions/deploy-pages runtime | [`github-actions.deploy-pages.node20`](rules/github-actions.deploy-pages.node20.html) | end-of-support | 2 | 2 |
 | actions/labeler | Unsupported actions/labeler runtime | [`github-actions.labeler.node20`](rules/github-actions.labeler.node20.html) | end-of-support | 2 | 2 |
+| aws-lambda-runtime/nodejs16.x | AWS Lambda Node.js 16 runtime is end-of-life | [`serverless.aws-lambda.nodejs16.x`](rules/serverless.aws-lambda.nodejs16.x.html) | end-of-life | 2 | 1 |
+| aws-lambda-runtime/provided.al2 | AWS Lambda OS-only runtime provided.al2 runtime is end-of-life | [`serverless.aws-lambda.provided.al2`](rules/serverless.aws-lambda.provided.al2.html) | end-of-life | 2 | 1 |
 | crypto-js | crypto-js is deprecated | [`npm.package.crypto-js.deprecated`](rules/npm.package.crypto-js.deprecated.html) | deprecated | 2 | 2 |
 | django | Django 4.2 LTS is end-of-life | [`python.package.django-4.2.eol`](rules/python.package.django-4.2.eol.html) | end-of-life | 2 | 2 |
 | dotnet | .NET Core 2.2 is no longer supported | [`dotnet.runtime.end-of-support-2.2`](rules/dotnet.runtime.end-of-support-2.2.html) | end-of-support | 2 | 1 |
@@ -5375,6 +5397,11 @@ Measured on the public corpus of 457 pinned repositories (2331 expected findings
 | actions/configure-pages | Unsupported actions/configure-pages runtime | [`github-actions.configure-pages.node20`](rules/github-actions.configure-pages.node20.html) | end-of-support | 1 | 1 |
 | amazon-eks | Amazon EKS 1.30 and earlier are past end of extended support | [`terraform.eks.end-of-life-1.30-and-older`](rules/terraform.eks.end-of-life-1.30-and-older.html) | end-of-life | 1 | 1 |
 | android/targetSdk | Google Play requires targetSdk 35+ for existing phone and tablet apps | [`android.target-sdk.existing.default-below-35`](rules/android.target-sdk.existing.default-below-35.html) | end-of-support | 1 | 1 |
+| aws-lambda-runtime/dotnet10 | AWS Lambda .NET 10 runtime reaches end of life on 2028-11-14 | [`serverless.aws-lambda.dotnet10`](rules/serverless.aws-lambda.dotnet10.html) | scheduled-end-of-life | 1 | 1 |
+| aws-lambda-runtime/java25 | AWS Lambda Java 25 runtime reaches end of life on 2029-06-30 | [`serverless.aws-lambda.java25`](rules/serverless.aws-lambda.java25.html) | scheduled-end-of-life | 1 | 1 |
+| aws-lambda-runtime/nodejs10.x | AWS Lambda Node.js 10 runtime is end-of-life | [`serverless.aws-lambda.nodejs10.x`](rules/serverless.aws-lambda.nodejs10.x.html) | end-of-life | 1 | 1 |
+| aws-lambda-runtime/nodejs18.x | AWS Lambda Node.js 18 runtime is end-of-life | [`serverless.aws-lambda.nodejs18.x`](rules/serverless.aws-lambda.nodejs18.x.html) | end-of-life | 1 | 1 |
+| aws-lambda-runtime/python3.13 | AWS Lambda Python 3.13 runtime reaches end of life on 2029-06-30 | [`serverless.aws-lambda.python3.13`](rules/serverless.aws-lambda.python3.13.html) | scheduled-end-of-life | 1 | 1 |
 | aws-lambda-runtime/ruby2.7 | AWS Lambda Ruby 2.7 runtime is end-of-life | [`serverless.aws-lambda.ruby2.7`](rules/serverless.aws-lambda.ruby2.7.html) | end-of-life | 1 | 1 |
 | cloud.google.com/go/pubsub | cloud.google.com/go/pubsub is deprecated | [`go.module.cloud.google.com.go.pubsub.deprecated`](rules/go.module.cloud.google.com.go.pubsub.deprecated.html) | deprecated | 1 | 1 |
 | com.android.billingclient/billing | Google Play Billing Library 5 is past its deprecation deadline | [`android.play-billing.version-5`](rules/android.play-billing.version-5.html) | deprecated | 1 | 1 |
@@ -5382,6 +5409,7 @@ Measured on the public corpus of 457 pinned repositories (2331 expected findings
 | com.android.billingclient/billing | Google Play Billing Library 7 is past its deprecation deadline | [`android.play-billing.version-7`](rules/android.play-billing.version-7.html) | deprecated | 1 | 1 |
 | com.android.billingclient/billing | Google Play Billing Library 9 reaches its new-app and update deadline on 2028-08-31 | [`android.play-billing.version-9`](rules/android.play-billing.version-9.html) | scheduled-end-of-life | 1 | 1 |
 | django | Django 2.2 LTS is end-of-life | [`python.package.django-2.2.eol`](rules/python.package.django-2.2.eol.html) | end-of-life | 1 | 1 |
+| dockerfile | The Dockerfile MAINTAINER instruction is deprecated | [`container.dockerfile.maintainer`](rules/container.dockerfile.maintainer.html) | deprecated | 1 | 1 |
 | doctrine/cache | doctrine/cache is abandoned | [`php.package.doctrine.cache.abandoned`](rules/php.package.doctrine.cache.abandoned.html) | deprecated | 1 | 1 |
 | failure | failure is no longer maintained | [`rust.crate.failure.unmaintained`](rules/rust.crate.failure.unmaintained.html) | deprecated | 1 | 1 |
 | github.com/golang/protobuf | github.com/golang/protobuf is deprecated | [`go.module.github.com.golang.protobuf.deprecated`](rules/go.module.github.com.golang.protobuf.deprecated.html) | deprecated | 1 | 1 |
