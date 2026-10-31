@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import { execFile } from "node:child_process";
 import { readFile, readdir } from "node:fs/promises";
-import { join, resolve } from "node:path";
+import { join, resolve, sep } from "node:path";
 import { test } from "node:test";
 import { promisify } from "node:util";
 
@@ -154,7 +154,7 @@ test("the Google Cloud rules give each document type a verdict against the bundl
 test("detection rejects every other importer's fixtures", async () => {
   for (const file of await fixtureFiles(FIXTURES)) {
     const document = parseExport(await readFile(file, "utf8"));
-    assert.equal(gcpImporter.detect(document, file), file.startsWith(`${GCP}/`), file);
+    assert.equal(gcpImporter.detect(document, file), file.startsWith(`${GCP}${sep}`), file);
   }
 });
 

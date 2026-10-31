@@ -17,7 +17,7 @@ import type { UpgradeAnalyzer, UpgradeIssue, UpgradeTarget } from "./types.js";
 const ANALYZER_ID = "go-modules";
 const RUNTIME = "go";
 const RUNTIME_PURL = "pkg:generic/golang";
-const VENDOR_MODULES = join("vendor", "modules.txt");
+const VENDOR_MODULES = "vendor/modules.txt";
 const NO_VENDOR_REASON = "Dependencies' Go requirements are not recorded in the repository without vendoring.";
 
 /** `1.22`, `go1.23.1`, and `1.24` as three numeric parts; undefined for anything that is not a Go release number. */

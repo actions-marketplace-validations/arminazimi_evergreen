@@ -83,6 +83,19 @@ test("usage matchers observe a rule when no detector finding is available", asyn
   assert.equal(result.fixtures[0]!.usages[0]!.path, "index.js");
 });
 
+test("an inventory export observes a rule that only `evergreen inventory` judges", async () => {
+  const rule = "serverless.google-appengine-runtime.python38";
+  const version = (runtime: string) => `[{ "name": "apps/example/services/default/versions/v1", "runtime": "${runtime}" }]\n`;
+  const root = await fixtures({
+    [`${rule}/match/app-engine-versions.json`]: version("python38"),
+    [`${rule}/clean/app-engine-versions.json`]: version("python313"),
+  });
+  const result = await testRule(rule, { fixturesRoot: root });
+  assert.equal(result.passed, true, renderRuleTestText(result));
+  assert.equal(result.fixtures[0]!.findings.length, 1);
+  assert.equal(result.fixtures[0]!.findings[0]!.path, "app-engine-versions.json");
+});
+
 test("an unknown rule is a clear error", async () => {
   await assert.rejects(testRule("npm.package.does-not-exist.deprecated"), (error: unknown) => error instanceof RuleTestError && /No rule has the id/.test(error.message));
 });
