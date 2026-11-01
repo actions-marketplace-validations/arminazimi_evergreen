@@ -12,7 +12,7 @@ evergreen drift . --runtime ruby --align 3.4
 
 ## How to read the report
 
-Each runtime block lists every value with its `path:line`, the file or field it came from, the value as written, and the release line it resolves to. A value that cannot be resolved offline is reported too, with the reason. When the `pin` values select more than one release, the block says `DRIFT`. A `floor` is a minimum the project supports; when a floor is above the lowest pinned release, the block says `FLOOR CONFLICT`.
+Each runtime block lists every value with its `path:line`, the file or field it came from, the value as written, and the release line it resolves to. A value that cannot be resolved offline is reported too, with the reason. When the `pin` values select more than one release, the block says `DRIFT`. A `floor` is a minimum the project supports; when a floor is above the lowest pinned release that applies to it, the block says `FLOOR CONFLICT`. A floor that names a directory is checked against the pins that apply to that directory, not against every pin.
 
 `--check` exits `1` when any runtime drifted or has a floor conflict. `--align <release>` requires `--runtime`, prints a unified diff for the pins it can rewrite, lists refused pins on stderr, and never writes a file. It refuses floors and ranges, and each collector documents the files it can rewrite.
 
@@ -163,3 +163,67 @@ A Python image is `python`, `cimg/python`, or `circleci/python` on Docker Hub. A
 A floor resolves from its first lower bound, so `>=3.10,<3.13`, `^3.10`, and `~=3.10.2` all report `3.10`.
 `3`, `3.x`, a wildcard with no minor version, `latest`, a tag or image with no version, a dynamic image reference, an expression, a constraint with no lower bound, and any value Evergreen does not read are reported as pins with a one-sentence reason and no release. A value is never guessed from a newer version existing.
 `--align` rewrites `.python-version`, `.tool-versions`, `runtime.txt`, `Pipfile`, `FROM python:<version>[-variant]` (keeping the variant suffix and the rest of the instruction), and a single-value `setup-python` `python-version`. It refuses floors, matrix entries, CI image references, and any line whose form it does not recognize.
+
+## Node.js
+
+Node.js pins are reported at the major release: `18.19.0`, `v18`, and the image tag `18-alpine` all select `18`.
+
+| Source | Field | Kind |
+| --- | --- | --- |
+| `.nvmrc` | the version line | pin |
+| `.node-version` | the version line | pin |
+| `.tool-versions` | the `nodejs` entry, one pin per version | pin |
+| `package.json` | `volta.node` | pin |
+| `package.json` | `engines.node` | floor |
+| `Dockerfile`, `*.Dockerfile`, `Containerfile*` | `FROM node:<tag>`, including every stage | pin |
+| `devcontainer.json` | the `image` tag and the `ghcr.io/devcontainers/features/node` feature `version` | pin |
+| `.github/workflows/*.yml` | `actions/setup-node` `node-version` | pin |
+| `.gitlab-ci.yml` | `image` and `services` values of the official `node`, `cimg/node`, and `circleci/node` images | pin |
+| `.circleci/config.yml` | Docker executor values of those images | pin |
+| `azure-pipelines.yml` | job `container` values of those images | pin |
+
+A Dev Container image is read for the `node`, `cimg/node`, and `circleci/node` Docker Hub images and for the `devcontainers/javascript-node` and `devcontainers/typescript-node` images, whose tags carry the Node.js major after the image major, such as `1-18-bookworm`.
+
+**LTS codenames**
+
+`lts/<codename>` resolves through the Node.js release schedule ([nodejs/Release](https://github.com/nodejs/Release#release-schedule)): `argon` 4, `boron` 6, `carbon` 8, `dubnium` 10, `erbium` 12, `fermium` 14, `gallium` 16, `hydrogen` 18, `iron` 20, `jod` 22, and `krypton` 24. The Docker tag form `lts-<codename>[-variant]` resolves the same way.
+
+**Matrix builds**
+
+A `setup-node` matrix with several versions is intentional. Each value is reported as a pin with source `setup-node matrix`, the values share one group, and they are not counted against each other. A drift is reported only when a non-matrix pin disagrees with another non-matrix pin, or when a non-matrix pin falls outside the matrix.
+
+**Unresolved**
+
+`lts/*`, `latest`, `current`, `node`, an LTS codename Evergreen does not know, an image tag that names no Node.js release, a dynamic image reference, an expression, a matrix entry that is not a plain version, and a floor with no lower bound are reported as pins with a one-sentence reason and no release.
+
+`--align` rewrites `.nvmrc`, `.node-version`, `.tool-versions`, `package.json` `volta.node`, `FROM node:<major>[-variant]` (keeping the variant suffix and the rest of the instruction), and a single-value `actions/setup-node` `node-version`. It refuses floors, `setup-node` matrices, Dev Container and CI image references, and any line whose form it does not recognize.
+
+## Terraform
+
+Terraform pins are reported at `major.minor` granularity: the `.terraform-version` value `1.17.0`, the image tag `1.17`, and `required_version = ">= 1.17.0"` all select `1.17`.
+
+| Source | Field | Kind |
+| --- | --- | --- |
+| `.terraform-version`, at any depth | the version line, one pin per file | pin |
+| `.tool-versions` | the first version of the `terraform` entry | pin |
+| `Dockerfile`, `*.Dockerfile`, `Containerfile*` | `FROM hashicorp/terraform:<tag>` | pin |
+| `.github/workflows/*.yml` | `hashicorp/setup-terraform` `terraform_version` | pin |
+| `.github/workflows/*.yml` | job `container:` and `services.<name>.image` `hashicorp/terraform` images | pin |
+| `.gitlab-ci.yml` | `image:` or `services:` `hashicorp/terraform` images | pin |
+| `.circleci/config.yml` | Docker executor `hashicorp/terraform` images | pin |
+| `azure-pipelines.yml` | job `container:` `hashicorp/terraform` images | pin |
+| `*.tf`, in every module | `required_version` | pin when exact (`"1.17.0"`, `"= 1.17.0"`, `"~> 1.17.0"`), else floor |
+
+The collector reuses the existing `.terraform-version` and `.tool-versions` parsers and reads `required_version` with the HCL parser. Provider versions in `required_providers` are not Terraform CLI versions and are not read.
+
+**Directories**
+
+Version files and `required_version` apply to the directory they live in, because modules in different directories can legitimately differ. A floor is checked only against the pins that apply to its directory: the nearest `.terraform-version` or `.tool-versions` at or above it, or the repository-wide pins (Dockerfiles, CI images, `setup-terraform`) when its directory declares none. A floor of `>= 1.17.0` beside a module `.terraform-version` of `1.17.0` agrees, even when the rest of the repository pins `1.16`. Pins are still compared across the repository, so modules on different release lines are a drift.
+
+**Unresolved**
+
+`latest`, `min-required`, `system`, a partial version such as `1.9`, a prerelease, a `.tool-versions` entry that names a `ref:` or `path:`, an image with no tag, a floating image tag, a workflow expression, and a constraint with no lower bound are reported with a one-sentence reason and no release.
+
+**Align**
+
+`--align <release>` rewrites `.terraform-version`, a single-value `.tool-versions` `terraform` entry, `FROM hashicorp/terraform:<version>` tags, a single-value `setup-terraform` `terraform_version`, and an exact `required_version` (keeping the `=` form when written). Where a full version is required, a release line such as `1.18` is written as `1.18.0`. It refuses floors, ranges, CI image references, and images pinned by digest.

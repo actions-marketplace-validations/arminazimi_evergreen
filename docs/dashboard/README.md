@@ -1,4 +1,13 @@
+---
+title: Accuracy dashboard
+permalink: /dashboard/README.html
+redirect_to: /dashboard/
+sitemap: false
+---
+
 # Accuracy dashboard
+
+The published site serves this path as a redirect to [`/dashboard/`](https://arminazimi.github.io/evergreen/dashboard/). The notes below stay here for people browsing the repository.
 
 The public page for epic #61: per-detector precision, recall, and corpus evidence from the last full public
 corpus run. Every number comes from `data.json`, which is generated from committed files and checked by CI.
@@ -35,7 +44,7 @@ npm run build:dashboard    # writes data.json
 npm run check:dashboard    # fails if data.json is out of date
 ```
 
-The build reads `benchmarks/thresholds.json` and `benchmarks/public-repositories.json`, never the clock or the
+The build reads `benchmarks/thresholds.json` and `benchmarks/public-repositories/`, never the clock or the
 network. Its reference day is the date of the last full run, so the committed file does not change on its own.
 
 ## What the page shows

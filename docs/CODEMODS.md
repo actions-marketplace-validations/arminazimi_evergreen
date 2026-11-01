@@ -106,3 +106,65 @@ Rewrites the deprecated Node.js `Buffer` constructor (`nodejs.symbol.buffer.cons
 - a template literal with substitutions;
 - a `SlowBuffer` call without `new`, or a member-expression form such as `buffer.SlowBuffer(...)`;
 - a file that cannot be read, does not end with a newline, or does not parse.
+## node-util-is
+Rewrites the removed Node.js `util.is*` type checks (DEP0044 to DEP0058) to the native expressions Node.js names for them. Only a call with exactly one argument is rewritten; the argument text is kept byte-for-byte.
+
+| Rule | Before | After |
+|---|---|---|
+| `nodejs.symbol.util.isarray` | `util.isArray(x)` | `Array.isArray(x)` |
+| `nodejs.symbol.util.isboolean` | `util.isBoolean(x)` | `typeof x === "boolean"` |
+| `nodejs.symbol.util.isbuffer` | `util.isBuffer(x)` | `Buffer.isBuffer(x)` |
+| `nodejs.symbol.util.isdate` | `util.isDate(x)` | `util.types.isDate(x)` |
+| `nodejs.symbol.util.isregexp` | `util.isRegExp(x)` | `util.types.isRegExp(x)` |
+| `nodejs.symbol.util.isfunction` | `util.isFunction(x)` | `typeof x === "function"` |
+| `nodejs.symbol.util.isnull` | `util.isNull(x)` | `x === null` |
+| `nodejs.symbol.util.isundefined` | `util.isUndefined(x)` | `x === undefined` |
+| `nodejs.symbol.util.isnullorundefined` | `util.isNullOrUndefined(x)` | `x == null` |
+| `nodejs.symbol.util.isnumber` | `util.isNumber(x)` | `typeof x === "number"` |
+| `nodejs.symbol.util.isstring` | `util.isString(x)` | `typeof x === "string"` |
+| `nodejs.symbol.util.issymbol` | `util.isSymbol(x)` | `typeof x === "symbol"` |
+| `nodejs.symbol.util.isobject` | `util.isObject(x)` | `x !== null && typeof x === "object"` |
+| `nodejs.symbol.util.isprimitive` | `util.isPrimitive(x)` | `x === null \|\| (typeof x !== "object" && typeof x !== "function")` |
+
+Each replacement is the function body Node.js already runs: [`util.js`](https://github.com/nodejs/node/blob/v22.23.0/lib/util.js#L120-L212) implements the checks with those expressions, and the [export table](https://github.com/nodejs/node/blob/v22.23.0/lib/util.js#L634-L689) deprecates each name with the same recommendation. `x == null` is the short form of `x === null || x === undefined` and matches nothing else, because loose equality against `null` never coerces an object. `isDate` and `isRegExp` call `util.types` because the deprecated functions were those checks and `instanceof` fails for values from another realm, which `util.isDate` and `util.isRegExp` accepted.
+
+The call may read `util` through `const util = require("util")`, `require("node:util")`, `import util from "util"`, `import * as util from "node:util"`, or a destructured `const { isArray } = require("util")` / `import { isArray } from "util"`. A destructured call is rewritten in place and its import binding is left alone. When `isDate` or `isRegExp` is called through a destructured binding and no namespace binding exists, the call is refused rather than adding an import.
+
+A replacement that is a binary or logical expression is wrapped in parentheses unless its parent is an expression statement, an `if` or `while` condition, a call argument, a return value, or an initializer, so `!util.isNull(a)` becomes `!(a === null)`.
+
+Refused, with the reason in `fix --json`:
+- `util.isError(x)`, which needs `Object.prototype.toString(e) === "[object Error]" || e instanceof Error` and has no exact native equivalent on every supported Node version;
+- `util.isObject(x)` or `util.isPrimitive(x)` when `x` is not an identifier or a member chain without calls, because the replacement reads `x` twice;
+- a call with no argument, more than one argument, or a spread argument;
+- an optional call (`util.isArray?.(x)` or `util?.isArray(x)`);
+- a call through a binding the file reassigns, such as `let check = util.isArray; check = other; check(x)`;
+- a call that contains another `util.is*` call, whose replacement would overlap;
+- a file that cannot be read, does not end with a newline, or does not parse.
+
+The `examples/codemods/node-util-is` directory contains an input file to run `evergreen fix` against.
+
+## python-utcnow
+
+Rewrites the two `datetime` methods [deprecated in Python 3.12](https://docs.python.org/3/whatsnew/3.12.html#deprecated) — `datetime.utcnow()` (`python.symbol.datetime.utcnow`) and `datetime.utcfromtimestamp(t)` (`python.symbol.datetime.utcfromtimestamp`) — into forms that return the exact same naive value without the deprecated call.
+
+| Import shape | `utcnow()` becomes | `utcfromtimestamp(t)` becomes |
+|---|---|---|
+| `from datetime import datetime` | `datetime.now(timezone.utc).replace(tzinfo=None)` | `datetime.fromtimestamp(t, timezone.utc).replace(tzinfo=None)` |
+| `import datetime` | `datetime.datetime.now(datetime.timezone.utc).replace(tzinfo=None)` | `datetime.datetime.fromtimestamp(t, datetime.timezone.utc).replace(tzinfo=None)` |
+| `import datetime as dt` | `dt.datetime.now(dt.timezone.utc).replace(tzinfo=None)` | `dt.datetime.fromtimestamp(t, dt.timezone.utc).replace(tzinfo=None)` |
+
+The naive result is preserved on purpose. The [deprecation note](https://docs.python.org/3/whatsnew/3.12.html#deprecated) and the [`datetime` documentation](https://docs.python.org/3/library/datetime.html#datetime.datetime.utcnow) point to `datetime.now(datetime.UTC)`, whose result is timezone-aware; switching a naive datetime to an aware one changes every comparison, serialization, and arithmetic it takes part in. `.replace(tzinfo=None)` strips the awareness the rewrite itself adds, so the value is byte-for-byte what the deprecated call returned. `timezone.utc` is used instead of `datetime.UTC` because it exists on every supported Python 3, while `datetime.UTC` needs 3.11 or newer.
+
+For the `from datetime import datetime` shape, `timezone` is added to that same import statement when it is not already imported. The rewrite follows the file's import shape per call, so a file that imports the class by name and the module under an alias gets each call rewritten in its own shape.
+
+Refused, with the reason in `fix --json`:
+
+- `from datetime import *`, where the codemod cannot tell where the names come from;
+- a call through an alias, such as `from datetime import datetime as d` or a rebinding `utcnow = datetime.utcnow`;
+- a file that binds `datetime` both as the module and as the class imported by name, where a call written `datetime.` could read either binding;
+- a `timezone` name already bound to something other than `datetime.timezone`, which the rewrite would shadow or read wrongly;
+- a `from datetime import datetime` statement that is parenthesized or spans several lines, when `timezone` would have to be added to it;
+- a `utcnow` call with arguments, and a `utcfromtimestamp` call with none, with a keyword argument, or with a splat;
+- a file that cannot be read, has syntax errors, or does not end with a newline.
+
+The `examples/codemods/python-utcnow` directory contains an input file to run `evergreen fix` against.

@@ -131,7 +131,7 @@ const manifest = {
     { id: "dotnet", status: "supported", maturity: "beta", detectorIds: ["dotnet"] },
     { id: "elixir", status: "experimental", maturity: "experimental", detectorIds: ["elixir"] },
     { id: "github-actions", status: "supported", maturity: "stable", detectorIds: ["github-actions"] },
-    { id: "go", status: "experimental", maturity: "experimental", detectorIds: ["go"] },
+    { id: "go", status: "supported", maturity: "stable", detectorIds: ["go"] },
     { id: "java", status: "supported", maturity: "beta", detectorIds: ["java"] },
     { id: "kubernetes", status: "supported", maturity: "beta", detectorIds: ["kubernetes"] },
     // nodejs and npm share the npm detector, so both take its level.
@@ -140,7 +140,7 @@ const manifest = {
     { id: "php", status: "experimental", maturity: "experimental", detectorIds: ["php"] },
     { id: "python", status: "supported", maturity: "stable", detectorIds: ["python"] },
     { id: "ruby", status: "experimental", maturity: "experimental", detectorIds: ["ruby"] },
-    { id: "rust", status: "experimental", maturity: "experimental", detectorIds: ["rust"] },
+    { id: "rust", status: "supported", maturity: "stable", detectorIds: ["rust"] },
     { id: "scala", status: "experimental", maturity: "experimental", detectorIds: ["scala"] },
     { id: "serverless", status: "supported", maturity: "beta", detectorIds: ["serverless"] },
     { id: "swift", status: "supported", maturity: "beta", detectorIds: ["swift"] },
@@ -192,6 +192,13 @@ const manifest = {
       ecosystems: [],
     },
     {
+      id: "snippet.check",
+      status: "supported",
+      version: "1",
+      description: "Check one file snippet before writing it, in an isolated temporary directory.",
+      ecosystems: [...scanEcosystems],
+    },
+    {
       id: "repository.remote-scan",
       status: "unsupported",
       version: "1",
@@ -219,6 +226,7 @@ const manifest = {
         "deprecation.explain",
         "migration.context.create",
         "environment.doctor",
+        "snippet.check",
       ],
     },
     {
@@ -227,7 +235,7 @@ const manifest = {
       status: "supported",
       version: VERSION,
       entryPoints: ["evergreen-mcp"],
-      capabilityIds: [...workflowCapabilityIds],
+      capabilityIds: [...workflowCapabilityIds, "snippet.check"],
     },
     {
       id: "skill",

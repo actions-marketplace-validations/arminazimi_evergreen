@@ -108,6 +108,24 @@ Lists what reaches end of life next, grouped by month, from the current scan.
 
 The SVG has no script and no external references, so it is safe to commit and embed as an image. [Showcase](SHOWCASE.md) covers embedding it in a README and refreshing it on a schedule.
 
+### `countdown`
+
+```bash
+evergreen countdown [path] [--as-of <YYYY-MM-DD>] [--limit <n>] [--json] [--once] [--no-animation]
+```
+
+Prints a live countdown to every dated lifecycle deadline that affects the repository: one row per subject, soonest first. Each row carries a bar scaled to the remaining time in a two-year window and the time left until 00:00 UTC on the deadline.
+
+| Flag | What it does |
+| --- | --- |
+| `--as-of <YYYY-MM-DD>` | Count down from 00:00 UTC on this date instead of now. |
+| `--limit <n>` | How many deadlines to show. Whole number of at least `1`; default `10`. |
+| `--json` | Print the rows in an `evergreen.countdown.v1` document, with `subject`, `deadline`, `remainingSeconds`, `ruleId`, and `location` for each. |
+| `--once` | Print one frame and exit. |
+| `--no-animation` | Print one static frame instead of animating on a terminal. |
+
+Bars are green while more than 180 days remain, yellow from 30 to 180, red under 30, and dim once the deadline has passed. The command looks 24 months ahead, the span a full bar represents. On a terminal the frame redraws once per second for six seconds and stops on the final frame; Ctrl-C clears the timer and exits `130`. Off a terminal, with `--once`, or with `--no-animation` it prints one static frame. `--json` always prints one document, and its deadline dates match `forecast --json` for the same `--as-of`.
+
 ### `status-card`
 
 ```bash
@@ -119,6 +137,22 @@ Prints a static SVG summary of the scan: finding counts, the next end of life, a
 | Flag | What it does |
 | --- | --- |
 | `--name <label>` | Repository label shown on the card. Defaults to the directory name. |
+
+### `glance`
+
+```bash
+evergreen glance [path] [--as-of <YYYY-MM-DD>] [--json]
+```
+
+Prints a one-screen summary of the repository's lifecycle state, laid out like `neofetch`: the Evergreen mark on the left and the facts on the right — the repository name (from the git remote, or the folder), every detected ecosystem with its maturity level, findings by severity as colored blocks, the next deadline, the oldest ended item, and the lifecycle data version and age. The severity counts match `scan --json` for the same path.
+
+| Flag | What it does |
+| --- | --- |
+| `[path]` | Repository path. Default `.`. |
+| `--as-of <YYYY-MM-DD>` | Read the state as of this date instead of today. |
+| `--json` | Print the facts as an `evergreen.glance.v1` document, without the mark. |
+
+Below 80 terminal columns the mark is dropped and the facts keep the full width. On a terminal the severity blocks are colored; `NO_COLOR` turns that off. [Showcase](SHOWCASE.md) shows the card and [docs/demos/glance.tape](demos/glance.tape) records it.
 
 ### `lookup`
 
@@ -278,6 +312,21 @@ Checks one Package URL against the bundled lifecycle rules and prints the status
 | `--json` | Print the structured check result. |
 
 An unused package is not reported as safe: `no-data` means Evergreen has no rule for it.
+
+### `check-snippet`
+
+```bash
+evergreen check-snippet --path <path> [--json]   # content arrives on stdin
+```
+
+Answers "if I write this content to this path, what would Evergreen flag?" before the file exists. Pipe the snippet on stdin and pass the intended repository-relative path with `--path` — `Dockerfile`, `.github/workflows/ci.yml`, `package.json`. Evergreen writes only that one file into a temporary directory, runs every built-in detector against it, and prints the findings with paths and lines relative to the snippet. The temporary directory is always removed, and the real repository is never read or written.
+
+| Flag | What it does |
+| --- | --- |
+| `--path <path>` | The repository-relative path the snippet is meant to be written to; it decides which detector reads it. Required. |
+| `--json` | Print the structured check result (`evergreen.check-snippet.v1`). |
+
+Paths that are absolute, contain `..`, or exceed 256 characters are rejected, as is content over 1 MB.
 
 ### `guard`
 
@@ -538,4 +587,4 @@ Every failure belongs to one class, and the class decides the exit code. With `-
 
 A `policy` failure is a verdict on a result that was already printed, so stdout stays that single result document and no error document is added. The message also goes to stderr in every mode, and `--debug` adds the stack trace for `internal` failures.
 
-The classes and their exit codes are stable; a new class would get a new number rather than renumber an existing one. The same table is published in [Capability manifest](CAPABILITIES.md#exit-codes-and-error-codes), and its source is the `EXIT_CODES` constant in `src/cli-main.ts`.
+The classes and their exit codes are stable; a new class would get a new number rather than renumber an existing one. The same table is published in [Capability manifest](CAPABILITIES.md#exit-codes-and-error-codes), and its source is the `EXIT_CODES` constant in `src/commands/types.ts`.

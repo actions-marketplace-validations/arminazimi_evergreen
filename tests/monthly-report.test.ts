@@ -87,28 +87,34 @@ test("collectEcosystemMetrics returns ecosystems from capability manifest", () =
 
 test("collectCorpusMetrics parses repository counts and expected findings", async () => {
   const tempDir = await mkdtemp(join(tmpdir(), "evergreen-test-corpus-"));
-  const corpusFile = join(tempDir, "corpus.json");
   try {
-    const mockCorpus = {
-      schemaVersion: "evergreen.public-validation.v1",
-      repositories: [
-        {
-          repository: "org/repo-a",
-          ecosystem: "node",
-          selection: "targeted",
-          expected: [{ ruleId: "r1" }, { ruleId: "r2" }],
-        },
-        {
-          repository: "org/repo-b",
-          ecosystem: "python",
-          selection: "blind",
-          expected: [{ ruleId: "r3" }],
-        },
-      ],
-    };
-    await writeFile(corpusFile, JSON.stringify(mockCorpus));
+    const nodeDir = join(tempDir, "benchmarks", "public-repositories", "node");
+    const pythonDir = join(tempDir, "benchmarks", "public-repositories", "python");
+    const { mkdir } = await import("node:fs/promises");
+    await mkdir(nodeDir, { recursive: true });
+    await mkdir(pythonDir, { recursive: true });
+    await writeFile(
+      join(nodeDir, "0000--org--repo-a.json"),
+      `${JSON.stringify({
+        repository: "org/repo-a",
+        commit: "a".repeat(40),
+        ecosystem: "node",
+        selection: "targeted",
+        expected: [{ ruleId: "r1", path: "package.json", groundTruthSource: { kind: "maintainer-review", note: "package.json" } }, { ruleId: "r2", path: "package.json", groundTruthSource: { kind: "maintainer-review", note: "package.json" } }],
+      }, null, 2)}\n`,
+    );
+    await writeFile(
+      join(pythonDir, "0001--org--repo-b.json"),
+      `${JSON.stringify({
+        repository: "org/repo-b",
+        commit: "b".repeat(40),
+        ecosystem: "python",
+        selection: "blind",
+        expected: [{ ruleId: "r3", path: "pyproject.toml", groundTruthSource: { kind: "maintainer-review", note: "pyproject.toml" } }],
+      }, null, 2)}\n`,
+    );
 
-    const metrics = await collectCorpusMetrics(corpusFile);
+    const metrics = await collectCorpusMetrics(tempDir);
     assert.equal(metrics.totalRepositories, 2);
     assert.equal(metrics.totalExpectedFindings, 3);
     assert.equal(metrics.byEcosystem["node"]?.repositories, 1);
@@ -123,7 +129,7 @@ test("collectCorpusMetrics parses repository counts and expected findings", asyn
 });
 
 test("collectCorpusMetrics handles missing or invalid corpus path gracefully", async () => {
-  const metrics = await collectCorpusMetrics("invalid-corpus-path.json");
+  const metrics = await collectCorpusMetrics("invalid-corpus-path");
   assert.equal(metrics.totalRepositories, 0);
   assert.equal(metrics.totalExpectedFindings, 0);
   assert.deepEqual(metrics.byEcosystem, {});
@@ -219,6 +225,7 @@ test("collectContributorMetrics degrades gracefully in a shallow repository", as
         githubStars: "unavailable",
         previousStars: null,
         channels: [],
+        landingPages: [],
       },
     };
 
@@ -300,6 +307,10 @@ function sampleReportData(): MonthlyReportData {
         { label: "skills.sh installs", value: 20, previous: null },
         { label: "Docs page views", value: 250, previous: 100 },
       ],
+      landingPages: [
+        { page: "https://arminazimi.github.io/evergreen/RULES.html", clicks: 42, impressions: 530 },
+        { page: "https://arminazimi.github.io/evergreen/eol/", clicks: 18, impressions: 410 },
+      ],
     },
   };
 }
@@ -338,6 +349,11 @@ test("generateMonthlyReport creates a complete markdown document with all sectio
   assert.match(report, /\| npm weekly downloads \| 500 \| \+120 \|/);
   assert.match(report, /\| skills.sh installs \| 20 \| — \|/);
   assert.match(report, /\| Docs page views \| 250 \| \+150 \|/);
+  assert.match(report, /^### Top landing pages$/m);
+  assert.match(report, /Entered by the maintainer from Search Console's Performance report for 2026-10/);
+  assert.match(report, /\| Landing page \| Clicks \| Impressions \|/);
+  assert.match(report, /\| https:\/\/arminazimi\.github\.io\/evergreen\/RULES\.html \| 42 \| 530 \|/);
+  assert.match(report, /\| https:\/\/arminazimi\.github\.io\/evergreen\/eol\/ \| 18 \| 410 \|/);
   assert.match(report, /\[docs\/ADOPTION\.md\]\(docs\/ADOPTION\.md\)/);
   assert.match(report, /\[`metrics\/adoption\/2026-10-28\.json`\]\(metrics\/adoption\/2026-10-28\.json\)/);
   assert.match(report, /^## Review responsiveness$/m);
@@ -357,6 +373,29 @@ test("generateMonthlyReport creates a complete markdown document with all sectio
     },
   });
   assert.match(noTrendReport, /\| Adoption \| 10 GitHub stars \| snapshot 2026-10-28 \|/);
+});
+
+test("generateMonthlyReport says when no landing pages were entered", () => {
+  const mockData = sampleReportData();
+  const report = generateMonthlyReport({
+    ...mockData,
+    adoption: { ...mockData.adoption, landingPages: [] },
+  });
+  assert.match(report, /^### Top landing pages$/m);
+  assert.match(report, /No Search Console landing pages were entered for 2026-10\./);
+  assert.doesNotMatch(report, /\| Landing page \| Clicks \| Impressions \|/);
+});
+
+test("generateMonthlyReport escapes pipes in landing-page URLs", () => {
+  const mockData = sampleReportData();
+  const report = generateMonthlyReport({
+    ...mockData,
+    adoption: {
+      ...mockData.adoption,
+      landingPages: [{ page: "https://example.test/a|b", clicks: 1, impressions: 2 }],
+    },
+  });
+  assert.match(report, /\| https:\/\/example\.test\/a\\\|b \| 1 \| 2 \|/);
 });
 
 test("collectAdoptionMetrics reads current and previous month snapshots", async () => {
@@ -385,6 +424,15 @@ test("collectAdoptionMetrics reads current and previous month snapshots", async 
         npmWeeklyDownloads: { status: "ok", value: 120, source: "npm" },
         skillsShInstalls: { status: "ok", value: 10, source: "skills" },
         docsPageViews: { status: "ok", value: 80, source: "https://test.goatcounter.com/counter/TOTAL.json" },
+        searchConsoleLandingPages: {
+          status: "ok",
+          value: 2,
+          pages: [
+            { page: "https://arminazimi.github.io/evergreen/RULES.html", clicks: 42, impressions: 530 },
+            { page: "https://arminazimi.github.io/evergreen/", clicks: 18, impressions: 410 },
+          ],
+          source: "https://search.google.com/search-console/performance/search-analytics",
+        },
       },
     };
     await writeFile(join(tempDir, "2026-09-20.json"), JSON.stringify(prevSnapshot));
@@ -409,6 +457,51 @@ test("collectAdoptionMetrics reads current and previous month snapshots", async 
     assert.equal(docsChannel?.previous, 50);
     assert.equal(metrics.channels.find((c) => c.label === "npm weekly downloads")?.previous, 100);
     assert.equal(metrics.channels.find((c) => c.label === "skills.sh installs")?.previous, 5);
+    assert.deepEqual(metrics.landingPages, [
+      { page: "https://arminazimi.github.io/evergreen/RULES.html", clicks: 42, impressions: 530 },
+      { page: "https://arminazimi.github.io/evergreen/", clicks: 18, impressions: 410 },
+    ]);
+  } finally {
+    await rm(tempDir, { recursive: true, force: true });
+  }
+});
+
+test("collectAdoptionMetrics keeps the month's landing pages when a newer snapshot lacks them", async () => {
+  const tempDir = await mkdtemp(join(tmpdir(), "evergreen-test-landing-"));
+  try {
+    await writeFile(
+      join(tempDir, "2026-10-05.json"),
+      JSON.stringify({
+        schemaVersion: "evergreen.adoption-snapshot.v1",
+        date: "2026-10-05",
+        metrics: {
+          searchConsoleLandingPages: {
+            status: "ok",
+            value: 1,
+            pages: [{ page: "/RULES.html", clicks: 3, impressions: 4 }],
+            source: "https://search.google.com/search-console/performance/search-analytics",
+          },
+        },
+      }),
+    );
+    await writeFile(
+      join(tempDir, "2026-10-25.json"),
+      JSON.stringify({
+        schemaVersion: "evergreen.adoption-snapshot.v1",
+        date: "2026-10-25",
+        metrics: {
+          searchConsoleLandingPages: {
+            status: "unavailable",
+            reason: "The maintainer has not entered this month's Search Console landing pages.",
+            source: "https://search.google.com/search-console/performance/search-analytics",
+          },
+        },
+      }),
+    );
+
+    const metrics = await collectAdoptionMetrics({ adoptionDir: tempDir, month: "2026-10" });
+    assert.equal(metrics.snapshotDate, "2026-10-25");
+    assert.deepEqual(metrics.landingPages, [{ page: "/RULES.html", clicks: 3, impressions: 4 }]);
   } finally {
     await rm(tempDir, { recursive: true, force: true });
   }
@@ -419,6 +512,7 @@ test("collectAdoptionMetrics handles missing adoption directories gracefully", a
   assert.equal(metrics.snapshotDate, null);
   assert.equal(metrics.githubStars, "unavailable");
   assert.equal(metrics.previousStars, null);
+  assert.deepEqual(metrics.landingPages, []);
   assert.ok(metrics.channels.length > 0);
   for (const c of metrics.channels) {
     assert.equal(c.value, "unavailable");

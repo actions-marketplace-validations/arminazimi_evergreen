@@ -125,6 +125,26 @@ blocked: dart@3.5 (1 blocker, 0 warnings, 0 unknown)
 pubspec.lock:12  resolved package set  The resolved package set requires Dart >=3.6.0 <4.0.0, which excludes 3.5.0.  [lockfile >=3.6.0 <4.0.0]
 ```
 
+## npm lockfile
+
+Runtime: `nodejs`. Applies when `package-lock.json` or `npm-shrinkwrap.json` exists with `lockfileVersion` 2 or 3. A version 1 lockfile is reported as one `unknown` issue because it does not record package `engines`.
+
+- Files read: `package-lock.json` and `npm-shrinkwrap.json`. Each issue names the file it came from.
+- Fields read: `lockfileVersion`; for each `packages["node_modules/..."]` entry, `version`, `engines.node`, `dev`, and `devOptional`.
+- Version syntax: semver ranges in `engines.node`, tested with `semver.satisfies` and `includePrerelease: false`. A bare target major such as `22` is tested as `22.0.0`; the bundled lifecycle data does not list per-minor Node.js releases.
+- Levels: `blocker` for a production dependency whose range excludes the target; `warning` for an entry marked `dev: true` or `devOptional: true`; `unknown` for an `engines.node` value that is not a valid semver range.
+- Evidence: `engines.node: <range as written>`, at the line of the `engines` key.
+- Deduplication: identical name, version, and range across nested paths keep the first path.
+
+```bash
+evergreen upgrade-check --to nodejs@22 examples/upgrade/npm-lock
+```
+
+```text
+nodejs@22: blocked (1 blockers, 0 warnings, 0 unknown)
+package-lock.json:16  sharp@0.30.7  sharp@0.30.7 declares engines.node ">=14.0.0 <17", which excludes Node.js 22.  [lockfile: engines.node: >=14.0.0 <17]
+```
+
 ## pnpm lockfile
 
 Runtime: `nodejs`. Applies when `pnpm-lock.yaml` exists with `lockfileVersion` 6.x or 9.x.
@@ -161,6 +181,37 @@ Example:
 blocked
 poetry.lock:12  requests@2.28.0  requests@2.28.0 declares python-versions ">=3.7,<3.11", which excludes Python 3.13.  [lockfile: python-versions: >=3.7,<3.11]
 pyproject.toml:9  python  The project's [tool.poetry.dependencies] python constraint ">=3.8,<3.12" excludes Python 3.13.  [manifest: python: >=3.8,<3.12]
+```
+
+## uv and PDM (`uv.lock`, `pdm.lock`)
+
+Applies when `uv.lock` or `pdm.lock` exists. Runtime: `python`. Each issue names the file it came from.
+
+Files and fields it reads:
+
+- The top-level `requires-python` in `uv.lock`: the project's own range.
+- Every `[[package]]` entry in `uv.lock`: `name`, `version`, `resolution-markers`, `sdist`, and the python and ABI tags of each wheel name.
+- The `[metadata]` `requires_python` in `pdm.lock`, when present.
+- Every `[[package]]` entry in `pdm.lock`: `name`, `version`, `requires_python`, and `groups`.
+
+Version syntax it understands: PEP 440 specifiers `>=`, `<=`, `<`, `>`, `==` (including `.*`), `!=`, and `~=`, joined with commas for AND, plus `||` alternatives; the same comparisons in `resolution-markers` clauses on `python_version` and `python_full_version`; and wheel python tags that name a minor version (`cp39`, `py38`, `cp39-abi3`). A wheel tagged `abi3` allows every release at or above its tag. Markers that mention other variables (`sys_platform`, `platform_system`) do not bound Python.
+
+What it reports:
+
+- `blocker` when the project's own range (top-level `requires-python` in `uv.lock`, `[metadata]` `requires_python` in `pdm.lock`) excludes the target, when a uv package has no resolution that admits the target, and when a `default`-group PDM package's `requires_python` excludes it.
+- `warning` for a PDM package in the `dev` or any other non-`default` group whose `requires_python` excludes the target. `uv.lock` has no groups.
+- `unknown` for a range, marker, or wheel tag the matcher cannot parse, and for an invalid TOML file.
+
+A uv package is reported only when every one of its resolutions states a Python bound and every bound excludes the target. Wheel tags are read only when the entry has no sdist, and a package with no bound at all is reported as nothing: wheel availability is never treated as evidence.
+
+Evidence is the value as written: `requires-python: <range>` or `requires_python: <range>` for the project range, `resolution-markers: <marker>` for an excluding resolution, `wheels: <python tag>-<ABI tag>, ...` for version-specific wheels, and `requires_python: <range>` for a PDM package, all with `kind: "lockfile"` at that field's line. The subject is `<name>@<version>`, or `python` for the project range.
+
+Example:
+
+```text
+python@3.13: blocked (1 blockers, 1 warnings, 0 unknown)
+uv.lock:7  twisted@24.3.0  twisted@24.3.0 resolves only for Python versions matching "python_full_version < '3.13'", which excludes Python 3.13.  [lockfile: resolution-markers: python_full_version < '3.13']
+pdm.lock:4  black@24.3.0  black@24.3.0 is in the dev group and its requires_python ">=3.9,<3.13" excludes Python 3.13.  [lockfile: requires_python: >=3.9,<3.13]
 ```
 
 ## Python standard library

@@ -12,6 +12,13 @@ on:
       - "tests/fixtures/**"
       - "benchmarks/**"
       - ".github/workflows/corpus-pr.yml"
+  pull_request:
+    paths:
+      - "src/**"
+      - "registry/**"
+      - "tests/fixtures/**"
+      - "benchmarks/**"
+      - ".github/workflows/corpus-pr.yml"
 
 # Least privilege: the job only reads the repository. There is no write scope, no secret, and no
 # pull_request_target, so code from a fork runs without any credential.
@@ -52,13 +59,13 @@ jobs:
         uses: actions/cache/restore@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6
         with:
           path: ${{ env.EVERGREEN_CORPUS_CACHE }}
-          key: corpus-checkouts-${{ hashFiles('benchmarks/public-repositories.json') }}
+          key: corpus-checkouts-${{ hashFiles('benchmarks/public-repositories/**') }}
           restore-keys: |
             corpus-checkouts-
       - name: Check the affected ecosystems against the pinned corpus
         shell: bash
         env:
-          BASE_SHA: ${{ github.event.before }}
+          BASE_SHA: ${{ github.event.pull_request.base.sha || github.event.before }}
         run: |
           git fetch --no-tags origin "$BASE_SHA"
           node dist/benchmarks/public-repositories.js --changed "$BASE_SHA" --output corpus-result.json 2>&1 | tee corpus.log

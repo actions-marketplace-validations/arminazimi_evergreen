@@ -15,8 +15,9 @@ import { mkdir, readFile, readdir, writeFile } from "node:fs/promises";
 import { join, resolve, dirname } from "node:path";
 import { pathToFileURL } from "node:url";
 
-import type { Snapshot } from "./adoption-metrics.js";
+import type { LandingPage, Snapshot } from "./adoption-metrics.js";
 
+import { loadPublicCorpus } from "../benchmarks/public-corpus.js";
 import { getCapabilityManifest } from "../src/capabilities.js";
 import { REGISTRY_V2_SCHEMA_VERSION } from "../src/registry.js";
 import type { RegistryV2, RegistryV2Rule } from "../src/registry.js";
@@ -100,6 +101,8 @@ export interface AdoptionMetrics {
   previousStars: number | null;
   /** Per-channel breakdown rows. */
   channels: AdoptionChannel[];
+  /** Top landing pages the maintainer entered from Search Console for the report month; empty when none. */
+  landingPages: LandingPage[];
 }
 
 export interface MonthlyReportData {
@@ -206,21 +209,15 @@ export function collectEcosystemMetrics(): EcosystemMetrics {
   };
 }
 
-/** Collects public benchmark corpus metrics from benchmarks/public-repositories.json. */
-export async function collectCorpusMetrics(corpusPath = "benchmarks/public-repositories.json"): Promise<CorpusMetrics> {
+/** Collects public benchmark corpus metrics from benchmarks/public-repositories/. */
+export async function collectCorpusMetrics(root = "."): Promise<CorpusMetrics> {
   const byEcosystem: Record<string, { repositories: number; expectedFindings: number }> = {};
   const bySelection: Record<string, number> = {};
   let totalRepositories = 0;
   let totalExpectedFindings = 0;
 
   try {
-    const raw = JSON.parse(await readFile(corpusPath, "utf8")) as {
-      repositories?: Array<{
-        ecosystem?: string;
-        selection?: string;
-        expected?: unknown[];
-      }>;
-    };
+    const raw = await loadPublicCorpus(root);
 
     if (Array.isArray(raw.repositories)) {
       for (const repo of raw.repositories) {
@@ -422,6 +419,30 @@ export async function collectAdoptionMetrics(options: CollectAdoptionOptions = {
     }
   }
 
+  /** Landing pages recorded by the newest snapshot of a month that has them, or an empty list. */
+  async function landingPagesForMonth(prefix: string): Promise<LandingPage[]> {
+    let entries: string[] = [];
+    try {
+      entries = await readdir(adoptionDir);
+    } catch {
+      return [];
+    }
+    const matches = entries
+      .filter((f) => f.startsWith(prefix) && f.endsWith(".json"))
+      .sort()
+      .reverse();
+    for (const name of matches) {
+      try {
+        const snapshot = JSON.parse(await readFile(join(adoptionDir, name), "utf8")) as Snapshot;
+        const metric = snapshot.metrics?.searchConsoleLandingPages;
+        if (metric?.status === "ok" && Array.isArray(metric.pages)) return metric.pages;
+      } catch {
+        // Skip an unreadable snapshot and look at the next one.
+      }
+    }
+    return [];
+  }
+
   /** Reads a numeric ok-metric value from a snapshot. */
   function metricValue(snapshot: Snapshot | null, key: string): number | "unavailable" {
     if (!snapshot) return "unavailable";
@@ -432,6 +453,7 @@ export async function collectAdoptionMetrics(options: CollectAdoptionOptions = {
 
   const current = await newestSnapshotForMonth(month);
   const previous = await newestSnapshotForMonth(previousMonth);
+  const landingPages = await landingPagesForMonth(month);
 
   const stars = metricValue(current, "githubStars");
   const prevStars = metricValue(previous, "githubStars");
@@ -464,6 +486,7 @@ export async function collectAdoptionMetrics(options: CollectAdoptionOptions = {
     githubStars: stars,
     previousStars: prevStars !== "unavailable" ? prevStars : null,
     channels,
+    landingPages,
   };
 }
 
@@ -483,7 +506,7 @@ export async function collectReportData(options: CollectReportOptions = {}): Pro
   const [rules, ecosystems, corpus, adoption] = await Promise.all([
     collectRuleMetrics(join(root, "registry"), month),
     Promise.resolve(collectEcosystemMetrics()),
-    collectCorpusMetrics(join(root, "benchmarks", "public-repositories.json")),
+    collectCorpusMetrics(root),
     collectAdoptionMetrics({ adoptionDir: join(root, "metrics", "adoption"), month }),
   ]);
 
@@ -646,7 +669,7 @@ export function generateMonthlyReport(data: MonthlyReportData): string {
   // Adoption section
   lines.push("## Adoption");
   lines.push("");
-  lines.push("Public signals from open sources only. Evergreen has no telemetry.");
+  lines.push("Adoption is measured from public sources, plus the Search Console landing pages the maintainer enters by hand. Evergreen has no telemetry.");
   lines.push("");
   if (data.adoption.snapshotDate) {
     lines.push(`*Snapshot: ${data.adoption.snapshotDate}*`);
@@ -678,6 +701,20 @@ export function generateMonthlyReport(data: MonthlyReportData): string {
           ? `${formatNumber(channel.value)} (${channel.note})`
           : formatNumber(channel.value);
     lines.push(`| ${channel.label} | ${countCell} | ${formatChange(channel.value, channel.previous)} |`);
+  }
+  lines.push("");
+  lines.push("### Top landing pages");
+  lines.push("");
+  if (data.adoption.landingPages.length > 0) {
+    lines.push(`Entered by the maintainer from Search Console's Performance report for ${data.month}; Search Console data is visible only to the verified owner.`);
+    lines.push("");
+    lines.push("| Landing page | Clicks | Impressions |");
+    lines.push("| --- | --- | --- |");
+    for (const page of data.adoption.landingPages) {
+      lines.push(`| ${page.page.replace(/\|/g, "\\|")} | ${formatNumber(page.clicks)} | ${formatNumber(page.impressions)} |`);
+    }
+  } else {
+    lines.push(`No Search Console landing pages were entered for ${data.month}.`);
   }
   lines.push("");
   if (data.adoption.snapshotDate) {

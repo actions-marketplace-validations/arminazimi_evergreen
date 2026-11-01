@@ -5,6 +5,7 @@ import { test } from "node:test";
 import { parse } from "yaml";
 
 import { maturityLabels } from "../benchmarks/maturity.js";
+import { loadPublicCorpus } from "../benchmarks/public-corpus.js";
 import { FULL_RUN_MAX_AGE_DAYS, detectorOf, findingKey, fullRunAgeDays, scoreDetectors, violations } from "../benchmarks/thresholds.js";
 import type { Thresholds } from "../benchmarks/thresholds.js";
 
@@ -15,8 +16,8 @@ test("thresholds name every shipped detector and enforce precision of at least 0
   assert.equal(thresholds.schemaVersion, "evergreen.corpus-thresholds.v1");
   assert.deepEqual(Object.keys(thresholds.detectors).sort(), ["android", "ci-images", "container", "cpp", "dart", "database", "deno", "dotnet", "elixir", "github-actions", "go", "java", "kubernetes", "nodejs", "npm", "php", "python", "ruby", "rust", "scala", "serverless", "shell", "swift", "terraform"]);
   for (const [name, threshold] of Object.entries(thresholds.detectors)) {
-    // The Android, ci-images, container, C and C++, Go, PHP, Ruby, and Rust detectors are experimental: they are scored and reported, but not enforced yet.
-    assert.equal(threshold.stable, !["android", "ci-images", "container", "cpp", "dart", "database", "deno", "elixir", "go", "php", "ruby", "rust", "scala", "shell", "terraform"].includes(name), name);
+    // The Android, ci-images, container, C and C++, PHP, Ruby, Scala, shell, and Terraform detectors are experimental: they are scored and reported, but not enforced yet.
+    assert.equal(threshold.stable, !["android", "ci-images", "container", "cpp", "dart", "database", "deno", "elixir", "php", "ruby", "scala", "shell", "terraform"].includes(name), name);
     assert.ok(threshold.minPrecision >= 0.95);
   }
 });
@@ -110,7 +111,7 @@ test("a level needs its share of blind-selected repositories; an unrecorded sele
 
 test("each detector's level agrees with its enforcement flag, its documented status, and its corpus evidence", async () => {
   const thresholds = JSON.parse(await readFile(resolve("benchmarks/thresholds.json"), "utf8")) as Thresholds;
-  const corpus = (JSON.parse(await readFile(resolve("benchmarks/public-repositories.json"), "utf8")) as { repositories: Parameters<typeof countEvidence>[0] }).repositories;
+  const corpus = (await loadPublicCorpus()).repositories as Parameters<typeof countEvidence>[0];
   const compatibility = await readFile(resolve("docs/COMPATIBILITY.md"), "utf8");
   const rank = { experimental: 0, beta: 1, stable: 2 } as const;
   for (const [name, threshold] of Object.entries(thresholds.detectors)) {
@@ -153,7 +154,7 @@ test("a beta detector needs recall of 0.80 and a stable one 0.90; experimental a
 });
 
 test("every corpus entry records whether it was chosen blind or targeted", async () => {
-  const corpus = (JSON.parse(await readFile(resolve("benchmarks/public-repositories.json"), "utf8")) as { repositories: Array<{ repository: string; selection?: string }> }).repositories;
+  const corpus = (await loadPublicCorpus()).repositories;
   for (const entry of corpus) assert.ok(entry.selection === "blind" || entry.selection === "targeted", `${entry.repository} must record selection: "blind" or "targeted"`);
 });
 

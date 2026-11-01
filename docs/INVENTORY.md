@@ -13,7 +13,7 @@ Every importer reads one export file and produces items. The output is determini
 
 ## Privacy
 
-`inventory` reads only the files named on the command line. It makes no network request, runs no command, and reads no other file. It never executes code or tools from the scanned export. Output names only the resource's own short name: `resource` is never an account id, ARN, subscription id, project number, IP address, node name, tag, or environment variable. `--redact` replaces each resource name with the first 12 hex characters of its SHA-256, in text and JSON output alike.
+`inventory` reads only the files named on the command line. It makes no network request, runs no command, and reads no other file. It never executes code or tools from the scanned export. Output names only the resource's own short name: `resource` is never an account id, ARN, subscription id, project number, IP address, tag, or environment variable, and the one exception is a Kubernetes node's own name, which the cluster importer reports because the node is the resource (a node named by its IP address is skipped). `--redact` replaces each resource name with the first 12 hex characters of its SHA-256, in text and JSON output alike.
 
 ## Kubernetes workloads
 
@@ -57,6 +57,51 @@ An image tag is used as the version only when it is a plain release number: `nod
 - Objects and fields beyond the ones listed above.
 
 The fixtures under `tests/fixtures/inventory/k8s-workloads/` reproduce the documented output shape of `kubectl get … -o json` (kubectl 1.31), with every identifier replaced by a placeholder. They were assembled from the command's output shape, not captured from a live cluster.
+
+## Kubernetes cluster
+
+Export the cluster's version and its nodes, then pass both files:
+
+```bash
+kubectl version -o json > k8s-cluster.json
+kubectl get nodes -o json > k8s-nodes.json
+evergreen inventory k8s-cluster.json k8s-nodes.json
+```
+
+The importer recognizes the version export, the object that carries `serverVersion.gitVersion`, and the node export, a Kubernetes `List` whose items are all `Node` objects with `status.nodeInfo`. From the version export it reads the control-plane version; from the node export it reads, per node:
+
+- `status.nodeInfo.kubeletVersion`
+- `status.nodeInfo.osImage`
+- `status.nodeInfo.containerRuntimeVersion`
+- `metadata.name`, which becomes `resource`
+
+### Provider suffixes
+
+`gitVersion` and `kubeletVersion` carry a provider suffix on managed services: `v1.28.3-eks-2fbdaf5`, `v1.30.5-gke.1445001`, `v1.31.5+k3s1`. Everything from the first `-` or `+` is stripped and the upstream release is judged, so each of those is `1.28.3`, `1.30.5`, and `1.31.5`. Managed providers (EKS, GKE, AKS) retire minors on their own calendars, which end earlier than upstream's, so a managed cluster should be judged by its provider's schedule too: the provider view is covered by the EKS, Google Cloud, and Azure tasks, and GKE already has its own rules in `registry/kubernetes.json`.
+
+### Rules matched
+
+| Item | PURL | Registry |
+| --- | --- | --- |
+| Control plane, kubelet | `pkg:generic/kubernetes` | `registry/kubernetes.json` |
+| Node OS image | `pkg:generic/<distribution>`, for example `pkg:generic/ubuntu` | `registry/container.json` |
+| Container runtime | `pkg:generic/containerd`, `pkg:generic/docker`, `pkg:generic/cri-o`, `pkg:generic/cri-dockerd` | no rules yet |
+
+`registry/kubernetes.json` holds upstream minor-release rules sourced to the [Kubernetes release history](https://kubernetes.io/releases/) page. They are the reviewed adoption of the `kubernetes-2` lifecycle importer's drafts: each of the five newest ended minors has an `end-of-life` rule at high severity, a minor whose announced end of life has not passed is `scheduled-end-of-life` at low severity (decision 0010), and a reviewed `1.28-and-older` rule covers the lines the importer no longer drafts. A weekly importer run keeps these fresh; a managed cluster should still be judged by its provider's schedule, which ends earlier than upstream's.
+
+An `osImage` maps to the distribution's PURL when it names one the registry knows: `Ubuntu 22.04.5 LTS` to `pkg:generic/ubuntu` at `22.04.5`, `SUSE Linux Enterprise Server 15 SP6` to `pkg:generic/sles` at `15.6`, `Amazon Linux 2` to `pkg:generic/amzn` at `2`. These are the same PURLs and rules the os-release importer checks, so a node image and a host's `/etc/os-release` are judged by one set of dates. A distribution without rules — Bottlerocket, Container-Optimized OS, Flatcar, Rocky Linux, AlmaLinux — is still reported, at its own PURL, as `no-data`: not safe, just unruled. An image that names none of the known distributions produces no item.
+
+`containerRuntimeVersion` maps to the runtime's PURL: `containerd://1.6.32` to `pkg:generic/containerd` at `1.6.32`. No runtime rule set exists yet, so these report `no-data`. A version that is not a plain release number (`containerd://1.6.x`) is reported without a version.
+
+### What is not judged
+
+- Node capacity, conditions, taints, labels, and addresses: never read or reported.
+- A node whose `metadata.name` is an IP address is skipped entirely, because `resource` names a resource, never an address.
+- The images running on the nodes and the objects' API versions: the workloads importer covers those.
+- Whether the control plane and the kubelets are within the version-skew policy: skew compatibility is a different question from end of life.
+- Anything the export does not state. No command is run, no API is called, and no other file is read.
+
+The fixtures under `tests/fixtures/inventory/k8s-cluster/` reproduce the documented output shape of `kubectl version -o json` and `kubectl get nodes -o json` (kubectl 1.31), with every identifier replaced by a placeholder. They were assembled from the command's output shape, not captured from a live cluster.
 
 ## Host operating systems
 
@@ -175,6 +220,8 @@ A Package URL with no rule is reported as `no-data`; when a PURL has rules but n
 | Importer | Reads | Export command |
 | --- | --- | --- |
 | `aws-rds` | AWS RDS instances, Aurora clusters, and ElastiCache cache clusters | `aws rds describe-db-instances`, `aws rds describe-db-clusters`, `aws elasticache describe-cache-clusters` |
+| `k8s-cluster` | Kubernetes control-plane and kubelet versions, node OS images, and container runtimes | `kubectl version -o json`, `kubectl get nodes -o json` |
+| `terraform-state` | Terraform state from `terraform show -json` or a raw `terraform.tfstate` v4 file | `terraform show -json` |
 
 ## AWS RDS, Aurora, and ElastiCache
 
@@ -309,3 +356,84 @@ Cloud Run has no managed language runtime. The importer reads only container ima
 **Fixtures**
 
 `tests/fixtures/inventory/gcp/` holds one sanitized sample per document type, and `examples/inventory/` holds two runnable samples. Each follows the JSON the commands above print, reduced to the fields this importer reads, with every project id, number, service account, URL, IP address, and environment value replaced by a placeholder. No `gcloud` CLI version is recorded because the contributor who added this importer had no Google Cloud project to capture exports from; the shapes follow the documented JSON output of the commands above rather than a recorded response.
+
+## Terraform state
+
+The `terraform-state` importer reads the values Terraform recorded for deployed resources. It accepts two shapes:
+
+```bash
+# the state JSON `terraform show -json` prints
+terraform show -json > state.json
+
+# or the raw state file itself
+evergreen inventory state.json terraform.tfstate
+```
+
+The first shape is state JSON: `format_version` plus `values.root_module`. The second is the raw state file: `version: 4` plus `resources`. Plan JSON (`planned_values.root_module`) is not read, because it describes a proposed change rather than what is deployed. The importer does not read `*.tf` source files; the Terraform detector already does that.
+
+**Fields read**
+
+Every module under `values.root_module`, including `child_modules` at any depth, and every resource instance is walked. In raw state, every entry of `resources` and every instance of `instances` is walked. Data sources and deposed objects are skipped.
+
+| Resource type | Attribute | PURL | Version |
+| --- | --- | --- | --- |
+| `aws_lambda_function` | `runtime` | `pkg:generic/aws-lambda-runtime/<runtime>` | the runtime ID |
+| `aws_db_instance`, `aws_rds_cluster`, `aws_elasticache_cluster`, `aws_elasticache_replication_group` | `engine`, `engine_version` | the AWS engine table below | `engine_version` |
+| `aws_eks_cluster` | `version` | `pkg:generic/amazon-eks` | `version` |
+| `google_container_cluster` | `master_version` | `pkg:generic/google-gke` | `master_version` |
+| `google_cloudfunctions_function` | `runtime` | `pkg:generic/google-cloud-functions-runtime/<runtime>` | none: the runtime is part of the PURL |
+| `google_cloudfunctions2_function` | `build_config[0].runtime` | `pkg:generic/google-cloud-functions-runtime/<runtime>` | none: the runtime is part of the PURL |
+| `azurerm_kubernetes_cluster` | `kubernetes_version` | `pkg:generic/azure-aks` | `kubernetes_version` |
+| `azurerm_linux_function_app` | `site_config[0].application_stack` | `pkg:generic/azure-app-service/<stack>` | the stack version |
+
+Nothing else in the state is copied. ARNs, resource ids, endpoints, provider configurations, outputs, tags, environment variables, and Terraform or provider versions are never read or reported. A value that is missing, empty, not a string, or not a release-shaped value is skipped, never guessed.
+
+**Resource and pointer**
+
+`resource` is `<type>.<name>`, with `[index]` for `count` and `["key"]` for `for_each`, such as `aws_lambda_function.worker[0]` or `aws_lambda_function.api["green"]`. A nested resource keeps the same form; the module path is in the JSON Pointer, not in `resource`. Every pointer resolves to the exact string the item's version came from: `/values/root_module/resources/<i>/values/<attribute>` for state JSON, or `/resources/<i>/instances/<j>/attributes/<attribute>` for raw state, with `child_modules` segments in between.
+
+**Engines and PURLs**
+
+The engine mapping is the one the AWS RDS importer uses, so a deployed engine and a described engine are checked against the same rules:
+
+| AWS engine | Provider PURL | Upstream PURL |
+| --- | --- | --- |
+| `postgres` | `pkg:generic/aws-rds/postgres` | `pkg:generic/postgresql` |
+| `mysql` | `pkg:generic/aws-rds/mysql` | `pkg:generic/mysql` |
+| `aurora-postgresql` | `pkg:generic/aws-aurora/postgresql` | `pkg:generic/postgresql` |
+| `aurora-mysql`, `aurora` | `pkg:generic/aws-aurora/mysql` | none |
+| `redis` | `pkg:generic/aws-elasticache/redis` | `pkg:generic/redis` |
+
+Unknown engines, including `mariadb`, `sqlserver-*`, `oracle-*`, `db2-*`, `memcached`, and `valkey`, produce no item and no claim.
+
+The Linux Function App stack reads the managed version fields of `application_stack` and maps each one to its own item:
+
+| Field | PURL |
+| --- | --- |
+| `dotnet_version` | `pkg:generic/azure-app-service/dotnet` |
+| `dotnet_isolated_version` | `pkg:generic/azure-app-service/dotnet-isolated` |
+| `java_version` | `pkg:generic/azure-app-service/java` |
+| `node_version` | `pkg:generic/azure-app-service/node` |
+| `python_version` | `pkg:generic/azure-app-service/python` |
+| `powershell_core_version` | `pkg:generic/azure-app-service/powershell` |
+
+A leading `~` in a Node.js version is Azure's release-line notation, so `~18` is reported at version `18`. `use_custom_runtime` and a `docker` image mean the runtime is not a managed stack, so they produce no item.
+
+**Rules matched**
+
+- `registry/database.json`: RDS, Aurora, and ElastiCache engine rules, the same rules the AWS RDS importer uses.
+- `registry/kubernetes.json`: GKE minor-version rules.
+- `registry/serverless.json`: AWS Lambda and Google Cloud Functions runtime rules.
+
+`pkg:generic/amazon-eks` currently has rules in `registry/terraform.json` for the Terraform source detector; they are not in the registry this importer reads, so an EKS cluster is reported as `no-data` until the EKS importer's `registry/kubernetes.json` rules land. `pkg:generic/azure-aks` and `pkg:generic/azure-app-service/<stack>` are emitted ahead of their Azure importer rules and report `no-data` for now. `no-data` is never a statement that the version is safe.
+
+**What is not judged**
+
+- Terraform plan JSON, `*.tf` source, module outputs, and provider configurations: this importer reads state values only.
+- Deposed instances: only current instances are reported.
+- Resource types and attributes beyond the table above, including EKS node groups, RDS proxy endpoints, and functions deployed outside the listed resource types.
+- Whether the state is current, whether it matches the configuration, or whether a remote backend is reachable. Evergreen reads only the file you pass and never runs Terraform.
+
+**Fixtures**
+
+`tests/fixtures/inventory/terraform-state/` holds one sample of each format, including nested modules and `count` and `for_each` instances, with every account id, ARN, subscription id, project number, hostname, and environment value replaced by a placeholder. `examples/inventory/terraform-state.json` is a runnable sample in the `terraform show -json` shape. They were assembled from the documented state shape of Terraform 1.9 rather than captured from a live state; no Terraform CLI version is recorded.

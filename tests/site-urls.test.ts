@@ -67,6 +67,32 @@ test("the committed inventory matches the sitemap and every docs page, and every
   assert.deepEqual(urls, [...urls].sort((left, right) => left.localeCompare(right)));
 });
 
+test("README inventory URLs that jekyll-readme-index drops keep a redirect", async () => {
+  // jekyll-readme-index publishes these READMEs as the directory index (or
+  // leaves a sibling index.html in place), so …/README.html would 404 without
+  // jekyll-redirect-from. Use redirect_to stubs — redirect_from on the README
+  // itself loops when readme-index rewrites the permalink to the directory.
+  const redirects: ReadonlyArray<{ path: string; permalink: string; to: string }> = [
+    { path: "docs/dashboard/README.md", permalink: "/dashboard/README.html", to: "/dashboard/" },
+    { path: "docs/redirects/rfcs-readme.md", permalink: "/rfcs/README.html", to: "/rfcs/" },
+    { path: "docs/redirects/i18n-fa-readme.md", permalink: "/i18n/fa/README.html", to: "/i18n/fa/" },
+  ];
+  for (const entry of redirects) {
+    const text = await readFile(resolve(entry.path), "utf8");
+    const frontMatter = text.match(/^---\r?\n([\s\S]*?)\r?\n---/)?.[1] ?? "";
+    assert.ok(frontMatter, `${entry.path} needs YAML front matter for the redirect`);
+    assert.match(frontMatter, new RegExp(`^redirect_to:\\s*${entry.to.replaceAll("/", "\\/")}\\s*$`, "m"), entry.path);
+    assert.match(
+      frontMatter,
+      new RegExp(`^permalink:\\s*${entry.permalink.replaceAll("/", "\\/").replaceAll(".", "\\.")}\\s*$`, "m"),
+      entry.path,
+    );
+  }
+
+  const config = await readFile(resolve("docs/_config.yml"), "utf8");
+  assert.match(config, /^\s*-\s*jekyll-redirect-from\s*$/m);
+});
+
 test("the machine files stay static and served at their old root URLs", async () => {
   const urls = await collectSiteUrls();
   const machineFiles = ["llms.txt", "llms-full.txt", "sitemap.xml"];
