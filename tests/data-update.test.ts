@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import { execFile } from "node:child_process";
-import { cp, mkdir, mkdtemp, readdir, readFile, rm, writeFile } from "node:fs/promises";
+import { cp, mkdtemp, readdir, readFile, rm, writeFile } from "node:fs/promises";
 import http from "node:http";
 import net from "node:net";
 import type { AddressInfo } from "node:net";
@@ -12,8 +12,9 @@ import { promisify } from "node:util";
 import { buildDataBundle, serializeDataBundle } from "../src/data-bundle.js";
 import type { DataBundle } from "../src/data-bundle.js";
 import { configureActiveData, resolveActiveData } from "../src/data-source.js";
-import { compareBundleVersions, DataUpdateError, latestDataRelease, renderDataUpdateText, updateData } from "../src/data-update.js";
+import { compareBundleVersions, latestDataRelease, renderDataUpdateText, updateData } from "../src/data-update.js";
 import { VERSION } from "../src/version.js";
+import { runCli } from "./cli-runner.js";
 
 const execute = promisify(execFile);
 const roots: string[] = [];
@@ -222,9 +223,9 @@ test("with the real signature check, an unsigned or foreign signature is refused
   await assert.rejects(readdir(join(cache, "data")), /ENOENT/);
 
   fixture.publish({ version: bundle.manifest.version, bundle, signature: foreign });
-  const result = await execute(process.execPath, [resolve("dist/src/cli.js"), "data", "update"], { env: { ...process.env, EVERGREEN_DATA_DIR: cache, EVERGREEN_DATA_URL: fixture.url } }).catch((error: { code: number; stderr: string }) => error);
-  assert.equal((result as { code: number }).code, 3);
-  assert.match((result as { stderr: string }).stderr, /Refusing data bundle 2999\.01\.01: The signature/);
+  const result = await runCli(["data", "update"], { env: { EVERGREEN_DATA_DIR: cache, EVERGREEN_DATA_URL: fixture.url } });
+  assert.equal(result.code, 3);
+  assert.match(result.stderr, /Refusing data bundle 2999\.01\.01: The signature/);
 });
 
 test("an older bundle is refused as a rollback unless the user allows it", async () => {

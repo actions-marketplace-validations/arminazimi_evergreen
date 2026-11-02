@@ -57,14 +57,14 @@ Trust rules that apply to every change:
 | Path | Regenerate with |
 |---|---|
 | `plugins/claude/`, `plugins/codex/`, `.claude-plugin/marketplace.json`, `.agents/plugins/marketplace.json` | `npm run build:plugins` (source: `skills/`) |
-| `dist/action/index.js` | `npm run build:action` (release pull request only; ordinary pull requests must not commit it) |
+| `dist/action/index.js` | `npm run build:action` (not committed on `main`; the Release workflow builds it onto the `release/<tag>` branch that release tags point at) |
 | `docs/llms-full.txt` | `npm run build:llms` (source: the pages linked from `docs/llms.txt`) |
 | `docs/rules/` | `npm run build:reference` (source: `registry/*.json`) |
 | `docs/assets/og/` | `npm run build:og-images` (source: `registry/*.json`, brand social-preview template) |
 | `docs/eol/` | `npm run build:answer-pages` (source: `registry/*.json`) |
 | `docs/ROADMAP.md` | `node planning/roadmap/roadmap-md.mjs` (source: `planning/roadmap/`) |
 
-CI fails when generated output drifts from its source. The exception is `dist/action/index.js`: it is one minified bundle that every merge rewrites, so parallel pull requests always conflict on it. Only the `chore: release` pull request regenerates and commits it (`EVERGREEN_VERIFY_ACTION_BUNDLE=1 npm run check` verifies it). If your branch conflicts on it, run `git checkout origin/main -- dist/action/index.js`.
+CI fails when generated output drifts from its source. The exception is `dist/action/index.js`: it is one minified bundle that every merge rewrote, so parallel pull requests always conflicted on it. `main` does not carry it, and no pull request commits it. Release tags still need it, so after a version bump lands on `main` the Release workflow builds it onto the `release/vX.Y.Z` branch, and the tag is pushed at that branch tip (`docs/RELEASING.md`, step 5). `EVERGREEN_VERIFY_ACTION_BUNDLE=1 npm run check` rebuilds the bundle and fails when the committed copy differs, which `npm publish` runs on that tag commit.
 
 ## Working on an issue
 
@@ -82,6 +82,26 @@ CI fails when generated output drifts from its source. The exception is `dist/ac
 - A pull request that changes user-visible behavior adds a changelog fragment: one file in `changes/` holding one bullet (see [changes/README.md](changes/README.md)). Do not edit `CHANGELOG.md` directly, so parallel pull requests never conflict on it.
 - Do not reformat unrelated files or add dependencies without a reason stated in the PR.
 - Public contracts (`schemas/`, `src/sdk.ts`, MCP tool shapes, CLI JSON output) change only additively unless a decision record in `docs/decisions/` says otherwise.
+- A change needs a decision record when it changes a public contract: anything under `schemas/`, `src/sdk.ts`, an MCP tool's name, description, input shape, or output, or the JSON a command writes under `--json`. Add a numbered record in `docs/decisions/` in the same pull request and link it from the pull request; `docs/decisions/index.md` alone is the index, not a record. `.github/workflows/decisions.yml` fails a pull request that changes `schemas/`, `src/sdk.ts`, or `src/mcp.ts` without a new or changed record. A CLI JSON change also needs its schema under `schemas/`, which is what the workflow can see.
+
+## Quality bar
+
+Reference quality is measured in [docs/QUALITY.md](docs/QUALITY.md) and enforced by `npm run check`, which runs `check:quality`. A failing run blocks the pull request, and no one may merge past it.
+
+- **File size:** median 300 lines or fewer. No hand-written `src/` file over 800 lines, and none over 1,000, unless it is in the allowlist.
+- **Complexity:** at most 15 per function. A function over 15 is not allowed unless it is in the allowlist.
+- **Type safety:** no explicit `any`, no `@ts-ignore` or `@ts-expect-error`; no new `as unknown as` or non-null assertion. `strict`, `noImplicitOverride`, `noUnusedLocals`, and `noUnusedParameters` stay on.
+- **Boundaries:** the six rules in [Architecture boundaries](#architecture-boundaries) hold.
+- **Coverage:** lines 93%, branches 87%, functions 93%. No pull request lowers a total below `main`.
+- **Mutation:** break at 60, high at 80, on the mutated core. The nightly run gates once its first complete score exists.
+- **Docs:** generated pages and indexes match their sources, and the documentation site builds.
+- **Security:** no runtime advisory and no high or critical advisory; a medium or low advisory only when it is listed by id. The OpenSSF Scorecard is 6.0 or more by v0.8.0.
+
+Rules for every change:
+
+- New debt fails. Do not add a file over 800 lines, a function over 15, or any `any`.
+- Existing debt is listed in `benchmarks/quality-allowlist.json` with an owner and an `expires` date. When you fix a debt, remove or tighten its entry. Never edit the allowlist to make a change pass: do not add an entry or raise a ceiling.
+- Before you change anything these criteria cover (`src/`, `tools/`, `tests/`, `benchmarks/`, `tsconfig.json`, `.github/workflows/`), read [docs/QUALITY.md](docs/QUALITY.md).
 
 ## Dependencies
 

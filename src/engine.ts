@@ -74,6 +74,17 @@ export const CROSS_FILE_DETECTORS = new Set([
 ]);
 
 /**
+ * Drops a declared directory's trailing `/` characters. Directory names come from detectors,
+ * including third-party ones, so they are untrusted: a loop stays linear where `/\/+$/` backtracks
+ * quadratically on a long run of slashes (`js/polynomial-redos`).
+ */
+function trimTrailingSlashes(value: string): string {
+  let end = value.length;
+  while (end > 0 && value.charCodeAt(end - 1) === 0x2f) end -= 1;
+  return end === value.length ? value : value.slice(0, end);
+}
+
+/**
  * Checks whether caching should be disabled for a detector.
  * A detector that omits `inputs` makes no promise about which files it reads, and a detector
  * that reads skipped directory trees (such as CLE reading `node_modules`) cannot be safely keyed
@@ -82,7 +93,7 @@ export const CROSS_FILE_DETECTORS = new Set([
 export function shouldDisableCacheForDetector(detector: Detector): boolean {
   if (!detector.inputs) return true;
   const dirs = detector.inputs.directories;
-  if (dirs && dirs.some((d) => SCAN_SKIPPED_DIRECTORIES.has(d.replace(/\/+$/, "")))) {
+  if (dirs && dirs.some((d) => SCAN_SKIPPED_DIRECTORIES.has(trimTrailingSlashes(d)))) {
     return true;
   }
   return false;
@@ -203,7 +214,7 @@ export async function buildScanCoverage(
     return { ecosystems: [], filesRead: [], unsupportedFiles: [...unsupportedFiles].sort((left, right) => left.localeCompare(right)) };
   }
   const directoryPrefixes = withInputs.flatMap(({ inputs }) =>
-    (inputs.directories ?? []).map((directory) => `${directory.replace(/\/+$/, "")}/`),
+    (inputs.directories ?? []).map((directory) => `${trimTrailingSlashes(directory)}/`),
   );
   const { files, truncated } = await listCoverageFiles(root, walkLimit);
   const ecosystems: string[] = [];
@@ -295,7 +306,6 @@ export async function scanRepository(
     return existing;
   };
 
-  let allDetectorsCached = !noCache && detectors.length > 0;
 
   const analyses = await Promise.all(
     detectors.map(async (detector) => {
@@ -306,7 +316,6 @@ export async function scanRepository(
       const disableCache = noCache || shouldDisableCacheForDetector(detector);
 
       if (disableCache) {
-        allDetectorsCached = false;
         const analysis = detector.analyze
           ? await detector.analyze(context)
           : { findings: await detector.scan(context), unclassified: [] };
@@ -357,7 +366,6 @@ export async function scanRepository(
       if (isCrossFile) {
         // Cross-file detector: manifests and dependencies across files correlate,
         // so invalidate and re-run on context when any input file changes.
-        allDetectorsCached = false;
         const analysis = detector.analyze
           ? await detector.analyze(context)
           : { findings: await detector.scan(context), unclassified: [] };
@@ -428,7 +436,6 @@ export async function scanRepository(
           };
         }
 
-        allDetectorsCached = false;
         let newlyParsedFindings: Finding[] = [];
         let newlyParsedUnclassified: UnclassifiedReference[] = [];
 

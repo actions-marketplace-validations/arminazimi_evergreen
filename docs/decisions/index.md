@@ -6,8 +6,8 @@ description: Index of the architecture, data, contract, and policy decisions beh
 # Decision records
 
 These records explain the choices behind Evergreen's architecture, data format, contracts, and
-policy. Each one is accepted unless a later record supersedes it. Records are numbered in the order
-they were written; this page groups them by theme.
+policy. Each one is accepted unless a later record supersedes it, or unless its status says
+otherwise. Records are numbered in the order they were written; this page groups them by theme.
 
 ## Detectors
 
@@ -34,6 +34,7 @@ they were written; this page groups them by theme.
 | [0016](0016-cli-exit-codes.md) | CLI exit codes and error codes | Map failures to five fixed classes and exit codes: policy 1, usage 2, data 3, parse 4, internal 5. |
 | [0017](0017-openeox-ingestion.md) | Do not read OpenEoX documents yet; keep CLE as the interchange target | Scans never read OpenEoX; do not ingest it until the Core Schema is final, and keep CLE as the standards interchange path. |
 | [0020](0020-data-license.md) | License the lifecycle dataset under CC BY 4.0 | License `registry/` and first-party schemas in the data-only package under CC BY 4.0; keep the rest of the repository Apache-2.0. |
+| [0022](0022-python-method-shape.md) | Match Python `TestCase` method calls with a `method` shape | Add a Python-only `method` symbol shape that matches a call by name on any receiver inside a class that directly subclasses `unittest.TestCase` or an alias of it. |
 
 ## Adoption
 
@@ -42,6 +43,12 @@ they were written; this page groups them by theme.
 | [0018](0018-adoption-before-v1.md) | Ship v0.8.0 (adoption) and v0.9.0 (visibility) before v1 | Ship adoption then visibility before v1, with usage before attention, and record post-v1 ideas as unscheduled epics. |
 | [0019](0019-privacy-first-adoption-metrics.md) | Privacy-first adoption metrics; opt-in telemetry only after v1 | Keep product telemetry off by default forever as the default; any opt-in comes only after a separate post-v1 decision. |
 | [0021](0021-one-release-before-v1.md) | Ship adoption and visibility as one release, with one launch | Merge v0.9.0 into v0.8.0 and replace the three mini-launches with one launch that follows the release. |
+
+## Quality
+
+| # | Title | Decision |
+| --- | --- | --- |
+| [0023](0023-measurable-quality-criteria.md) | Define reference quality as measurable, enforced criteria | **Proposed.** Define eight quality criteria, each enforced by a failing check; zero new debt; existing debt allowlisted with an owner and an expiry of 2027-01-26. |
 
 ## Policy
 

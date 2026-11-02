@@ -155,6 +155,13 @@ test("renderSummary formats complete and incomplete reports", () => {
   assert.match(summaryBad, /\| \[#2\]\(https:\/\/github\.com\/arminazimi\/evergreen\/issues\/2\) \| Bad issue \| files, steps, done-check \|/);
 });
 
+test("an issue title cannot break out of the summary table", () => {
+  const report = evaluateIssues([{ number: 7, title: "A \\| B | C", body: "" }]);
+  const summary = renderSummary(report);
+  // The backslash is doubled and every pipe escaped: `A \\\| B \| C`.
+  assert.ok(summary.includes(String.raw`| A \\\| B \| C |`), summary);
+});
+
 test("parseArguments handles flags and defaults", () => {
   const defaults = parseArguments([]);
   assert.equal(defaults.repo, "arminazimi/evergreen");
@@ -187,7 +194,7 @@ test("parseArguments handles flags and defaults", () => {
 
 test("fetchGoodFirstIssues handles pagination and ignores pull requests", async () => {
   const requests: string[] = [];
-  const mockFetcher = async (url: string, init?: RequestInit): Promise<Response> => {
+  const mockFetcher = async (url: string, _init?: RequestInit): Promise<Response> => {
     requests.push(url);
     const parsed = new URL(url);
     const page = parsed.searchParams.get("page");
