@@ -357,9 +357,6 @@
     }
   },
   "src/drift/java.ts": {
-    "@typescript-eslint/no-unnecessary-type-assertion": {
-      "count": 2
-    },
     "@typescript-eslint/no-unsafe-type-assertion": {
       "count": 2
     },
@@ -395,7 +392,7 @@
   },
   "src/drift/terraform.ts": {
     "@typescript-eslint/no-unnecessary-type-assertion": {
-      "count": 3
+      "count": 1
     },
     "@typescript-eslint/no-unsafe-type-assertion": {
       "count": 1
@@ -428,16 +425,6 @@
     },
     "preserve-caught-error": {
       "count": 1
-    }
-  },
-  "src/fix/java.ts": {
-    "@typescript-eslint/no-unnecessary-type-assertion": {
-      "count": 1
-    }
-  },
-  "src/fix/python.ts": {
-    "@typescript-eslint/no-unnecessary-type-assertion": {
-      "count": 4
     }
   },
   "src/forecast.ts": {
@@ -644,7 +631,7 @@
       "count": 2
     },
     "@typescript-eslint/no-unsafe-type-assertion": {
-      "count": 4
+      "count": 3
     }
   },
   "src/usage-log.ts": {
