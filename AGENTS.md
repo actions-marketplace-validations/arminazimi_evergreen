@@ -58,13 +58,16 @@ Trust rules that apply to every change:
 |---|---|
 | `plugins/claude/`, `plugins/codex/`, `.claude-plugin/marketplace.json`, `.agents/plugins/marketplace.json` | `npm run build:plugins` (source: `skills/`) |
 | `dist/action/index.js` | `npm run build:action` (not committed on `main`; the Release workflow builds it onto the `release/<tag>` branch that release tags point at) |
-| `docs/llms-full.txt` | `npm run build:llms` (source: the pages linked from `docs/llms.txt`) |
-| `docs/rules/` | `npm run build:reference` (source: `registry/*.json`) |
+| `docs/llms-full.txt` | `npm run build:llms` (source: the pages linked from `docs/llms.txt`; gitignored — the Pages workflow builds it before Jekyll; no pull request commits it) |
+| `docs/sitemap.xml`, `docs/rules/index.md` | `npm run build:reference` / `node dist/tools/build-reference-pages.js --site` (source: `registry/*.json`; gitignored — Pages builds them before Jekyll; Search Console URL unchanged) |
+| `docs/dashboard/data.json` | `npm run build:dashboard` (source: `benchmarks/thresholds.json` and `benchmarks/public-repositories/`; gitignored — the Pages workflow builds it before Jekyll; no pull request commits it) |
+| `docs/api/v1/` | `npm run build:data-api` (source: `registry/*.json`; gitignored — the Pages workflow builds it before Jekyll; no pull request commits it) |
+| `docs/rules/` (per-rule pages) | `npm run build:reference` (source: `registry/*.json`) |
 | `docs/assets/og/` | `npm run build:og-images` (source: `registry/*.json`, brand social-preview template) |
 | `docs/eol/` | `npm run build:answer-pages` (source: `registry/*.json`) |
 | `docs/ROADMAP.md` | `node planning/roadmap/roadmap-md.mjs` (source: `planning/roadmap/`) |
 
-CI fails when generated output drifts from its source. The exception is `dist/action/index.js`: it is one minified bundle that every merge rewrote, so parallel pull requests always conflicted on it. `main` does not carry it, and no pull request commits it. Release tags still need it, so after a version bump lands on `main` the Release workflow builds it onto the `release/vX.Y.Z` branch, and the tag is pushed at that branch tip (`docs/RELEASING.md`, step 5). `EVERGREEN_VERIFY_ACTION_BUNDLE=1 npm run check` rebuilds the bundle and fails when the committed copy differs, which `npm publish` runs on that tag commit.
+CI fails when generated output drifts from its source. Exceptions not committed on `main`: `dist/action/index.js` (each merge rewrote the same minified lines, so parallel pull requests conflicted; release tags still need it — see `docs/RELEASING.md`, step 5); and `docs/llms-full.txt`, `docs/sitemap.xml`, `docs/rules/index.md`, `docs/dashboard/data.json`, and `docs/api/v1/` (Pages generates them during the site build; `check:reference`, `check:llms`, `check:dashboard`, and `check:data-api` fail when the sources would not produce a well-formed site).
 
 ## Working on an issue
 
@@ -73,7 +76,49 @@ CI fails when generated output drifts from its source. The exception is `dist/ac
 3. **One issue = one pull request.** If you find more work, open a follow-up issue instead of growing the PR.
 4. Add or update tests for observable behavior. Keep JSON output deterministic and stable across platforms.
 5. Run `npm run check` and make sure it passes.
-6. Open the PR with `Closes #<issue>` and list the commands you ran. For rule changes, link the evidence.
+6. Self-check the diff against the [review rubric](docs/REVIEW.md) (scope, correct layer, real tests, honest docs) and fix every item that would block a merge.
+7. Open the PR with `Closes #<issue>` and list the commands you ran. For rule changes, link the evidence.
+
+## Parallel-task protocol
+
+Use this when more than one agent or contributor works on the repository at once. Follow it with no other context.
+
+### One branch per task from the same base
+
+1. Branch from up-to-date `main` (or the issue's stated base). Name it `<type>/<issue-number>-<short-name>` (for example `docs/2022-parallel-task-protocol`).
+2. One issue = one pull request = one branch. Do not stack unrelated issues on the same branch.
+3. Prefer an isolated git worktree when running multiple tasks in parallel, so each branch has its own working tree and does not stomp on another.
+
+### Shared paths
+
+Prefer adding new per-item files instead of editing assembled or shared registries. Paths many tasks touch:
+
+| Path | How to change it |
+|---|---|
+| `benchmarks/thresholds.json` | Assembled. Edit `benchmarks/thresholds/<detector>.json`, then regenerate with the assembler in `benchmarks/thresholds/index.ts`. Do not edit the assembled file by hand. |
+| `examples/capabilities.json` | Assembled. Edit per-item files under `src/capabilities/`, then regenerate. Do not edit the assembled file by hand. |
+| Generated paths in [Generated files](#generated-files--do-not-edit-by-hand) | Edit the listed source; regenerate; never hand-edit the output. |
+| `benchmarks/public-repositories/` | One file per repo. Add a new file; do not edit a monolith. |
+| `tools/importers/index.ts` | Registration list. Adding an importer means a new file **and** one import line here — expect conflicts. |
+| `AGENTS.md`, `CONTRIBUTING.md` | Shared docs; rebase carefully if another PR touched them. |
+| `package-lock.json` | Shared lockfile; regenerate from `package.json` when needed, do not hand-merge blindly. |
+| `CHANGELOG.md` | Do not edit directly. Add a fragment under `changes/` (see [changes/README.md](changes/README.md)). |
+
+**Shared registry rule:** A shared or assembled registry must not be edited by hand. Edit the per-item source; regenerate the assembled document; commit both when the check requires the assembled file to match.
+
+### On conflict
+
+- Do not force-push.
+- Rebase onto latest `main` (or merge if the brief says so).
+- Resolve by keeping both parties' new per-item files.
+- Never "fix" a conflict by hand-editing an assembled registry — regenerate it from sources.
+- If the conflict is outside your issue's file list, stop and ask, or open a follow-up issue, rather than expanding scope.
+
+### When to rebase
+
+- Rebase onto `main` before opening the PR if `main` moved.
+- Rebase (do not merge `main` into the branch) when CI is green except for being behind, or when resolving conflicts after another PR landed.
+- Do not rewrite history that is already under review without need.
 
 ## Conventions
 
@@ -116,6 +161,7 @@ Do not add it if the check reports an end-of-life, deprecated, or retired result
 
 ## More
 
+- [docs/REVIEW.md](docs/REVIEW.md) — review rubric for agent pull requests: what to check beyond CI, and what must block a merge
 - [CONTRIBUTING.md](CONTRIBUTING.md) — contribution paths and review expectations
 - [docs/ROADMAP.md](docs/ROADMAP.md) — phases and what each one delivers
 - [docs/DETECTORS.md](docs/DETECTORS.md) — detector and registry authoring

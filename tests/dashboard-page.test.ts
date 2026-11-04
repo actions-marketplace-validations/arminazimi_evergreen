@@ -5,6 +5,8 @@ import { test } from "node:test";
 import { runInNewContext } from "node:vm";
 
 import type { Thresholds } from "../benchmarks/thresholds.js";
+import { renderDashboardData } from "../tools/build-dashboard-data.js";
+import { loadRegistries, renderSitemap } from "../tools/build-reference-pages.js";
 
 interface TextNode {
   kind: "text";
@@ -85,7 +87,7 @@ interface Data {
 const script = await readFile(resolve("docs/dashboard/dashboard.js"), "utf8");
 const html = await readFile(resolve("docs/dashboard/index.html"), "utf8");
 const css = await readFile(resolve("docs/dashboard/style.css"), "utf8");
-const data = JSON.parse(await readFile(resolve("docs/dashboard/data.json"), "utf8")) as Data;
+const data = JSON.parse(await renderDashboardData(".", "run-date")) as Data;
 const recorded = (JSON.parse(await readFile(resolve("benchmarks/thresholds.json"), "utf8")) as Thresholds).lastFullRun!;
 
 const api = (() => {
@@ -453,7 +455,7 @@ test("the page loads nothing from elsewhere and is not in the sitemap", async ()
   assert.ok(urls.length > 0);
   for (const url of urls) assert.ok(url.startsWith(api.BLOB_URL) || url === "https://arminazimi.github.io/evergreen/dashboard/", url);
   assert.doesNotMatch(script, /XMLHttpRequest|sendBeacon|WebSocket|EventSource/);
-  const sitemap = await readFile(resolve("docs/sitemap.xml"), "utf8");
+  const sitemap = renderSitemap(await loadRegistries());
   assert.doesNotMatch(sitemap, /dashboard/);
   for (const id of ["status", "data-sections", "run", "detectors-table", "minimums-table", "definitions-list", "limitations-list"]) {
     assert.ok(html.includes(`id="${id}"`), id);

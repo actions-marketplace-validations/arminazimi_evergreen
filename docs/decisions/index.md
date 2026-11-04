@@ -49,6 +49,13 @@ otherwise. Records are numbered in the order they were written; this page groups
 | # | Title | Decision |
 | --- | --- | --- |
 | [0023](0023-measurable-quality-criteria.md) | Define reference quality as measurable, enforced criteria | **Proposed.** Define eight quality criteria, each enforced by a failing check; zero new debt; existing debt allowlisted with an owner and an expiry of 2027-01-26. |
+| [0025](0025-linter-and-formatter.md) | Choose the linter and formatter | Lint with ESLint and typescript-eslint (type-aware); format with Biome; do not use Biome for typed lint or Prettier for format. |
+
+## Operations
+
+| # | Title | Decision |
+| --- | --- | --- |
+| [0024](0024-ci-lanes.md) | CI lanes: pull request, merge queue, main, nightly, release | **Proposed.** Five CI lanes with wall-clock budgets; one required check (`ci-ok`); the merge queue is the proof that lands on `main`. |
 
 ## Policy
 

@@ -3,18 +3,11 @@
   "note": "Existing debt only. Each entry is a ceiling: it may shrink (tighten it) or be removed, never raised or added. Entries expire on the date shown; see docs/QUALITY.md.",
   "fileSize": [
     {
-      "file": "src/reporters.ts",
-      "lines": 911,
-      "owner": "#2227",
-      "expires": "2027-01-26",
-      "reason": "Measured 2026-11-02. Over the 800-line limit; split it in the file-size follow-up."
-    },
-    {
       "file": "src/source-usage.ts",
-      "lines": 1983,
+      "lines": 1898,
       "owner": "#2224",
       "expires": "2027-01-26",
-      "reason": "Measured 2026-11-02. Over the 1,000-line ceiling; split it in the file-size follow-up."
+      "reason": "Measured 2026-11-03. Over the 1,000-line ceiling; split it in the file-size follow-up."
     }
   ],
   "complexity": [
@@ -398,14 +391,6 @@
       "file": "src/detectors/java/index.ts",
       "function": "JavaDetector.analyze",
       "complexity": 19,
-      "owner": "#2259",
-      "expires": "2027-01-26",
-      "reason": "Measured 2026-11-02. Complexity over 15; reduce it in the complexity follow-up."
-    },
-    {
-      "file": "src/detectors/java/parse-catalog.ts",
-      "function": "parseCatalog",
-      "complexity": 18,
       "owner": "#2259",
       "expires": "2027-01-26",
       "reason": "Measured 2026-11-02. Complexity over 15; reduce it in the complexity follow-up."
@@ -1211,14 +1196,6 @@
       "reason": "Measured 2026-11-02. Complexity over 15; reduce it in the complexity follow-up."
     },
     {
-      "file": "src/migration-packet.ts",
-      "function": "validateMigrationPacket",
-      "complexity": 31,
-      "owner": "#2274",
-      "expires": "2027-01-26",
-      "reason": "Measured 2026-11-02. Complexity over 15; reduce it in the complexity follow-up."
-    },
-    {
       "file": "src/purl.ts",
       "function": "parsePurl",
       "complexity": 17,
@@ -1238,14 +1215,6 @@
       "file": "src/renovate-preset.ts",
       "function": "buildRenovatePreset",
       "complexity": 21,
-      "owner": "#2274",
-      "expires": "2027-01-26",
-      "reason": "Measured 2026-11-02. Complexity over 15; reduce it in the complexity follow-up."
-    },
-    {
-      "file": "src/reporters.ts",
-      "function": "renderText",
-      "complexity": 24,
       "owner": "#2274",
       "expires": "2027-01-26",
       "reason": "Measured 2026-11-02. Complexity over 15; reduce it in the complexity follow-up."
@@ -1301,22 +1270,14 @@
     {
       "file": "src/source-usage.ts",
       "function": "analyzeSourceUsage",
-      "complexity": 97,
+      "complexity": 96,
       "owner": "#2275",
       "expires": "2027-01-26",
-      "reason": "Measured 2026-11-02. Complexity over 15; reduce it in the complexity follow-up."
+      "reason": "Measured 2026-11-03. Complexity over 15; reduce it in the complexity follow-up."
     },
     {
       "file": "src/source-usage.ts",
       "function": "javascriptImports",
-      "complexity": 19,
-      "owner": "#2275",
-      "expires": "2027-01-26",
-      "reason": "Measured 2026-11-02. Complexity over 15; reduce it in the complexity follow-up."
-    },
-    {
-      "file": "src/source-usage.ts",
-      "function": "languageFor",
       "complexity": 19,
       "owner": "#2275",
       "expires": "2027-01-26",
@@ -1477,7 +1438,7 @@
     {
       "file": "src/usage/javascript.ts",
       "function": "analyzeJavaScriptFile",
-      "complexity": 45,
+      "complexity": 36,
       "owner": "#2280",
       "expires": "2027-01-26",
       "reason": "Measured 2026-11-02. Complexity over 15; reduce it in the complexity follow-up."
@@ -1493,7 +1454,7 @@
     {
       "file": "src/usage/python.ts",
       "function": "analyzePythonFile",
-      "complexity": 45,
+      "complexity": 40,
       "owner": "#2280",
       "expires": "2027-01-26",
       "reason": "Measured 2026-11-02. Complexity over 15; reduce it in the complexity follow-up."
@@ -1548,27 +1509,6 @@
     }
   ],
   "asUnknownAs": [
-    {
-      "file": "src/detectors/github-actions.ts",
-      "count": 2,
-      "owner": "#2229",
-      "expires": "2027-01-26",
-      "reason": "Measured 2026-11-02. Existing `as unknown as`; narrow the type in the type-safety follow-up."
-    },
-    {
-      "file": "src/detectors/java/parse-catalog.ts",
-      "count": 2,
-      "owner": "#2229",
-      "expires": "2027-01-26",
-      "reason": "Measured 2026-11-02. Existing `as unknown as`; narrow the type in the type-safety follow-up."
-    },
-    {
-      "file": "src/migration-packet.ts",
-      "count": 1,
-      "owner": "#2229",
-      "expires": "2027-01-26",
-      "reason": "Measured 2026-11-02. Existing `as unknown as`; narrow the type in the type-safety follow-up."
-    },
     {
       "file": "src/osv-advisories.ts",
       "count": 1,
@@ -1643,76 +1583,6 @@
     },
     {
       "file": "src/codeowners.ts",
-      "count": 1,
-      "owner": "#2223",
-      "expires": "2027-01-26",
-      "reason": "Measured 2026-11-02. Non-null assertions in this file; remove them in the non-null follow-up."
-    },
-    {
-      "file": "src/commands/badge.ts",
-      "count": 1,
-      "owner": "#2223",
-      "expires": "2027-01-26",
-      "reason": "Measured 2026-11-02. Non-null assertions in this file; remove them in the non-null follow-up."
-    },
-    {
-      "file": "src/commands/check-snippet.ts",
-      "count": 1,
-      "owner": "#2223",
-      "expires": "2027-01-26",
-      "reason": "Measured 2026-11-02. Non-null assertions in this file; remove them in the non-null follow-up."
-    },
-    {
-      "file": "src/commands/check.ts",
-      "count": 1,
-      "owner": "#2223",
-      "expires": "2027-01-26",
-      "reason": "Measured 2026-11-02. Non-null assertions in this file; remove them in the non-null follow-up."
-    },
-    {
-      "file": "src/commands/glance.ts",
-      "count": 1,
-      "owner": "#2223",
-      "expires": "2027-01-26",
-      "reason": "Measured 2026-11-02. Non-null assertions in this file; remove them in the non-null follow-up."
-    },
-    {
-      "file": "src/commands/lookup.ts",
-      "count": 1,
-      "owner": "#2223",
-      "expires": "2027-01-26",
-      "reason": "Measured 2026-11-02. Non-null assertions in this file; remove them in the non-null follow-up."
-    },
-    {
-      "file": "src/commands/new-rule.ts",
-      "count": 1,
-      "owner": "#2223",
-      "expires": "2027-01-26",
-      "reason": "Measured 2026-11-02. Non-null assertions in this file; remove them in the non-null follow-up."
-    },
-    {
-      "file": "src/commands/rules.ts",
-      "count": 2,
-      "owner": "#2223",
-      "expires": "2027-01-26",
-      "reason": "Measured 2026-11-02. Non-null assertions in this file; remove them in the non-null follow-up."
-    },
-    {
-      "file": "src/commands/runtime.ts",
-      "count": 2,
-      "owner": "#2223",
-      "expires": "2027-01-26",
-      "reason": "Measured 2026-11-02. Non-null assertions in this file; remove them in the non-null follow-up."
-    },
-    {
-      "file": "src/commands/sbom.ts",
-      "count": 2,
-      "owner": "#2223",
-      "expires": "2027-01-26",
-      "reason": "Measured 2026-11-02. Non-null assertions in this file; remove them in the non-null follow-up."
-    },
-    {
-      "file": "src/commands/status-card.ts",
       "count": 1,
       "owner": "#2223",
       "expires": "2027-01-26",
@@ -2398,13 +2268,6 @@
       "reason": "Measured 2026-11-02. Non-null assertions in this file; remove them in the non-null follow-up."
     },
     {
-      "file": "src/reporters.ts",
-      "count": 3,
-      "owner": "#2223",
-      "expires": "2027-01-26",
-      "reason": "Measured 2026-11-02. Non-null assertions in this file; remove them in the non-null follow-up."
-    },
-    {
       "file": "src/rollup.ts",
       "count": 1,
       "owner": "#2223",
@@ -2573,16 +2436,7 @@
       "reason": "Measured 2026-11-02. Non-null assertions in this file; remove them in the non-null follow-up."
     }
   ],
-  "boundaries": [
-    {
-      "file": "src/github-action.ts",
-      "rule": "adapters-no-detectors",
-      "count": 1,
-      "owner": "#2228",
-      "expires": "2027-01-26",
-      "reason": "Measured 2026-11-02. Existing import of a detector from an adapter; move the logic into the engine or the detector."
-    }
-  ],
+  "boundaries": [],
   "audit": [
     {
       "advisory": "GHSA-333x-w4r6-6crp",

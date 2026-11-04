@@ -123,8 +123,7 @@ count.
 
 The rules come from [Architecture](ARCHITECTURE.md#trust-boundaries) and [AGENTS.md](../AGENTS.md#architecture-boundaries).
 
-**Current.** One violation: `src/github-action.ts` imports a detector (`adapters-no-detectors`). It is allowlisted
-at 1 with an owner and expiry.
+**Current.** No boundary violations. The `boundaries` allowlist section is empty.
 
 **Not mechanically checkable today.** Rule 4 (what `src/source-usage.ts` owns) and the "owns logic" half of the
 adapter rule are review rules. Transitive network reach needs a module-graph walk, which is a dependency-cruiser
@@ -174,8 +173,10 @@ mutation score as the ratio of mutants the tests detect.
 **Target.**
 
 - The generated command registry is current, and every command module appears in the CLI help.
-- `docs/llms-full.txt` matches the pages linked from `docs/llms.txt`.
-- Reference pages, answer pages, Open Graph images, and the data API match `registry/*.json`.
+- `docs/llms-full.txt` is buildable from the pages linked from `docs/llms.txt` (generated at site build; not committed).
+- `docs/sitemap.xml` and `docs/rules/index.md` are generated at site build (not committed).
+- `docs/dashboard/data.json` is buildable from the corpus thresholds (generated at site build; not committed).
+- Committed reference pages, answer pages, and Open Graph images match `registry/*.json`. The data API is buildable and schema-valid from `registry/*.json` (generated at site build; not committed).
 - The README coverage table names files each detector reads and commands that exist.
 - The documentation site builds with **zero broken internal links** and no accessibility errors at the level
   Seaworthy checks.
@@ -183,8 +184,10 @@ mutation score as the ratio of mutants the tests detect.
 **Enforced by.**
 
 - `npm run check`: the command registry (`generate-commands-index.mjs --check`) and the docs tests.
-- `ci.yml`, Linux Node 24: `check:reference`, `check:og-images`, `check:answer-pages`, and, added here,
-  `check:llms` and `check:data-api`. Each fails on drift from its source.
+- `ci.yml`, Linux Node 24: `check:reference`, `check:og-images`, `check:answer-pages`, `check:llms`,
+  `check:data-api`, and `check:dashboard`. Reference, Open Graph, and answer checks fail on drift from
+  their source; `check:llms`, `check:data-api`, and `check:dashboard` fail when the sources would not
+  produce a well-formed build-time file.
 - Links and accessibility: **report-only**. `ci.yml` runs Seaworthy with `--fail-on none`, and `docs-doctor.yml`
   sets `level: none`. This change does not turn them into gates, because it did not run the Seaworthy findings to
   a clean state locally. The condition is in the next paragraph.
@@ -268,6 +271,15 @@ same on every run:
 
 The numbers are the allowlist's own ceilings. The check keeps each ceiling equal to the measured value, so the report
 matches the code while the check passes.
+
+## Monthly report
+
+Each target above appears in the monthly progress report with its current value and the change against the previous
+month. `npm run metrics:quality` writes `metrics/quality/<YYYY-MM-DD>.json` from the allowlist and any local
+`lcov.info`, `artifacts/mutation-report.json`, and Scorecard row already stored under `metrics/adoption/` — no
+network access. `npm run report:monthly -- --out docs/reports/monthly-YYYY-MM.md` reads the newest snapshot of the
+month and the newest of the previous month, and prints a dash when either side is missing rather than treating a gap
+as zero. Published reports live under [`docs/reports/`](reports/).
 
 **Editing rules.** An entry is removed or tightened, never raised or added to pass a change. Changing a ceiling
 upward is a new debt decision and belongs in its own reviewed pull request with a new owner issue.
