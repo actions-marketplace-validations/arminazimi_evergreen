@@ -31,6 +31,7 @@ const TODAY = "2026-11-02";
 const EMPTY: Allowlist = {
   schemaVersion: ALLOWLIST_SCHEMA,
   fileSize: [],
+  functionLength: [],
   complexity: [],
   asUnknownAs: [],
   nonNull: [],
@@ -57,7 +58,12 @@ function fileWith(path: string, text: string): FileMeasure {
 
 /** Small companions keep the median under the target, so a test isolates the one file it is about. */
 function withFillers(...files: FileMeasure[]): FileMeasure[] {
-  return [...files, fileWith("src/filler-a.ts", "export {};\n"), fileWith("src/filler-b.ts", "export {};\n"), fileWith("src/filler-c.ts", "export {};\n")];
+  return [
+    ...files,
+    fileWith("src/filler-a.ts", "export {};\n"),
+    fileWith("src/filler-b.ts", "export {};\n"),
+    fileWith("src/filler-c.ts", "export {};\n"),
+  ];
 }
 
 test("cyclomatic complexity counts decision points and ignores nested functions", () => {
@@ -83,7 +89,7 @@ test("cyclomatic complexity counts decision points and ignores nested functions"
   assert.equal(only?.name, "decide");
   // 1 + if + && + ?? + for-of + if + || + ?: = 8; the nested arrow's `if` is counted on its own.
   assert.equal(only?.complexity, 8);
-  assert.deepEqual(measured.functions[1], { name: "decide > nested", complexity: 2 });
+  assert.deepEqual(measured.functions[1], { name: "decide > nested", complexity: 2, lines: 4 });
 });
 
 test("methods are named by class and duplicate names are numbered in source order", () => {
@@ -120,6 +126,78 @@ test("the complexity walk does not count a nested class method against its enclo
   assert.equal(outer?.complexity, 2);
 });
 
+test("a function's line span runs from its first line through its closing brace", () => {
+  const measured = measureFile(
+    "src/x.ts",
+    `const tiny = () => 1;
+export function eight(
+  a: number,
+) {
+  if (a) {
+    return a;
+  }
+  return 0;
+}
+`,
+  );
+  const byName = new Map(measured.functions.map((fn) => [fn.name, fn.lines]));
+  assert.equal(byName.get("tiny"), 1);
+  assert.equal(byName.get("eight"), 8);
+});
+
+test("an unallowlisted function over 50 lines fails with the file, the function, and what to do", () => {
+  const body = `${"  const x = 1;\n".repeat(50)}`;
+  const findings = evaluateQuality(
+    input({ files: withFillers(fileWith("src/long.ts", `export function draw() {\n${body}}\n`)) }),
+  );
+  const functionSize = findings.find((finding) => finding.check === "function-size");
+  assert.ok(functionSize, "expected a function-size finding");
+  assert.equal(functionSize.location, "src/long.ts draw");
+  assert.match(functionSize.message, /52 lines is over the 50-line limit/);
+});
+
+test("a function-length ceiling may shrink only by tightening it, and may never grow", () => {
+  const body = (count: number): string => `${"  const x = 1;\n".repeat(count)}`;
+  const at = (count: number, ceiling: number): QualityInput =>
+    input({
+      files: withFillers(fileWith("src/long.ts", `export function draw() {\n${body(count)}}\n`)),
+      allowlist: { ...EMPTY, functionLength: [{ ...DEBT, file: "src/long.ts", function: "draw", lines: ceiling }] },
+    });
+
+  assert.deepEqual(evaluateQuality(at(60, 62)), []);
+  assert.match(
+    evaluateQuality(at(61, 62))
+      .map((finding) => finding.message)
+      .join("\n"),
+    /grew from 62 to 63/,
+  );
+  assert.match(
+    evaluateQuality(at(58, 62))
+      .map((finding) => finding.message)
+      .join("\n"),
+    /is now 60 lines; set this entry to 60/,
+  );
+
+  const under = evaluateQuality(
+    input({
+      files: withFillers(fileWith("src/short.ts", "export function draw() {\n  return 1;\n}\n")),
+      allowlist: { ...EMPTY, functionLength: [{ ...DEBT, file: "src/short.ts", function: "draw", lines: 51 }] },
+    }),
+  );
+  assert.match(
+    under.map((finding) => finding.message).join("\n"),
+    /is now at or under 50 lines; remove this allowlist entry/,
+  );
+
+  const stale = evaluateQuality(
+    input({
+      files: withFillers(),
+      allowlist: { ...EMPTY, functionLength: [{ ...DEBT, file: "src/gone.ts", function: "draw", lines: 51 }] },
+    }),
+  );
+  assert.match(stale.map((finding) => finding.message).join("\n"), /no such function; remove this allowlist entry/);
+});
+
 test("line counts match wc -l and the median is the middle value", () => {
   assert.equal(countLines(""), 0);
   assert.equal(countLines("a\nb\n"), 2);
@@ -129,16 +207,25 @@ test("line counts match wc -l and the median is the middle value", () => {
 });
 
 test("boundary rules flag a detector importing the network and an adapter importing a detector", () => {
-  const detector = measureFile("src/detectors/x.ts", 'import { request } from "node:https";\nexport const f = () => fetch("https://example.com");\n');
+  const detector = measureFile(
+    "src/detectors/x.ts",
+    'import { request } from "node:https";\nexport const f = () => fetch("https://example.com");\n',
+  );
   assert.equal(detector.boundary.get("no-network"), 2);
 
-  const adapter = measureFile("src/cli.ts", 'import { DetectorX } from "./detectors/x.js";\nexport { y } from "./detectors/y.js";\n');
+  const adapter = measureFile(
+    "src/cli.ts",
+    'import { DetectorX } from "./detectors/x.js";\nexport { y } from "./detectors/y.js";\n',
+  );
   assert.equal(adapter.boundary.get("adapters-no-detectors"), 2);
 
   const engine = measureFile("src/engine.ts", 'import type { D } from "./detectors/index.js";\n');
   assert.equal(engine.boundary.get("engine-no-detectors"), 1);
 
-  const clean = measureFile("src/detectors/y.ts", 'import { join } from "node:path";\nimport { x } from "../domain.js";\n');
+  const clean = measureFile(
+    "src/detectors/y.ts",
+    'import { join } from "node:path";\nimport { x } from "../domain.js";\n',
+  );
   assert.equal(clean.boundary.size, 0);
 });
 
@@ -291,7 +378,10 @@ test("a new file with non-null assertions fails, and a stale or missing non-null
       allowlist: { ...EMPTY, nonNull: [{ ...DEBT, file: "src/clean.ts", count: 1 }] },
     }),
   );
-  assert.match(stale.map((finding) => finding.message).join("\n"), /no non-null assertions remain; remove this allowlist entry/);
+  assert.match(
+    stale.map((finding) => finding.message).join("\n"),
+    /no non-null assertions remain; remove this allowlist entry/,
+  );
 
   const missing = evaluateQuality(
     input({
@@ -305,7 +395,10 @@ test("a new file with non-null assertions fails, and a stale or missing non-null
 test("non-null entries are one per file with a whole-number count; the old single total is refused", () => {
   const { allowlist, problems } = parseAllowlist({
     schemaVersion: ALLOWLIST_SCHEMA,
-    nonNull: [{ file: "src/a.ts", count: 1.5, owner: "#2223", expires: MAX_EXPIRY, reason: "x" }, { count: 1, owner: "#2223", expires: MAX_EXPIRY, reason: "x" }],
+    nonNull: [
+      { file: "src/a.ts", count: 1.5, owner: "#2223", expires: MAX_EXPIRY, reason: "x" },
+      { count: 1, owner: "#2223", expires: MAX_EXPIRY, reason: "x" },
+    ],
   });
   const messages = problems.map((problem) => problem.message).join("\n");
   assert.match(messages, /count must be a whole number/);
@@ -320,6 +413,53 @@ test("non-null entries are one per file with a whole-number count; the old singl
   assert.match(single.problems[0]?.message ?? "", /must be an array of objects/);
 });
 
+test("as unknown as casts are a ceiling per file: a matching entry passes and a raised one fails", () => {
+  const casts = "const a = b as unknown as X;\nconst c = d as unknown as Y;\n";
+  const matches = evaluateQuality(
+    input({
+      files: withFillers(fileWith("src/a.ts", casts)),
+      allowlist: { ...EMPTY, asUnknownAs: [{ ...DEBT, file: "src/a.ts", count: 2 }] },
+    }),
+  );
+  assert.deepEqual(matches, []);
+
+  const raised = evaluateQuality(
+    input({
+      files: withFillers(fileWith("src/a.ts", casts)),
+      allowlist: { ...EMPTY, asUnknownAs: [{ ...DEBT, file: "src/a.ts", count: 1 }] },
+    }),
+  );
+  assert.match(raised.map((finding) => finding.message).join("\n"), /`as unknown as` grew from 1 to 2/);
+});
+
+test("as unknown as entries parse per file, and a stale or missing entry fails", () => {
+  const { allowlist, problems } = parseAllowlist({
+    schemaVersion: ALLOWLIST_SCHEMA,
+    asUnknownAs: [{ file: "src/a.ts", count: 2, owner: "#2230", expires: MAX_EXPIRY, reason: "x" }],
+  });
+  assert.deepEqual(problems, []);
+  assert.equal(allowlist.asUnknownAs[0]?.count, 2);
+
+  const stale = evaluateQuality(
+    input({
+      files: withFillers(fileWith("src/clean.ts", "export const a = 1;\n")),
+      allowlist: { ...EMPTY, asUnknownAs: [{ ...DEBT, file: "src/clean.ts", count: 1 }] },
+    }),
+  );
+  assert.match(
+    stale.map((finding) => finding.message).join("\n"),
+    /no `as unknown as` remain; remove this allowlist entry/,
+  );
+
+  const missing = evaluateQuality(
+    input({
+      files: withFillers(),
+      allowlist: { ...EMPTY, asUnknownAs: [{ ...DEBT, file: "src/gone.ts", count: 1 }] },
+    }),
+  );
+  assert.match(missing.map((finding) => finding.message).join("\n"), /the file no longer exists/);
+});
+
 test("the report totals each section and splits complexity and non-null by directory, largest first", () => {
   const text = renderReport({
     ...EMPTY,
@@ -328,17 +468,31 @@ test("the report totals each section and splits complexity and non-null by direc
       { ...DEBT, file: "src/commands/b.ts", function: "g", complexity: 17 },
       { ...DEBT, file: "src/commands/c.ts", function: "h", complexity: 18 },
     ],
+    functionLength: [
+      { ...DEBT, file: "src/a.ts", function: "f", lines: 60 },
+      { ...DEBT, file: "src/fix/x.ts", function: "g", lines: 70 },
+    ],
     nonNull: [
       { ...DEBT, file: "src/a.ts", count: 3 },
       { ...DEBT, file: "src/fix/x.ts", count: 10 },
     ],
   });
   assert.match(text, /^complexity +3 +functions over 15$/m);
+  assert.match(text, /^function size +2 +functions over 50$/m);
   assert.match(text, /^non-null +13 +non-null assertions$/m);
   assert.match(text, /^  src\/commands +2$/m);
   assert.match(text, /^  src +1$/m);
-  assert.ok(text.search(/^  src\/commands /m) < text.search(/^  src +1$/m), "the larger directory comes first");
-  assert.ok(text.search(/^  src\/fix /m) < text.search(/^  src +3$/m), "the larger non-null directory comes first");
+  assert.match(text, /function size by directory \(functions over 50\)/);
+  const complexityLines = text.slice(text.indexOf("complexity by directory (functions over 15)"));
+  assert.ok(
+    complexityLines.search(/^  src\/commands +2$/m) < complexityLines.search(/^  src +1$/m),
+    "the larger complexity directory comes first",
+  );
+  const nonNullLines = text.slice(text.indexOf("non-null by directory (assertions)"));
+  assert.ok(
+    nonNullLines.search(/^  src\/fix +10$/m) < nonNullLines.search(/^  src +3$/m),
+    "the larger non-null directory comes first",
+  );
   assert.equal(renderReport({ ...EMPTY }).includes("complexity by directory (functions over 15)\n\n"), true);
 });
 
@@ -375,10 +529,19 @@ test("high and critical advisories cannot be allowlisted; a moderate one can", (
     { id: "GHSA-high", package: "a", severity: "high" },
     { id: "GHSA-mod", package: "b", severity: "moderate" },
   ];
-  const allowed = { ...EMPTY, audit: [{ ...DEBT, advisory: "GHSA-high", package: "a" }, { ...DEBT, advisory: "GHSA-mod", package: "b" }] };
+  const allowed = {
+    ...EMPTY,
+    audit: [
+      { ...DEBT, advisory: "GHSA-high", package: "a" },
+      { ...DEBT, advisory: "GHSA-mod", package: "b" },
+    ],
+  };
   const findings = evaluateQuality(input({ audit, allowlist: allowed })).map((finding) => finding.message);
   assert.ok(findings.some((message) => /high advisory .* never allowlisted/.test(message)));
-  assert.equal(findings.some((message) => /GHSA-mod/.test(message)), false);
+  assert.equal(
+    findings.some((message) => /GHSA-mod/.test(message)),
+    false,
+  );
 });
 
 test("npm audit JSON is reduced to one row per advisory", () => {
@@ -436,9 +599,40 @@ test("a looser TARGETS limit fails, and parseTargets reads the table from source
   assert.equal(looser[0]?.location, "TARGETS.complexity");
   assert.match(looser[0]?.message ?? "", /limit loosened from 15 to 16/);
 
-  const parsed = parseTargets(`export const TARGETS = {\n  medianLines: 300,\n  warnLines: 800,\n  ceilingLines: 1000,\n  complexity: 15,\n} as const;\n`);
+  const parsed = parseTargets(
+    `export const TARGETS = {\n  medianLines: 300,\n  warnLines: 800,\n  ceilingLines: 1000,\n  functionLines: 50,\n  complexity: 15,\n} as const;\n`,
+  );
   assert.deepEqual(parsed, TARGETS);
   assert.equal(parseTargets("export const OTHER = 1;\n"), null);
+});
+
+test("a limit the base ref lacks is new and passes; removing a limit it has fails", () => {
+  assert.deepEqual(compareTargets({ complexity: 15 }, { ...TARGETS }), []);
+  const removed = compareTargets(TARGETS, {
+    medianLines: TARGETS.medianLines,
+    warnLines: TARGETS.warnLines,
+    ceilingLines: TARGETS.ceilingLines,
+    complexity: TARGETS.complexity,
+  });
+  assert.deepEqual(
+    removed.map((finding) => finding.location),
+    ["TARGETS.functionLines"],
+  );
+  assert.match(removed[0]?.message ?? "", /limit removed/);
+});
+
+test("an allowlist section the base ref lacks is new, so its entries are not rejected as additions", () => {
+  const current: Allowlist = {
+    ...EMPTY,
+    functionLength: [{ ...DEBT, file: "src/a.ts", function: "f", lines: 60 }],
+  };
+  assert.match(
+    compareAllowlists(EMPTY, current)
+      .map((finding) => finding.message)
+      .join("\n"),
+    /new allowlist entry/,
+  );
+  assert.deepEqual(compareAllowlists(EMPTY, current, { baselineSections: new Set(["fileSize"]) }), []);
 });
 
 test("lowering or deleting an allowlist entry passes the gate comparison", () => {

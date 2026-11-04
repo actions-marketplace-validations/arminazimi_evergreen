@@ -1,14 +1,10 @@
 import { severityValues, sourceLanguageValues, symbolShapeValues } from "./domain.js";
-import type {
-  DeprecationRule,
-  Finding,
-  MigrationGuidance,
-  UnclassifiedReference,
-  UsageMatcher,
-} from "./domain.js";
+import type { DeprecationRule, Finding, MigrationGuidance, UnclassifiedReference, UsageMatcher } from "./domain.js";
 
+/** The detector interface version an adapter must declare to run. */
 export const DETECTOR_API_VERSION = "evergreen.detector.v1" as const;
 
+/** The repository and scan time a detector receives when it runs. */
 export interface DetectorContext {
   /** Absolute path to the repository being scanned. */
   readonly root: string;
@@ -23,8 +19,10 @@ export interface DetectorContext {
 
 /** A detector may state `confidence`; when it does not, the engine derives it from where the finding was read. */
 export type DetectorFinding = Omit<Finding, "detector" | "confidence"> & { confidence?: Finding["confidence"] };
+/** A reference a detector could not classify; the engine fills in which detector reported it. */
 export type DetectorUnclassifiedReference = Omit<UnclassifiedReference, "detector">;
 
+/** Findings plus unclassified references, for detectors that report both. */
 export interface DetectorAnalysis {
   findings: readonly DetectorFinding[];
   unclassified: readonly DetectorUnclassifiedReference[];
@@ -45,6 +43,7 @@ export interface DetectorInputs {
   readonly sourceExtensions?: readonly string[];
 }
 
+/** The stable interface an ecosystem detector implements. */
 export interface Detector {
   readonly apiVersion: typeof DETECTOR_API_VERSION;
   readonly id: string;
@@ -58,16 +57,19 @@ export interface Detector {
   analyze?(context: DetectorContext): Promise<DetectorAnalysis>;
 }
 
+/** Ties a registry schema version to the guard that recognizes its rules. */
 export interface RegistryDefinition<Rule> {
   readonly schemaVersion: string;
   readonly isRule: (value: unknown) => value is Rule;
 }
 
+/** A validated registry document and the schema version it was read as. */
 export interface Registry<Rule> {
   readonly schemaVersion: string;
   readonly rules: readonly Rule[];
 }
 
+/** Thrown when a detector does not satisfy the current API contract. */
 export class DetectorCompatibilityError extends Error {
   constructor(message: string) {
     super(message);
@@ -75,6 +77,7 @@ export class DetectorCompatibilityError extends Error {
   }
 }
 
+/** Thrown when a registry document is malformed or has the wrong schema version. */
 export class RegistryValidationError extends Error {
   constructor(message: string) {
     super(message);
@@ -90,6 +93,7 @@ function isNonEmptyString(value: unknown): value is string {
   return typeof value === "string" && value.trim().length > 0;
 }
 
+/** Narrows an unknown value to a lifecycle rule that carries the required evidence. */
 export function isDeprecationRule(value: unknown): value is DeprecationRule {
   if (!isRecord(value)) return false;
   if (
@@ -117,6 +121,7 @@ export function isDeprecationRule(value: unknown): value is DeprecationRule {
   );
 }
 
+/** Narrows an unknown value to reviewed migration guidance with steps and verification. */
 export function isMigrationGuidance(value: unknown): value is MigrationGuidance {
   if (
     !isRecord(value) ||
@@ -148,10 +153,7 @@ export function isMigrationGuidance(value: unknown): value is MigrationGuidance 
   return (
     validSteps &&
     value.verification.every(
-      (command) =>
-        isRecord(command) &&
-        isNonEmptyString(command.command) &&
-        isNonEmptyString(command.purpose),
+      (command) => isRecord(command) && isNonEmptyString(command.command) && isNonEmptyString(command.purpose),
     )
   );
 }
@@ -159,17 +161,32 @@ export function isMigrationGuidance(value: unknown): value is MigrationGuidance 
 const SYMBOL_FIELDS = ["kind", "language", "module", "symbol", "shape", "option", "argument", "replacement"];
 const SYMBOL_PATH = /^[A-Za-z_$][\w$]*(?:\.[A-Za-z_$][\w$]*)*$/;
 
+/** Narrows an unknown value to one of the supported source-usage matchers. */
 export function isUsageMatcher(value: unknown): value is UsageMatcher {
   if (!isRecord(value) || !sourceLanguageValues.includes(value.language as never)) return false;
   if (value.kind === "import") {
     return (
-      ["javascript", "typescript", "python", "go", "java", "kotlin", "rust", "csharp", "ruby", "php", "swift", "dart"].includes(value.language as string) &&
-      isNonEmptyString(value.module)
+      [
+        "javascript",
+        "typescript",
+        "python",
+        "go",
+        "java",
+        "kotlin",
+        "rust",
+        "csharp",
+        "ruby",
+        "php",
+        "swift",
+        "dart",
+      ].includes(value.language as string) && isNonEmptyString(value.module)
     );
   }
   if (value.kind === "call") {
     return (
-      ["javascript", "typescript", "python", "go", "rust", "csharp", "ruby", "php", "swift", "dart"].includes(value.language as string) &&
+      ["javascript", "typescript", "python", "go", "rust", "csharp", "ruby", "php", "swift", "dart"].includes(
+        value.language as string,
+      ) &&
       isNonEmptyString(value.module) &&
       Array.isArray(value.targets) &&
       value.targets.length > 0 &&
@@ -193,18 +210,13 @@ export function isUsageMatcher(value: unknown): value is UsageMatcher {
     );
   }
   if (value.kind === "config-key") {
-    return (
-      isNonEmptyString(value.key) &&
-      (value.valueIncludes === undefined || isNonEmptyString(value.valueIncludes))
-    );
+    return isNonEmptyString(value.key) && (value.valueIncludes === undefined || isNonEmptyString(value.valueIncludes));
   }
   return false;
 }
 
-export function validateRegistry<Rule>(
-  value: unknown,
-  definition: RegistryDefinition<Rule>,
-): Registry<Rule> {
+/** Validates a decoded registry against its definition and returns its rules. */
+export function validateRegistry<Rule>(value: unknown, definition: RegistryDefinition<Rule>): Registry<Rule> {
   if (!isRecord(value)) {
     throw new RegistryValidationError("Registry must be a JSON object.");
   }
@@ -226,6 +238,7 @@ export function validateRegistry<Rule>(
   return { schemaVersion: definition.schemaVersion, rules: value.rules };
 }
 
+/** Throws unless the value declares the current API version and a valid id and scan function. */
 export function assertDetectorCompatible(value: unknown): asserts value is Detector {
   if (!isRecord(value)) {
     throw new DetectorCompatibilityError("Detector must be an object.");
@@ -236,15 +249,14 @@ export function assertDetectorCompatible(value: unknown): asserts value is Detec
     );
   }
   if (!isNonEmptyString(value.id) || !/^[a-z0-9]+(?:-[a-z0-9]+)*$/.test(value.id)) {
-    throw new DetectorCompatibilityError(
-      "Detector id must contain lowercase letters, numbers, and single hyphens.",
-    );
+    throw new DetectorCompatibilityError("Detector id must contain lowercase letters, numbers, and single hyphens.");
   }
   if (typeof value.scan !== "function") {
     throw new DetectorCompatibilityError("Detector scan must be a function.");
   }
 }
 
+/** Checks a detector at definition time and returns it with its literal type preserved. */
 export function defineDetector<const Adapter extends Detector>(adapter: Adapter): Adapter {
   assertDetectorCompatible(adapter);
   return adapter;

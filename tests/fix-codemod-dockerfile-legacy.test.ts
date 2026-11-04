@@ -29,8 +29,8 @@ async function repository(files: Record<string, string>): Promise<string> {
 }
 
 test("rewrites MAINTAINER and the legacy ENV form to the after fixture", async () => {
-  const before = await readFile(join(fixtures, "before.Dockerfile"), "utf8");
-  const after = await readFile(join(fixtures, "after.Dockerfile"), "utf8");
+  const before = await readFile(join(fixtures, "before.image.fixture"), "utf8");
+  const after = await readFile(join(fixtures, "after.image.fixture"), "utf8");
   const root = await repository({ Dockerfile: before });
   const patches = await dockerfileLegacyFixer.plan(await scanRepository(root, detectors));
 
@@ -38,9 +38,14 @@ test("rewrites MAINTAINER and the legacy ENV form to the after fixture", async (
   assert.equal(patches[0]!.path, "Dockerfile");
   const hunk = patches[0]!.diff.split("\n").slice(2);
   const start = Number(/^@@ -(\d+)/.exec(hunk[0]!)![1]) - 1;
-  const rebuilt = hunk.slice(1).filter((line) => !line.startsWith("-")).map((line) => line.slice(1));
+  const rebuilt = hunk
+    .slice(1)
+    .filter((line) => !line.startsWith("-"))
+    .map((line) => line.slice(1));
   assert.deepEqual(rebuilt, after.split("\n").slice(start, start + rebuilt.length));
-  assert.ok(patches[0]!.diff.includes('\n+LABEL org.opencontainers.image.authors="Evergreen Team <team@example.com>"\n'));
+  assert.ok(
+    patches[0]!.diff.includes('\n+LABEL org.opencontainers.image.authors="Evergreen Team <team@example.com>"\n'),
+  );
   assert.ok(patches[0]!.diff.includes('\n+ENV MULTI="one two"\n'));
 
   const patch = join(root, "fix.patch");
@@ -54,7 +59,7 @@ test("rewrites MAINTAINER and the legacy ENV form to the after fixture", async (
 });
 
 test("the planned patch is idempotent: scanning the fixed file plans nothing", async () => {
-  const root = await repository({ Dockerfile: await readFile(join(fixtures, "after.Dockerfile"), "utf8") });
+  const root = await repository({ Dockerfile: await readFile(join(fixtures, "after.image.fixture"), "utf8") });
   assert.deepEqual(await dockerfileLegacyFixer.plan(await scanRepository(root, detectors)), []);
 });
 
@@ -102,7 +107,8 @@ for (const refusal of refusals) {
     const root = await repository({ Dockerfile: refusal.contents });
     const declined: Array<{ line: number | undefined; reason: string }> = [];
     const patches = await dockerfileLegacyFixer.plan(await scanRepository(root, detectors), (finding, reason) =>
-      declined.push({ line: finding.location.line, reason }));
+      declined.push({ line: finding.location.line, reason }),
+    );
     assert.deepEqual(patches, []);
     assert.deepEqual(declined, [{ line: refusal.line, reason: refusal.reason }]);
     assert.equal(await readFile(join(root, "Dockerfile"), "utf8"), refusal.contents);

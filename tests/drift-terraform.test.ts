@@ -4,16 +4,21 @@ import { mkdir, mkdtemp, readFile, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join, resolve } from "node:path";
 import { promisify } from "node:util";
-import { after, test } from "node:test";
+import { after, before, test } from "node:test";
 
 import { Ajv2020 } from "ajv/dist/2020.js";
 
 import { runCli } from "./cli-runner.js";
+import { copyFixtureTree } from "./fixture-copies.js";
 
 const execute = promisify(execFile);
 
-const fixtures = resolve("tests/fixtures/drift/terraform");
+let fixtures: string;
 const temporaryRoots: string[] = [];
+
+before(async () => {
+  fixtures = await copyFixtureTree(resolve("tests/fixtures/drift/terraform"), temporaryRoots);
+});
 
 after(async () => {
   await Promise.all(temporaryRoots.map((root) => rm(root, { recursive: true, force: true })));
@@ -88,7 +93,10 @@ test("every Terraform source is collected, and the report is a drift", async () 
 
   assert.equal(find(runtime, ".gitlab-ci.yml", "GitLab CI image")?.raw, "1.17.0");
   const mainTf = runtime.pins.filter((pin) => pin.path === "main.tf");
-  assert.deepEqual(mainTf.map((pin) => pin.source), ["terraform required_version"]);
+  assert.deepEqual(
+    mainTf.map((pin) => pin.source),
+    ["terraform required_version"],
+  );
 });
 
 test("an exact required_version is a pin, a range is a floor, and both carry their directory", async () => {
@@ -120,7 +128,10 @@ test("required_version above a repository-wide pin is a floor conflict", async (
   const runtime = await report("floor-conflict");
   assert.equal(runtime.drifted, false);
   assert.deepEqual(runtime.releases, ["1.6"]);
-  assert.deepEqual(runtime.floorConflicts.map((pin) => [pin.path, pin.line, pin.raw, pin.release]), [["main.tf", 2, ">= 1.8.0", "1.8"]]);
+  assert.deepEqual(
+    runtime.floorConflicts.map((pin) => [pin.path, pin.line, pin.raw, pin.release]),
+    [["main.tf", 2, ">= 1.8.0", "1.8"]],
+  );
   assert.equal((await run("drift", resolve(fixtures, "floor-conflict"), "--runtime", "terraform", "--check")).code, 1);
 });
 
@@ -147,7 +158,10 @@ test("values that cannot be resolved are reported with a reason, not guessed", a
   assert.match(find(runtime, "legacy/.terraform-version", ".terraform-version")?.unresolved ?? "", /1\.9/);
   assert.match(find(runtime, ".tool-versions", ".tool-versions")?.unresolved ?? "", /ref:main/);
   assert.match(find(runtime, "Dockerfile", "Dockerfile FROM")?.unresolved ?? "", /no tag/);
-  assert.match(find(runtime, ".github/workflows/ci.yml", "hashicorp/setup-terraform terraform_version")?.unresolved ?? "", /matrix/);
+  assert.match(
+    find(runtime, ".github/workflows/ci.yml", "hashicorp/setup-terraform terraform_version")?.unresolved ?? "",
+    /matrix/,
+  );
   assert.match(find(runtime, "main.tf", "terraform required_version")?.unresolved ?? "", /no minimum/);
 });
 
@@ -169,7 +183,10 @@ test("align prints a patch for every understood source, applies cleanly, and rem
   await writeFile(join(root, "Dockerfile"), "FROM hashicorp/terraform:1.16.0\nRUN terraform fmt -check\n");
   await writeFile(join(root, "main.tf"), 'terraform {\n  required_version = "= 1.16.0"\n}\n');
   await writeFile(join(root, "modules", "vpc", "main.tf"), 'terraform {\n  required_version = ">= 1.16.0"\n}\n');
-  await writeFile(join(root, ".github", "workflows", "ci.yml"), "jobs:\n  test:\n    steps:\n      - uses: hashicorp/setup-terraform@v3\n        with:\n          terraform_version: 1.16.0\n");
+  await writeFile(
+    join(root, ".github", "workflows", "ci.yml"),
+    "jobs:\n  test:\n    steps:\n      - uses: hashicorp/setup-terraform@v3\n        with:\n          terraform_version: 1.16.0\n",
+  );
   await execute("git", ["init", "-q"], { cwd: root });
 
   const aligned = await run("drift", root, "--runtime", "terraform", "--align", "1.18");

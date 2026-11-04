@@ -1,4 +1,4 @@
-import { MAXIMUM_INPUT_BYTES, MAXIMUM_LINE_LENGTH, readTomlLines, stringValue } from "./toml-lines.js";
+import { readTomlLines, stringValue } from "./toml-lines.js";
 
 /**
  * Pure, bounded parser for the resolved crate versions in Cargo.lock.
@@ -8,8 +8,6 @@ import { MAXIMUM_INPUT_BYTES, MAXIMUM_LINE_LENGTH, readTomlLines, stringValue } 
  * sources, packages with no readable name or version, and a malformed file return nothing. The parser never
  * evaluates contents or runs Cargo.
  */
-
-export { MAXIMUM_INPUT_BYTES, MAXIMUM_LINE_LENGTH };
 
 export interface CargoLockPackage {
   crate: string;
@@ -27,7 +25,13 @@ export function parseCargoLock(contents: string): CargoLockPackage[] {
   const packages: CargoLockPackage[] = [];
   let current: { name?: string; version?: string; versionLine?: number; source?: string } | undefined;
   const finish = (): void => {
-    if (current?.name && current.version !== undefined && current.versionLine !== undefined && current.source && /^(?:registry|sparse)\+/.test(current.source)) {
+    if (
+      current?.name &&
+      current.version !== undefined &&
+      current.versionLine !== undefined &&
+      current.source &&
+      /^(?:registry|sparse)\+/.test(current.source)
+    ) {
       packages.push({ crate: current.name, value: current.version, line: current.versionLine });
     }
     current = undefined;

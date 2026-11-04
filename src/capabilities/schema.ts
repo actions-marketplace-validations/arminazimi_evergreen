@@ -21,6 +21,7 @@ const surfaceSchema = z.object({
   capabilityIds: z.array(z.string().min(1)).min(1),
 });
 
+/** Validates the manifest that lists Evergreen's ecosystems, capabilities, and surfaces. */
 export const capabilityManifestSchema = z.object({
   schemaVersion: z.literal("evergreen.capabilities.v1"),
   manifestVersion: z.string().regex(/^1\.[0-9]+\.[0-9]+$/),
@@ -39,20 +40,25 @@ export const capabilityManifestSchema = z.object({
     unlistedEcosystems: z.literal("unsupported"),
     unknownSchemaMajor: z.literal("reject"),
   }),
-  ecosystems: z.array(z.object({
-    id: z.string().min(1),
-    status: supportStatusSchema,
-    // The lowest `level` among the detectors in `detectorIds` (decision 0013); an ecosystem served by
-    // several detectors is only as mature as its least mature detector. Optional so the exported schema
-    // still parses a 1.0.0 manifest, which predates the field; Evergreen's own manifest always sets it.
-    maturity: maturityLevelSchema.optional(),
-    detectorIds: z.array(z.string().min(1)),
-  })),
+  ecosystems: z.array(
+    z.object({
+      id: z.string().min(1),
+      status: supportStatusSchema,
+      // The lowest `level` among the detectors in `detectorIds` (decision 0013); an ecosystem served by
+      // several detectors is only as mature as its least mature detector. Optional so the exported schema
+      // still parses a 1.0.0 manifest, which predates the field; Evergreen's own manifest always sets it.
+      maturity: maturityLevelSchema.optional(),
+      detectorIds: z.array(z.string().min(1)),
+    }),
+  ),
   capabilities: z.array(capabilitySchema),
   surfaces: z.array(surfaceSchema),
 });
 
+/** The parsed manifest that describes what this Evergreen release supports. */
 export type CapabilityManifest = z.infer<typeof capabilityManifestSchema>;
+/** One feature area the release implements, with its support status and ecosystems. */
 export type Capability = CapabilityManifest["capabilities"][number];
+/** One way users reach the capabilities: CLI, MCP, skill, plugin, or CI. */
 export type CapabilitySurface = CapabilityManifest["surfaces"][number];
 export type ManifestEcosystem = CapabilityManifest["ecosystems"][number];

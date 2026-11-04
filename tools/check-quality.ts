@@ -13,8 +13,8 @@
 // The hand-written sources are parsed with the TypeScript compiler API. Nothing is type-checked and no
 // repository code runs. Each measured number is compared with benchmarks/quality-allowlist.json:
 //
-// - A target with no allowlist entry must hold. A new file over 800 lines, a new function over 15, an
-//   explicit `any`, or a `@ts-ignore` fails.
+// - A target with no allowlist entry must hold. A new file over 800 lines, a new function over 50 lines
+//   or over complexity 15, an explicit `any`, or a `@ts-ignore` fails.
 // - An entry is a ceiling on existing debt. It may shrink, and then its number is tightened to match,
 //   or it may be removed. It may not grow, and it may not outlive its `expires` date.
 // - An entry that no longer matches a violation is stale and fails until it is removed.
@@ -38,6 +38,7 @@ export const TARGETS = {
   medianLines: 300,
   warnLines: 800,
   ceilingLines: 1000,
+  functionLines: 50,
   complexity: 15,
 } as const;
 
@@ -76,6 +77,8 @@ export interface SourceFile {
 export interface FunctionMeasure {
   name: string;
   complexity: number;
+  /** From the line the function starts on through its closing brace, inclusive. */
+  lines: number;
 }
 
 export interface FileMeasure {
@@ -98,6 +101,12 @@ export interface AllowEntry {
 
 export interface FileSizeEntry extends AllowEntry {
   file: string;
+  lines: number;
+}
+
+export interface FunctionLengthEntry extends AllowEntry {
+  file: string;
+  function: string;
   lines: number;
 }
 
@@ -131,6 +140,7 @@ export interface AuditEntry extends AllowEntry {
 export interface Allowlist {
   schemaVersion: string;
   fileSize: FileSizeEntry[];
+  functionLength: FunctionLengthEntry[];
   complexity: ComplexityEntry[];
   asUnknownAs: AsUnknownAsEntry[];
   nonNull: NonNullEntry[];
@@ -226,7 +236,7 @@ export function cyclomaticComplexity(fn: ts.Node): number {
   return count;
 }
 
-/** Every function in the file with its complexity. Methods are named `Class.method`, nested ones `outer > inner`. */
+/** Every function in the file with its complexity and line span. Methods are named `Class.method`, nested ones `outer > inner`. */
 export function functionMeasures(file: ts.SourceFile): FunctionMeasure[] {
   const found: FunctionMeasure[] = [];
   const collect = (node: ts.Node, scope: string): void => {
@@ -235,7 +245,9 @@ export function functionMeasures(file: ts.SourceFile): FunctionMeasure[] {
         const local = localFunctionName(child);
         const owner = ts.isClassLike(child.parent) && child.parent.name ? `${child.parent.name.text}.` : "";
         const name = scope ? `${scope} > ${owner}${local}` : `${owner}${local}`;
-        found.push({ name, complexity: cyclomaticComplexity(child) });
+        const start = file.getLineAndCharacterOfPosition(child.getStart(file)).line;
+        const end = file.getLineAndCharacterOfPosition(child.getEnd()).line;
+        found.push({ name, complexity: cyclomaticComplexity(child), lines: end - start + 1 });
         collect(child, name);
         return;
       }
@@ -301,10 +313,7 @@ export function measureFile(path: string, text: string): FileMeasure {
     const target = resolveSpecifier(path, specifier);
     if (ENGINE_FILES.includes(path) && target.startsWith(DETECTOR_DIR)) bump(BOUNDARY_RULES.engineNoDetectors);
     if (ADAPTER_FILES.includes(path) && target.startsWith(DETECTOR_DIR)) bump(BOUNDARY_RULES.adaptersNoDetectors);
-    if (
-      (path.startsWith(DETECTOR_DIR) || ENGINE_FILES.includes(path)) &&
-      NETWORK_MODULES.includes(target)
-    ) {
+    if ((path.startsWith(DETECTOR_DIR) || ENGINE_FILES.includes(path)) && NETWORK_MODULES.includes(target)) {
       bump(BOUNDARY_RULES.detectorsNoNetwork);
     }
   }
@@ -366,8 +375,11 @@ const DATE = /^\d{4}-\d{2}-\d{2}$/;
 const OWNER = /^#\d+$/;
 
 /** Fields every entry of a list must carry, and whether each is a number or a string. */
-const REQUIRED_FIELDS: Readonly<Record<keyof Omit<Allowlist, "schemaVersion">, Readonly<Record<string, "string" | "count">>>> = {
+const REQUIRED_FIELDS: Readonly<
+  Record<keyof Omit<Allowlist, "schemaVersion">, Readonly<Record<string, "string" | "count">>>
+> = {
   fileSize: { file: "string", lines: "count" },
+  functionLength: { file: "string", function: "string", lines: "count" },
   nonNull: { file: "string", count: "count" },
   complexity: { file: "string", function: "string", complexity: "count" },
   asUnknownAs: { file: "string", count: "count" },
@@ -380,8 +392,14 @@ function validateEntry(list: string, entry: Record<string, unknown>, problems: F
   const fields = REQUIRED_FIELDS[list as keyof typeof REQUIRED_FIELDS];
   for (const [field, kind] of Object.entries(fields)) {
     const value = entry[field];
-    const valid = kind === "count" ? Number.isInteger(value) && (value as number) >= 0 : typeof value === "string" && value !== "";
-    if (!valid) problems.push({ check: "allowlist", location: where, message: `${field} must be ${kind === "count" ? "a whole number" : "a non-empty string"}` });
+    const valid =
+      kind === "count" ? Number.isInteger(value) && (value as number) >= 0 : typeof value === "string" && value !== "";
+    if (!valid)
+      problems.push({
+        check: "allowlist",
+        location: where,
+        message: `${field} must be ${kind === "count" ? "a whole number" : "a non-empty string"}`,
+      });
   }
   if (typeof entry.owner !== "string" || !OWNER.test(entry.owner)) {
     problems.push({ check: "allowlist", location: where, message: `owner must be an issue number such as "#2041"` });
@@ -408,6 +426,7 @@ export function parseAllowlist(raw: unknown): { allowlist: Allowlist; problems: 
   const empty: Allowlist = {
     schemaVersion: ALLOWLIST_SCHEMA,
     fileSize: [],
+    functionLength: [],
     complexity: [],
     asUnknownAs: [],
     nonNull: [],
@@ -415,7 +434,11 @@ export function parseAllowlist(raw: unknown): { allowlist: Allowlist; problems: 
     audit: [],
   };
   if (!isRecord(raw) || raw.schemaVersion !== ALLOWLIST_SCHEMA) {
-    problems.push({ check: "allowlist", location: ALLOWLIST_PATH, message: `schemaVersion must be "${ALLOWLIST_SCHEMA}"` });
+    problems.push({
+      check: "allowlist",
+      location: ALLOWLIST_PATH,
+      message: `schemaVersion must be "${ALLOWLIST_SCHEMA}"`,
+    });
     return { allowlist: empty, problems };
   }
   const rows = (name: keyof typeof REQUIRED_FIELDS): Record<string, unknown>[] => {
@@ -429,6 +452,7 @@ export function parseAllowlist(raw: unknown): { allowlist: Allowlist; problems: 
   };
   const lists = {
     fileSize: rows("fileSize"),
+    functionLength: rows("functionLength"),
     complexity: rows("complexity"),
     asUnknownAs: rows("asUnknownAs"),
     nonNull: rows("nonNull"),
@@ -441,22 +465,44 @@ export function parseAllowlist(raw: unknown): { allowlist: Allowlist; problems: 
   return {
     allowlist: {
       schemaVersion: ALLOWLIST_SCHEMA,
-      fileSize: lists.fileSize.map((entry) => ({ ...details(entry), file: textOf(entry, "file"), lines: numberOf(entry, "lines") })),
+      fileSize: lists.fileSize.map((entry) => ({
+        ...details(entry),
+        file: textOf(entry, "file"),
+        lines: numberOf(entry, "lines"),
+      })),
+      functionLength: lists.functionLength.map((entry) => ({
+        ...details(entry),
+        file: textOf(entry, "file"),
+        function: textOf(entry, "function"),
+        lines: numberOf(entry, "lines"),
+      })),
       complexity: lists.complexity.map((entry) => ({
         ...details(entry),
         file: textOf(entry, "file"),
         function: textOf(entry, "function"),
         complexity: numberOf(entry, "complexity"),
       })),
-      asUnknownAs: lists.asUnknownAs.map((entry) => ({ ...details(entry), file: textOf(entry, "file"), count: numberOf(entry, "count") })),
-      nonNull: lists.nonNull.map((entry) => ({ ...details(entry), file: textOf(entry, "file"), count: numberOf(entry, "count") })),
+      asUnknownAs: lists.asUnknownAs.map((entry) => ({
+        ...details(entry),
+        file: textOf(entry, "file"),
+        count: numberOf(entry, "count"),
+      })),
+      nonNull: lists.nonNull.map((entry) => ({
+        ...details(entry),
+        file: textOf(entry, "file"),
+        count: numberOf(entry, "count"),
+      })),
       boundaries: lists.boundaries.map((entry) => ({
         ...details(entry),
         file: textOf(entry, "file"),
         rule: textOf(entry, "rule"),
         count: numberOf(entry, "count"),
       })),
-      audit: lists.audit.map((entry) => ({ ...details(entry), advisory: textOf(entry, "advisory"), package: textOf(entry, "package") })),
+      audit: lists.audit.map((entry) => ({
+        ...details(entry),
+        advisory: textOf(entry, "advisory"),
+        package: textOf(entry, "package"),
+      })),
     },
     problems,
   };
@@ -483,13 +529,7 @@ function expiredFinding(check: string, location: string, expires: string, today:
 }
 
 /** The shared rule for a counted entry: it may shrink (tighten it) but not grow, and it must still match. */
-function compareCount(
-  check: string,
-  location: string,
-  current: number,
-  ceiling: number,
-  noun: string,
-): Finding | null {
+function compareCount(check: string, location: string, current: number, ceiling: number, noun: string): Finding | null {
   if (current === 0) {
     return { check, location, message: `no ${noun} remain; remove this allowlist entry` };
   }
@@ -535,7 +575,11 @@ export function evaluateQuality(input: QualityInput): Finding[] {
       const expired = expiredFinding("file-size", file.path, entry.expires, today);
       if (expired) findings.push(expired);
       if (file.lines <= TARGETS.warnLines) {
-        findings.push({ check: "file-size", location: file.path, message: "now under 800 lines; remove this allowlist entry" });
+        findings.push({
+          check: "file-size",
+          location: file.path,
+          message: "now under 800 lines; remove this allowlist entry",
+        });
       } else if (file.lines > entry.lines) {
         findings.push({
           check: "file-size",
@@ -543,18 +587,81 @@ export function evaluateQuality(input: QualityInput): Finding[] {
           message: `grew from ${entry.lines} to ${file.lines} lines; the allowlist is a ceiling, so split the change`,
         });
       } else if (file.lines < entry.lines) {
-        findings.push({ check: "file-size", location: file.path, message: `is now ${file.lines} lines; set this entry to ${file.lines}` });
+        findings.push({
+          check: "file-size",
+          location: file.path,
+          message: `is now ${file.lines} lines; set this entry to ${file.lines}`,
+        });
       }
     }
   }
   for (const entry of allowlist.fileSize) {
     if (!files.some((file) => file.path === entry.file)) {
-      findings.push({ check: "file-size", location: entry.file, message: "the file no longer exists; remove this allowlist entry" });
+      findings.push({
+        check: "file-size",
+        location: entry.file,
+        message: "the file no longer exists; remove this allowlist entry",
+      });
+    }
+  }
+
+  // Function length.
+  const lengthEntries = new Map(
+    allowlist.functionLength.map((entry) => [`${entry.file}\u0000${entry.function}`, entry]),
+  );
+  const measuredLengths = new Map<string, number>();
+  for (const file of files) {
+    for (const fn of file.functions) {
+      const key = `${file.path}\u0000${fn.name}`;
+      measuredLengths.set(key, fn.lines);
+      const entry = lengthEntries.get(key);
+      const location = `${file.path} ${fn.name}`;
+      if (fn.lines > TARGETS.functionLines && !entry) {
+        findings.push({
+          check: "function-size",
+          location,
+          message: `${fn.lines} lines is over the ${TARGETS.functionLines}-line limit. Split the function into smaller functions; do not add an allowlist entry to pass.`,
+        });
+      }
+      if (entry) {
+        const expired = expiredFinding("function-size", location, entry.expires, today);
+        if (expired) findings.push(expired);
+        if (fn.lines <= TARGETS.functionLines) {
+          findings.push({
+            check: "function-size",
+            location,
+            message: `is now at or under ${TARGETS.functionLines} lines; remove this allowlist entry`,
+          });
+        } else if (fn.lines > entry.lines) {
+          findings.push({
+            check: "function-size",
+            location,
+            message: `grew from ${entry.lines} to ${fn.lines} lines; the allowlist is a ceiling, so split the change`,
+          });
+        } else if (fn.lines < entry.lines) {
+          findings.push({
+            check: "function-size",
+            location,
+            message: `is now ${fn.lines} lines; set this entry to ${fn.lines}`,
+          });
+        }
+      }
+    }
+  }
+  for (const entry of allowlist.functionLength) {
+    if (!measuredLengths.has(`${entry.file}\u0000${entry.function}`)) {
+      findings.push({
+        check: "function-size",
+        location: `${entry.file} ${entry.function}`,
+        message: "no such function; remove this allowlist entry (or fix its name)",
+      });
     }
   }
 
   // Complexity.
-  const complexityEntries = new Map(allowlist.complexity.map((entry) => [`${entry.file}\u0000${entry.function}`, entry]));
+  const complexityEntries = new Map(
+    allowlist.complexity.map((entry) => [`${entry.file}\u0000${entry.function}`, entry]),
+  );
   const measuredFunctions = new Map<string, number>();
   for (const file of files) {
     for (const fn of file.functions) {
@@ -573,7 +680,11 @@ export function evaluateQuality(input: QualityInput): Finding[] {
         const expired = expiredFinding("complexity", location, entry.expires, today);
         if (expired) findings.push(expired);
         if (fn.complexity <= TARGETS.complexity) {
-          findings.push({ check: "complexity", location, message: "is now at or under 15; remove this allowlist entry" });
+          findings.push({
+            check: "complexity",
+            location,
+            message: "is now at or under 15; remove this allowlist entry",
+          });
         } else if (fn.complexity > entry.complexity) {
           findings.push({
             check: "complexity",
@@ -581,7 +692,11 @@ export function evaluateQuality(input: QualityInput): Finding[] {
             message: `complexity grew from ${entry.complexity} to ${fn.complexity}; the allowlist is a ceiling, so reduce it`,
           });
         } else if (fn.complexity < entry.complexity) {
-          findings.push({ check: "complexity", location, message: `complexity is now ${fn.complexity}; set this entry to ${fn.complexity}` });
+          findings.push({
+            check: "complexity",
+            location,
+            message: `complexity is now ${fn.complexity}; set this entry to ${fn.complexity}`,
+          });
         }
       }
     }
@@ -599,17 +714,29 @@ export function evaluateQuality(input: QualityInput): Finding[] {
   // Type safety.
   for (const file of files) {
     if (file.explicitAny > 0) {
-      findings.push({ check: "type-safety", location: file.path, message: `${file.explicitAny} explicit \`any\`. Use a real type, \`unknown\` with a narrowing check, or a generic.` });
+      findings.push({
+        check: "type-safety",
+        location: file.path,
+        message: `${file.explicitAny} explicit \`any\`. Use a real type, \`unknown\` with a narrowing check, or a generic.`,
+      });
     }
     if (file.tsDirectives > 0) {
-      findings.push({ check: "type-safety", location: file.path, message: `${file.tsDirectives} \`@ts-ignore\` or \`@ts-expect-error\`. Fix the type instead.` });
+      findings.push({
+        check: "type-safety",
+        location: file.path,
+        message: `${file.tsDirectives} \`@ts-ignore\` or \`@ts-expect-error\`. Fix the type instead.`,
+      });
     }
   }
   const unknownEntries = new Map(allowlist.asUnknownAs.map((entry) => [entry.file, entry]));
   for (const file of files) {
     const entry = unknownEntries.get(file.path);
     if (file.asUnknownAs > 0 && !entry) {
-      findings.push({ check: "type-safety", location: file.path, message: `${file.asUnknownAs} new \`as unknown as\`. Narrow the type instead; this count may not grow.` });
+      findings.push({
+        check: "type-safety",
+        location: file.path,
+        message: `${file.asUnknownAs} new \`as unknown as\`. Narrow the type instead; this count may not grow.`,
+      });
     }
     if (entry) {
       const expired = expiredFinding("type-safety", file.path, entry.expires, today);
@@ -620,14 +747,22 @@ export function evaluateQuality(input: QualityInput): Finding[] {
   }
   for (const entry of allowlist.asUnknownAs) {
     if (!files.some((file) => file.path === entry.file)) {
-      findings.push({ check: "type-safety", location: entry.file, message: "the file no longer exists; remove this allowlist entry" });
+      findings.push({
+        check: "type-safety",
+        location: entry.file,
+        message: "the file no longer exists; remove this allowlist entry",
+      });
     }
   }
   const nonNullEntries = new Map(allowlist.nonNull.map((entry) => [entry.file, entry]));
   for (const file of files) {
     const entry = nonNullEntries.get(file.path);
     if (file.nonNull > 0 && !entry) {
-      findings.push({ check: "type-safety", location: file.path, message: `${file.nonNull} non-null assertions and no allowlist entry; this count may not grow` });
+      findings.push({
+        check: "type-safety",
+        location: file.path,
+        message: `${file.nonNull} non-null assertions and no allowlist entry; this count may not grow`,
+      });
     }
     if (entry) {
       const expired = expiredFinding("type-safety", file.path, entry.expires, today);
@@ -638,7 +773,11 @@ export function evaluateQuality(input: QualityInput): Finding[] {
   }
   for (const entry of allowlist.nonNull) {
     if (!files.some((file) => file.path === entry.file)) {
-      findings.push({ check: "type-safety", location: entry.file, message: "the file no longer exists; remove this allowlist entry" });
+      findings.push({
+        check: "type-safety",
+        location: entry.file,
+        message: "the file no longer exists; remove this allowlist entry",
+      });
     }
   }
 
@@ -655,7 +794,11 @@ export function evaluateQuality(input: QualityInput): Finding[] {
     const [file, rule] = key.split("\u0000") as [string, string];
     const entry = boundaryEntries.get(key);
     if (!entry) {
-      findings.push({ check: "boundaries", location: file, message: `breaks rule \`${rule}\` (${count}); move the code to the layer that owns it (AGENTS.md, Architecture boundaries)` });
+      findings.push({
+        check: "boundaries",
+        location: file,
+        message: `breaks rule \`${rule}\` (${count}); move the code to the layer that owns it (AGENTS.md, Architecture boundaries)`,
+      });
       continue;
     }
     const expired = expiredFinding("boundaries", file, entry.expires, today);
@@ -665,7 +808,11 @@ export function evaluateQuality(input: QualityInput): Finding[] {
   }
   for (const entry of allowlist.boundaries) {
     if (!boundaryCounts.has(`${entry.file}\u0000${entry.rule}`)) {
-      findings.push({ check: "boundaries", location: `${entry.file} ${entry.rule}`, message: "no violation remains; remove this allowlist entry" });
+      findings.push({
+        check: "boundaries",
+        location: `${entry.file} ${entry.rule}`,
+        message: "no violation remains; remove this allowlist entry",
+      });
     }
   }
 
@@ -674,16 +821,28 @@ export function evaluateQuality(input: QualityInput): Finding[] {
     const audited = new Set(allowlist.audit.map((entry) => entry.advisory));
     for (const advisory of input.audit) {
       if (advisory.severity === "high" || advisory.severity === "critical") {
-        findings.push({ check: "security", location: advisory.package, message: `${advisory.severity} advisory ${advisory.id}; fix or replace the dependency. High and critical advisories are never allowlisted.` });
+        findings.push({
+          check: "security",
+          location: advisory.package,
+          message: `${advisory.severity} advisory ${advisory.id}; fix or replace the dependency. High and critical advisories are never allowlisted.`,
+        });
       } else if (!audited.has(advisory.id)) {
-        findings.push({ check: "security", location: advisory.package, message: `${advisory.severity} advisory ${advisory.id} is not allowlisted; update the dependency or add an entry with an owner and expiry` });
+        findings.push({
+          check: "security",
+          location: advisory.package,
+          message: `${advisory.severity} advisory ${advisory.id} is not allowlisted; update the dependency or add an entry with an owner and expiry`,
+        });
       }
     }
     for (const entry of allowlist.audit) {
       const expired = expiredFinding("security", entry.advisory, entry.expires, today);
       if (expired) findings.push(expired);
       if (!input.audit.some((advisory) => advisory.id === entry.advisory)) {
-        findings.push({ check: "security", location: entry.advisory, message: "no longer reported; remove this allowlist entry" });
+        findings.push({
+          check: "security",
+          location: entry.advisory,
+          message: "no longer reported; remove this allowlist entry",
+        });
       }
     }
   }
@@ -698,10 +857,7 @@ function isoToday(): string {
 /** The hand-written TypeScript under src/, minus the vendored tree and the generated index. */
 export function isHandWritten(path: string): boolean {
   return (
-    path.startsWith("src/") &&
-    path.endsWith(".ts") &&
-    !path.includes("/vendor/") &&
-    !path.endsWith(".generated.ts")
+    path.startsWith("src/") && path.endsWith(".ts") && !path.includes("/vendor/") && !path.endsWith(".generated.ts")
   );
 }
 
@@ -756,11 +912,15 @@ function formatTable(rows: readonly (readonly [label: string, value: number, uni
   if (rows.length === 0) return [];
   const labelWidth = Math.max(...rows.map(([label]) => label.length));
   const valueWidth = Math.max(...rows.map(([, value]) => String(value).length));
-  return rows.map(([label, value, unit]) => `${label.padEnd(labelWidth)}  ${String(value).padStart(valueWidth)}  ${unit}`.trimEnd());
+  return rows.map(([label, value, unit]) =>
+    `${label.padEnd(labelWidth)}  ${String(value).padStart(valueWidth)}  ${unit}`.trimEnd(),
+  );
 }
 
 /** Sums one number per file into its directory, largest first; ties sort by name so the output is stable. */
-function directoryTotals(entries: readonly (readonly [file: string, size: number])[]): [label: string, value: number, unit: string][] {
+function directoryTotals(
+  entries: readonly (readonly [file: string, size: number])[],
+): [label: string, value: number, unit: string][] {
   const totals = new Map<string, number>();
   for (const [file, size] of entries) {
     const directory = posix.dirname(file);
@@ -776,18 +936,23 @@ export function renderReport(allowlist: Allowlist): string {
   const sum = (values: readonly number[]): number => values.reduce((total, value) => total + value, 0);
   const sections: [label: string, value: number, unit: string][] = [
     ["file size", allowlist.fileSize.length, "files over 800 lines"],
+    ["function size", allowlist.functionLength.length, `functions over ${TARGETS.functionLines}`],
     ["complexity", allowlist.complexity.length, "functions over 15"],
     ["as unknown as", allowlist.asUnknownAs.length, "files"],
     ["non-null", sum(allowlist.nonNull.map((entry) => entry.count)), "non-null assertions"],
     ["boundaries", sum(allowlist.boundaries.map((entry) => entry.count)), "boundary violations"],
     ["audit", allowlist.audit.length, "advisories"],
   ];
+  const lengthByDirectory = directoryTotals(allowlist.functionLength.map((entry) => [entry.file, 1]));
   const complexityByDirectory = directoryTotals(allowlist.complexity.map((entry) => [entry.file, 1]));
   const nonNullByDirectory = directoryTotals(allowlist.nonNull.map((entry) => [entry.file, entry.count]));
   const lines = [
     `remaining debt, from ${ALLOWLIST_PATH}`,
     "",
     ...formatTable(sections),
+    "",
+    `function size by directory (functions over ${TARGETS.functionLines})`,
+    ...formatTable(lengthByDirectory).map((line) => `  ${line}`),
     "",
     "complexity by directory (functions over 15)",
     ...formatTable(complexityByDirectory).map((line) => `  ${line}`),
@@ -822,33 +987,44 @@ export function readGitFile(ref: string, path: string, root = process.cwd()): st
   }
 }
 
-/** Reads the numeric TARGETS table from a checker source file. Missing or incomplete tables return null. */
-export function parseTargets(source: string): TargetLimits | null {
+function isTargetKey(key: string): key is keyof TargetLimits {
+  return key in TARGETS;
+}
+
+/** Reads the numeric TARGETS table from a checker source file. A table with no numeric limit returns null. */
+export function parseTargets(source: string): Partial<TargetLimits> | null {
   const block = source.match(/export const TARGETS = \{([^}]*)\}/s);
   if (!block) return null;
   const body = block[1] ?? "";
-  const read = (name: keyof typeof TARGETS): number | null => {
-    const match = body.match(new RegExp(`${name}\\s*:\\s*(\\d+)`));
-    if (!match) return null;
-    return Number(match[1]);
-  };
-  const medianLines = read("medianLines");
-  const warnLines = read("warnLines");
-  const ceilingLines = read("ceilingLines");
-  const complexity = read("complexity");
-  if (medianLines === null || warnLines === null || ceilingLines === null || complexity === null) return null;
-  return { medianLines, warnLines, ceilingLines, complexity };
+  const values: Partial<Record<keyof TargetLimits, number>> = {};
+  for (const key of Object.keys(TARGETS).filter(isTargetKey)) {
+    const match = body.match(new RegExp(`${key}\\s*:\\s*(\\d+)`));
+    if (match) values[key] = Number(match[1]);
+  }
+  return Object.keys(values).length === 0 ? null : values;
 }
 
-/** Fails when any numeric limit in `current` is higher (looser) than in `baseline`. */
-export function compareTargets(baseline: TargetLimits, current: TargetLimits): Finding[] {
+/**
+ * Fails when a limit present in `baseline` is raised or removed in `current`. A limit the baseline does not
+ * have is new, which is how a checker gains a target; it may only grow stricter from then on.
+ */
+export function compareTargets(baseline: Partial<TargetLimits>, current: Partial<TargetLimits>): Finding[] {
   const findings: Finding[] = [];
-  for (const key of Object.keys(TARGETS) as (keyof typeof TARGETS)[]) {
-    if (current[key] > baseline[key]) {
+  for (const key of Object.keys(baseline).filter(isTargetKey)) {
+    const before = baseline[key];
+    if (before === undefined) continue;
+    const after = current[key];
+    if (after === undefined) {
       findings.push({
         check: "gate",
         location: `TARGETS.${key}`,
-        message: `limit loosened from ${baseline[key]} to ${current[key]}; the quality gate may only tighten against the base ref`,
+        message: "limit removed; the quality gate may only tighten against the base ref",
+      });
+    } else if (after > before) {
+      findings.push({
+        check: "gate",
+        location: `TARGETS.${key}`,
+        message: `limit loosened from ${before} to ${after}; the quality gate may only tighten against the base ref`,
       });
     }
   }
@@ -880,7 +1056,12 @@ function compareGateEntries(
       });
       continue;
     }
-    if (ceilingNoun !== undefined && head.ceiling !== undefined && base.ceiling !== undefined && head.ceiling > base.ceiling) {
+    if (
+      ceilingNoun !== undefined &&
+      head.ceiling !== undefined &&
+      base.ceiling !== undefined &&
+      head.ceiling > base.ceiling
+    ) {
       findings.push({
         check: "gate",
         location: where,
@@ -905,10 +1086,10 @@ function compareGateEntries(
   return findings;
 }
 
-function gateMap(
-  entries: readonly AllowEntry[],
-  keyOf: (entry: AllowEntry) => string,
-  ceilingOf?: (entry: AllowEntry) => number,
+function gateMap<T extends AllowEntry>(
+  entries: readonly T[],
+  keyOf: (entry: T) => string,
+  ceilingOf?: (entry: T) => number,
 ): Map<string, GateEntry> {
   const map = new Map<string, GateEntry>();
   for (const entry of entries) {
@@ -921,51 +1102,95 @@ function gateMap(
   return map;
 }
 
+export interface CompareAllowlistsOptions {
+  /**
+   * Sections the base ref has. A section it lacks is new in this change, so its entries are not additions to a
+   * ceiling that existed; from the next change on, the section is compared like every other.
+   */
+  baselineSections?: ReadonlySet<string>;
+}
+
 /** Compares two allowlists: raising a ceiling, adding an entry, extending expiry, or dropping an owner fails. */
-export function compareAllowlists(baseline: Allowlist, current: Allowlist): Finding[] {
-  const fileKey = (entry: AllowEntry): string => (entry as FileSizeEntry).file;
-  const complexityKey = (entry: AllowEntry): string => {
-    const row = entry as ComplexityEntry;
-    return `${row.file}\u0000${row.function}`;
-  };
-  const boundaryKey = (entry: AllowEntry): string => {
-    const row = entry as BoundaryEntry;
-    return `${row.file}\u0000${row.rule}`;
-  };
-  const auditKey = (entry: AllowEntry): string => (entry as AuditEntry).advisory;
+export function compareAllowlists(
+  baseline: Allowlist,
+  current: Allowlist,
+  options: CompareAllowlistsOptions = {},
+): Finding[] {
+  const present = (section: string): boolean =>
+    options.baselineSections === undefined || options.baselineSections.has(section);
+  const fileKey = (entry: { file: string }): string => entry.file;
+  const functionKey = (entry: { file: string; function: string }): string => `${entry.file}\u0000${entry.function}`;
+  const boundaryKey = (entry: { file: string; rule: string }): string => `${entry.file}\u0000${entry.rule}`;
+  const auditKey = (entry: { advisory: string }): string => entry.advisory;
   return [
-    ...compareGateEntries("fileSize", gateMap(baseline.fileSize, fileKey, (e) => (e as FileSizeEntry).lines), gateMap(current.fileSize, fileKey, (e) => (e as FileSizeEntry).lines), "lines"),
-    ...compareGateEntries(
-      "complexity",
-      gateMap(baseline.complexity, complexityKey, (e) => (e as ComplexityEntry).complexity),
-      gateMap(current.complexity, complexityKey, (e) => (e as ComplexityEntry).complexity),
-      "complexity",
-    ),
-    ...compareGateEntries(
-      "asUnknownAs",
-      gateMap(baseline.asUnknownAs, fileKey, (e) => (e as AsUnknownAsEntry).count),
-      gateMap(current.asUnknownAs, fileKey, (e) => (e as AsUnknownAsEntry).count),
-      "count",
-    ),
-    ...compareGateEntries(
-      "nonNull",
-      gateMap(baseline.nonNull, fileKey, (e) => (e as NonNullEntry).count),
-      gateMap(current.nonNull, fileKey, (e) => (e as NonNullEntry).count),
-      "count",
-    ),
-    ...compareGateEntries(
-      "boundaries",
-      gateMap(baseline.boundaries, boundaryKey, (e) => (e as BoundaryEntry).count),
-      gateMap(current.boundaries, boundaryKey, (e) => (e as BoundaryEntry).count),
-      "count",
-    ),
-    ...compareGateEntries("audit", gateMap(baseline.audit, auditKey), gateMap(current.audit, auditKey)),
+    ...(present("fileSize")
+      ? compareGateEntries(
+          "fileSize",
+          gateMap(baseline.fileSize, fileKey, (e) => e.lines),
+          gateMap(current.fileSize, fileKey, (e) => e.lines),
+          "lines",
+        )
+      : []),
+    ...(present("functionLength")
+      ? compareGateEntries(
+          "functionLength",
+          gateMap(baseline.functionLength, functionKey, (e) => e.lines),
+          gateMap(current.functionLength, functionKey, (e) => e.lines),
+          "lines",
+        )
+      : []),
+    ...(present("complexity")
+      ? compareGateEntries(
+          "complexity",
+          gateMap(baseline.complexity, functionKey, (e) => e.complexity),
+          gateMap(current.complexity, functionKey, (e) => e.complexity),
+          "complexity",
+        )
+      : []),
+    ...(present("asUnknownAs")
+      ? compareGateEntries(
+          "asUnknownAs",
+          gateMap(baseline.asUnknownAs, fileKey, (e) => e.count),
+          gateMap(current.asUnknownAs, fileKey, (e) => e.count),
+          "count",
+        )
+      : []),
+    ...(present("nonNull")
+      ? compareGateEntries(
+          "nonNull",
+          gateMap(baseline.nonNull, fileKey, (e) => e.count),
+          gateMap(current.nonNull, fileKey, (e) => e.count),
+          "count",
+        )
+      : []),
+    ...(present("boundaries")
+      ? compareGateEntries(
+          "boundaries",
+          gateMap(baseline.boundaries, boundaryKey, (e) => e.count),
+          gateMap(current.boundaries, boundaryKey, (e) => e.count),
+          "count",
+        )
+      : []),
+    ...(present("audit")
+      ? compareGateEntries("audit", gateMap(baseline.audit, auditKey), gateMap(current.audit, auditKey))
+      : []),
   ];
+}
+
+/** The allowlist sections present in raw JSON, so a section absent from the base ref reads as new. */
+function allowlistSections(raw: unknown): Set<string> {
+  if (!isRecord(raw)) return new Set();
+  return new Set(
+    Object.entries(raw)
+      .filter(([, value]) => Array.isArray(value))
+      .map(([name]) => name),
+  );
 }
 
 /** Loads the allowlist and TARGETS at `ref` and compares them with the working tree. */
 export async function evaluateAgainst(ref: string, root = process.cwd()): Promise<Finding[]> {
-  const { allowlist, problems } = parseAllowlist(JSON.parse(readGitFile(ref, ALLOWLIST_PATH, root)));
+  const rawBaseline: unknown = JSON.parse(readGitFile(ref, ALLOWLIST_PATH, root));
+  const { allowlist, problems } = parseAllowlist(rawBaseline);
   if (problems.length > 0) {
     return problems.map((problem) => ({
       check: "gate",
@@ -981,7 +1206,10 @@ export async function evaluateAgainst(ref: string, root = process.cwd()): Promis
     JSON.parse(await readFile(resolve(root, ALLOWLIST_PATH), "utf8")),
   );
   if (currentProblems.length > 0) return currentProblems;
-  return [...compareAllowlists(allowlist, current), ...compareTargets(baselineTargets, TARGETS)];
+  return [
+    ...compareAllowlists(allowlist, current, { baselineSections: allowlistSections(rawBaseline) }),
+    ...compareTargets(baselineTargets, TARGETS),
+  ];
 }
 
 export function parseArguments(argv: readonly string[]): {

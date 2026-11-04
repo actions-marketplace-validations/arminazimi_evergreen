@@ -20,6 +20,7 @@ function emptyAllowlist(): Allowlist {
   return {
     schemaVersion: "evergreen.quality-allowlist.v2",
     fileSize: [],
+    functionLength: [],
     complexity: [],
     asUnknownAs: [],
     nonNull: [],
@@ -124,7 +125,7 @@ test("rowsFromSnapshots list every QUALITY.md target and never invent a previous
       coverage: "lcov.info",
       mutation: null,
       scorecard: "metrics/adoption/2026-10-28.json",
-      docs: "docs/QUALITY.md §7",
+      docs: "docs/QUALITY.md §8",
     },
   };
 
@@ -189,13 +190,19 @@ test("collectQualityMetrics compares the newest snapshots of this month and the 
         coverage: null,
         mutation: null,
         scorecard: null,
-        docs: "docs/QUALITY.md §7",
+        docs: "docs/QUALITY.md §8",
       },
     };
     const curr = {
       ...prev,
       date: "2026-11-03",
-      counts: { ...prev.counts, filesOverWarn: 1, functionsOverComplexity: 187, nonNullAssertions: 573, boundaryViolations: 0 },
+      counts: {
+        ...prev.counts,
+        filesOverWarn: 1,
+        functionsOverComplexity: 187,
+        nonNullAssertions: 573,
+        boundaryViolations: 0,
+      },
     };
     await writeFile(join(tempDir, "2026-10-15.json"), `${JSON.stringify(prev)}\n`);
     await writeFile(join(tempDir, "2026-11-03.json"), `${JSON.stringify(curr)}\n`);

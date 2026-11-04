@@ -1,5 +1,6 @@
 export const severityValues = ["info", "low", "medium", "high", "critical"] as const;
 
+/** How much attention a finding or rule deserves, from informational to critical. */
 export type Severity = (typeof severityValues)[number];
 
 /**
@@ -10,12 +11,14 @@ export const confidenceValues = ["exact", "range", "inferred-from-lock"] as cons
 
 export type Confidence = (typeof confidenceValues)[number];
 
+/** An authoritative page a lifecycle claim was read from, with the day it was reviewed. */
 export interface EvidenceSource {
   title: string;
   url: string;
   accessedAt?: string;
 }
 
+/** Where a finding or usage was observed, as a repository-relative path and optional position. */
 export interface SourceLocation {
   path: string;
   line?: number;
@@ -41,11 +44,24 @@ export const sourceLanguageValues = [
   "dart",
 ] as const;
 
+/** A language or data format the source-usage scanner can read. */
 export type SourceLanguage = (typeof sourceLanguageValues)[number];
 
 export interface ImportUsageMatcher {
   kind: "import";
-  language: "javascript" | "typescript" | "python" | "go" | "java" | "kotlin" | "rust" | "csharp" | "ruby" | "php" | "swift" | "dart";
+  language:
+    | "javascript"
+    | "typescript"
+    | "python"
+    | "go"
+    | "java"
+    | "kotlin"
+    | "rust"
+    | "csharp"
+    | "ruby"
+    | "php"
+    | "swift"
+    | "dart";
   module: string;
 }
 
@@ -90,13 +106,16 @@ export interface SymbolUsageMatcher {
   replacement?: string;
 }
 
+/** One way a deprecated API can appear in source, selected by import, call, config key, or symbol. */
 export type UsageMatcher = ImportUsageMatcher | CallUsageMatcher | ConfigUsageMatcher | SymbolUsageMatcher;
 
+/** A named set of matchers that together describe how one deprecated API is used. */
 export interface SourceUsageContract {
   id: string;
   matchers: UsageMatcher[];
 }
 
+/** One place a deprecated API was found, with a short excerpt around it. */
 export interface SourceUsage {
   kind: "import" | "call" | "config-key" | "symbol";
   language: SourceLanguage;
@@ -105,18 +124,21 @@ export interface SourceUsage {
   excerpt: string;
 }
 
+/** How far a deprecated API has spread through the repository, counted in usages and files. */
 export interface MigrationImpact {
   usageCount: number;
   affectedFiles: number;
   level: "none" | "low" | "medium" | "high";
 }
 
+/** The usages and impact found for one contract during a scan. */
 export interface SourceUsageAnalysis {
   contractId: string;
   usages: SourceUsage[];
   impact: MigrationImpact;
 }
 
+/** One ordered action in a migration, and whether it changes the declaration, its usages, or both. */
 export interface MigrationGuidanceStep {
   id: string;
   title: string;
@@ -124,11 +146,13 @@ export interface MigrationGuidanceStep {
   targets: "declaration" | "usages" | "all";
 }
 
+/** A command a person can run to confirm a migration, with the reason for running it. */
 export interface VerificationCommand {
   command: string;
   purpose: string;
 }
 
+/** Reviewed constraints, steps, and verification commands for replacing a deprecated API. */
 export interface MigrationGuidance {
   constraints: string[];
   steps: MigrationGuidanceStep[];
@@ -141,6 +165,7 @@ export interface ReplacementRequirements {
   python?: string;
 }
 
+/** A reviewed lifecycle rule: what is deprecated, when, why, and what replaces it. */
 export interface DeprecationRule {
   id: string;
   ecosystem: string;
@@ -154,6 +179,7 @@ export interface DeprecationRule {
   migration?: MigrationGuidance;
 }
 
+/** One confirmed lifecycle risk in the scanned repository, with its evidence and location. */
 export interface Finding {
   id: string;
   ruleId: string;
@@ -187,6 +213,7 @@ export interface ScanSelection {
   exclude?: string[];
 }
 
+/** A dependency declaration a detector could not match to a rule, and why. */
 export interface UnclassifiedReference {
   detector: string;
   component: string;
@@ -195,6 +222,7 @@ export interface UnclassifiedReference {
   location: SourceLocation;
 }
 
+/** The unclassified references from a scan, with how many there were. */
 export interface UnclassifiedSummary {
   count: number;
   references: UnclassifiedReference[];
@@ -257,6 +285,7 @@ export interface ScanCoverage {
   truncated?: boolean;
 }
 
+/** The complete result of scanning one repository. */
 export interface ScanResult {
   schemaVersion: "evergreen.scan.v1";
   root: string;
@@ -303,9 +332,14 @@ const DAY_MS = 86_400_000;
  * up to 25). Popularity is never an input. Reads no clock: the caller passes `today` (YYYY-MM-DD), so the same
  * finding scores the same everywhere. Documented in docs/RULES.md.
  */
-export function riskScore(finding: Pick<Finding, "deadline" | "usages" | "impact">, today: string, advisories = 0): RiskScore {
+export function riskScore(
+  finding: Pick<Finding, "deadline" | "usages" | "impact">,
+  today: string,
+  advisories = 0,
+): RiskScore {
   const todayMs = Date.parse(`${today}T00:00:00Z`);
-  if (!/^\d{4}-\d{2}-\d{2}$/.test(today) || Number.isNaN(todayMs)) throw new Error(`"${today}" is not a date (YYYY-MM-DD).`);
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(today) || Number.isNaN(todayMs))
+    throw new Error(`"${today}" is not a date (YYYY-MM-DD).`);
   const deadlineMs = finding.deadline === undefined ? Number.NaN : Date.parse(`${finding.deadline}T00:00:00Z`);
   const daysPastEndOfLife = Number.isNaN(deadlineMs) ? 0 : Math.max(0, Math.floor((todayMs - deadlineMs) / DAY_MS));
   const usageCount = finding.impact?.usageCount ?? finding.usages?.length ?? 0;

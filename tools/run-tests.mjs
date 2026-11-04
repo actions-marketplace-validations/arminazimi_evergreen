@@ -4,6 +4,8 @@
 // step summary (and still counts as a pass). Tests listed in tests/quarantine.json are skipped on
 // pull_request and merge_group events; the nightly ci-health job runs them with --quarantine-only.
 // The weekly ci-health job lists flaky tests seen that week with --list-weekly-flaky.
+// Every quarantine entry needs an "expires" date; once it has passed, every run of this runner fails
+// until a person fixes the file or moves the date forward, so a skip never becomes permanent.
 //
 // Linux CI shards the suite across runners with EVERGREEN_TEST_SHARD / EVERGREEN_TEST_SHARD_COUNT,
 // balancing by measured file times in benchmarks/test-file-timings.json. When
@@ -81,8 +83,28 @@ export const USER_AGENT = "evergreen-run-tests (+https://github.com/arminazimi/e
 const ROOT = resolve(import.meta.dirname, "..");
 
 /**
- * @typedef {{ file: string, issue: string }} QuarantineEntry
+ * @typedef {{ file: string, issue: string, expires: string }} QuarantineEntry
  */
+
+const ISO_DATE = /^\d{4}-\d{2}-\d{2}$/;
+
+/**
+ * A real ISO calendar date (`YYYY-MM-DD`), read in UTC so a date that does not exist
+ * (`2026-02-30`) and one with a stray offset are both rejected.
+ *
+ * @param {unknown} value
+ * @returns {value is string}
+ */
+export function isIsoDate(value) {
+  if (typeof value !== "string" || !ISO_DATE.test(value)) return false;
+  const parsed = new Date(`${value}T00:00:00Z`);
+  return !Number.isNaN(parsed.getTime()) && parsed.toISOString().slice(0, 10) === value;
+}
+
+/** Today in UTC as an ISO date, the same value on every platform at the same instant. */
+export function currentIsoDate() {
+  return new Date().toISOString().slice(0, 10);
+}
 
 /**
  * @param {string} text
@@ -101,9 +123,58 @@ export function parseQuarantine(text) {
     if (!/^https:\/\/github\.com\/[^/]+\/[^/]+\/issues\/\d+$/.test(entry.issue)) {
       throw new Error(`${QUARANTINE_PATH}[${index}].issue must be a GitHub issue URL`);
     }
+    if (!isIsoDate(entry.expires)) {
+      throw new Error(
+        `${QUARANTINE_PATH}[${index}].expires is required and must be an ISO date (YYYY-MM-DD): the last day the file may stay skipped`,
+      );
+    }
     toDistTestPath(entry.file);
-    return { file: entry.file.replaceAll("\\", "/"), issue: entry.issue };
+    return { file: entry.file.replaceAll("\\", "/"), issue: entry.issue, expires: entry.expires };
   });
+}
+
+/**
+ * Entries past their expiry date, oldest first, so the failure names the longest-overdue skip.
+ * An entry is still in force on its expiry date and expired the day after it.
+ *
+ * @param {readonly QuarantineEntry[]} entries
+ * @param {string} today ISO date (`YYYY-MM-DD`) to compare against
+ * @returns {QuarantineEntry[]}
+ */
+export function expiredQuarantineEntries(entries, today) {
+  if (!isIsoDate(today)) {
+    throw new Error(`quarantine expiry needs an ISO date (YYYY-MM-DD) for today: ${String(today)}`);
+  }
+  return entries
+    .filter((entry) => entry.expires < today)
+    .sort((a, b) => a.expires.localeCompare(b.expires) || a.file.localeCompare(b.file));
+}
+
+/**
+ * @param {readonly QuarantineEntry[]} expired
+ */
+export function renderQuarantineExpiryFailure(expired) {
+  const lines = [
+    `Quarantine expired (${QUARANTINE_PATH}): a quarantined test file is skipped only until its expiry date.`,
+    "",
+    ...expired.map((entry) => `  - ${entry.file} expired on ${entry.expires} — ${entry.issue}`),
+    "",
+    'Fix the file and delete its entry, or move "expires" forward with the reason in the pull request.',
+    "Do not add another entry, a skip, or a filter to hide the failure.",
+  ];
+  return lines.join("\n");
+}
+
+/**
+ * Glass box: name every quarantined file with its expiry date and issue, so a skip is never silent.
+ *
+ * @param {readonly QuarantineEntry[]} entries
+ * @param {string} headline
+ */
+export function renderQuarantineList(entries, headline) {
+  const sorted = [...entries].sort((a, b) => a.file.localeCompare(b.file));
+  const lines = [headline, ...sorted.map((entry) => `  - ${entry.file} until ${entry.expires} — ${entry.issue}`)];
+  return `${lines.join("\n")}\n`;
 }
 
 /**
@@ -304,6 +375,20 @@ function quarantineDistSet(entries) {
 }
 
 /**
+ * The quarantined entries this run would actually skip: entries naming a file in the list, so the
+ * skip report names real files instead of stale entries.
+ *
+ * @param {readonly string[]} files absolute paths the run would execute
+ * @param {readonly QuarantineEntry[]} entries
+ * @param {string} [root]
+ * @returns {QuarantineEntry[]}
+ */
+export function quarantinedEntriesInRun(files, entries, root = ROOT) {
+  const inRun = new Set(files);
+  return entries.filter((entry) => inRun.has(resolve(root, toDistTestPath(entry.file))));
+}
+
+/**
  * @param {string[]} flakyRelative
  */
 async function reportFlaky(flakyRelative) {
@@ -341,7 +426,9 @@ async function loadTimeBudget() {
  */
 async function reportTimeBudgetViolations(violations) {
   const lines = violations.map((violation) => formatTestTimeBudgetViolation(violation));
-  process.stderr.write(`\nTest time budget exceeded (${TIME_BUDGET_PATH}):\n${lines.map((line) => `  ${line}`).join("\n")}\n`);
+  process.stderr.write(
+    `\nTest time budget exceeded (${TIME_BUDGET_PATH}):\n${lines.map((line) => `  ${line}`).join("\n")}\n`,
+  );
   for (const violation of violations) process.stdout.write(`${testTimeBudgetAnnotation(violation)}\n`);
   const summary = renderTestTimeBudgetFailure(violations, { budgetPath: TIME_BUDGET_PATH });
   process.stdout.write(`\n${summary}`);
@@ -351,7 +438,12 @@ async function reportTimeBudgetViolations(violations) {
 
 async function loadQuarantine() {
   const text = await readFile(resolve(ROOT, QUARANTINE_PATH), "utf8");
-  return parseQuarantine(text);
+  const entries = parseQuarantine(text);
+  const expired = expiredQuarantineEntries(entries, currentIsoDate());
+  if (expired.length > 0) {
+    throw new Error(renderQuarantineExpiryFailure(expired));
+  }
+  return entries;
 }
 
 /**
@@ -368,7 +460,10 @@ async function runFilesWithRetry(files, options = {}) {
   /** @type {string[]} */
   const baseArgs = ["--test", concurrencyArg];
   if (coveragePath) {
-    baseArgs.push("--experimental-test-coverage", ...COVERAGE_EXCLUDES.map((path) => `--test-coverage-exclude=${path}`));
+    baseArgs.push(
+      "--experimental-test-coverage",
+      ...COVERAGE_EXCLUDES.map((path) => `--test-coverage-exclude=${path}`),
+    );
   }
   baseArgs.push(...files);
   const filteredArgs = baseArgs.filter((arg) => typeof arg === "string");
@@ -409,11 +504,14 @@ async function runFilesWithRetry(files, options = {}) {
     /** @type {string[]} */
     const hard = [];
     for (const file of failed) {
-      const result = await spawnTest(["--test", concurrencyArg, file].filter((arg) => typeof arg === "string"), {
-        cwd,
-        env,
-        capture: true,
-      });
+      const result = await spawnTest(
+        ["--test", concurrencyArg, file].filter((arg) => typeof arg === "string"),
+        {
+          cwd,
+          env,
+          capture: true,
+        },
+      );
       if (result.signal) {
         process.kill(process.pid, result.signal);
         return 1;
@@ -458,10 +556,7 @@ async function runSuite(options) {
   const concurrencyArg = testProcessArgs().find((arg) => arg.startsWith("--test-concurrency="));
   const quarantined = await loadQuarantine();
   const quarantinePaths = quarantineDistSet(quarantined);
-  let files =
-    options.files.length > 0
-      ? options.files.map((file) => resolve(ROOT, file))
-      : await listDistTests();
+  let files = options.files.length > 0 ? options.files.map((file) => resolve(ROOT, file)) : await listDistTests();
 
   if (options.quarantineOnly) {
     files = [...quarantinePaths].sort();
@@ -470,13 +565,16 @@ async function runSuite(options) {
       return 0;
     }
     process.stdout.write(`Running ${files.length} quarantined test file(s).\n`);
+    process.stdout.write(renderQuarantineList(quarantined, `Quarantined files in this run (${QUARANTINE_PATH}):`));
   } else if (isPullRequestEvent()) {
-    const before = files.length;
+    const skipped = quarantinedEntriesInRun(files, quarantined);
     files = files.filter((file) => !quarantinePaths.has(file));
-    const skipped = before - files.length;
-    if (skipped > 0) {
+    if (skipped.length > 0) {
       process.stdout.write(
-        `Skipping ${skipped} quarantined test file(s) on ${process.env.GITHUB_EVENT_NAME} (see ${QUARANTINE_PATH}).\n`,
+        renderQuarantineList(
+          skipped,
+          `Skipping ${skipped.length} quarantined test file(s) on ${process.env.GITHUB_EVENT_NAME} (see ${QUARANTINE_PATH}):`,
+        ),
       );
     }
   }
@@ -484,12 +582,7 @@ async function runSuite(options) {
   const shard = parseShardEnv(process.env);
   if (shard && files.length > 0) {
     const timings = await loadFileTimings();
-    const assignment = selectShardFiles(
-      files,
-      (file) => durationMsForFile(file, timings),
-      shard.index,
-      shard.count,
-    );
+    const assignment = selectShardFiles(files, (file) => durationMsForFile(file, timings), shard.index, shard.count);
     files = assignment.files;
     const balance = shardLoadsWithinTolerance(assignment.loadsMs)
       ? "within 20%"
@@ -652,10 +745,7 @@ async function runListWeeklyFlaky() {
   if (stepSummary) await appendFile(stepSummary, `\n${summary}`);
   await mkdir("metrics/ci", { recursive: true });
   const date = new Date().toISOString().slice(0, 10);
-  await writeFile(
-    join("metrics/ci", `flaky-${date}.json`),
-    `${JSON.stringify({ date, flaky: entries }, null, 2)}\n`,
-  );
+  await writeFile(join("metrics/ci", `flaky-${date}.json`), `${JSON.stringify({ date, flaky: entries }, null, 2)}\n`);
   return 0;
 }
 

@@ -62,9 +62,17 @@ const CASES: readonly DocumentRoundTripCase[] = [
   },
   {
     name: "inventory:aws-rds",
-    document: ({ name, version }) => ({ DBInstances: [{ DBInstanceIdentifier: name, Engine: "postgres", EngineVersion: version }] }),
+    document: ({ name, version }) => ({
+      DBInstances: [{ DBInstanceIdentifier: name, Engine: "postgres", EngineVersion: version }],
+    }),
     names: "zzmark",
     versions: "9.8.7|14.2",
+  },
+  {
+    name: "inventory:aws-eks",
+    document: ({ name, version }) => ({ cluster: { name, version, platformVersion: "eks.21" } }),
+    names: "zzmark",
+    versions: "9.8.7|1.21.0",
   },
   {
     name: "inventory:aws-lambda",
@@ -80,7 +88,9 @@ const CASES: readonly DocumentRoundTripCase[] = [
   },
   {
     name: "inventory:azure",
-    document: ({ name, version }) => [{ name, kubernetesVersion: version, agentPoolProfiles: [{ orchestratorVersion: version }] }],
+    document: ({ name, version }) => [
+      { name, kubernetesVersion: version, agentPoolProfiles: [{ orchestratorVersion: version }] },
+    ],
     names: "zzmark",
     versions: "9.8.7|1.21.0",
     markers: ({ version }) => ["pkg:generic/azure-aks", version],
@@ -91,7 +101,9 @@ const CASES: readonly DocumentRoundTripCase[] = [
       format_version: "1.0",
       values: {
         root_module: {
-          resources: [{ type: "aws_eks_cluster", name, mode: "managed", address: `aws_eks_cluster.${name}`, values: { version } }],
+          resources: [
+            { type: "aws_eks_cluster", name, mode: "managed", address: `aws_eks_cluster.${name}`, values: { version } },
+          ],
         },
       },
     }),
@@ -175,7 +187,7 @@ for (const target of CASES) {
  * The two inventory helpers that read a document as text: `parseExport` decides whether an export is
  * JSON or a plain file such as `/etc/os-release`, and `parseOsReleaseDocument` splits the latter into
  * one block per host. They are string parsers, so they join this suite as round-trip cases.
- */const TEXT_CASES: readonly RoundTripCase[] = [
+ */ const TEXT_CASES: readonly RoundTripCase[] = [
   {
     name: "parseExport (inventory)",
     file: ({ name, version }) => `{"ID":"${name}","VERSION_ID":"${version}"}\n`,

@@ -6,7 +6,15 @@ import { dirname, join, resolve } from "node:path";
 import { getActiveData } from "./data-source.js";
 import { dataInfoFrom, staleDataWarning } from "./data-status.js";
 import { declaresInput } from "./detector-inputs.js";
-import { COVERAGE_WALK_LIMIT, type Confidence, type Finding, type ScanCoverage, type ScanResult, type ScanSelection, type UnclassifiedReference } from "./domain.js";
+import {
+  COVERAGE_WALK_LIMIT,
+  type Confidence,
+  type Finding,
+  type ScanCoverage,
+  type ScanResult,
+  type ScanSelection,
+  type UnclassifiedReference,
+} from "./domain.js";
 import { advisoryIdsByRuleId } from "./osv-advisories.js";
 import { childPosixPath } from "./paths.js";
 import { computeFileHash, defaultScanCacheDirectory, ScanCache } from "./scan-cache.js";
@@ -35,18 +43,46 @@ export interface ScanOptions {
 const CLE_COVERAGE_FILE = "cle.json";
 
 /** Lockfiles whose entries are resolved versions rather than declarations. */
-const LOCKFILE_NAME = /(^|[-.])(lock|lockfile)(\.[a-z]+)?$|\.lock$|^(go\.sum|pubspec\.lock|packages\.lock\.json|gemfile\.lock|composer\.lock|cargo\.lock|poetry\.lock|uv\.lock|pipfile\.lock|npm-shrinkwrap\.json)$/i;
+const LOCKFILE_NAME =
+  /(^|[-.])(lock|lockfile)(\.[a-z]+)?$|\.lock$|^(go\.sum|pubspec\.lock|packages\.lock\.json|gemfile\.lock|composer\.lock|cargo\.lock|poetry\.lock|uv\.lock|pipfile\.lock|npm-shrinkwrap\.json)$/i;
 
 /** Vendored and build trees the coverage walk does not enter (kept local so the engine stays light). */
 const COVERAGE_SKIPPED_DIRECTORIES = new Set([
-  ".git", ".hg", ".venv", "venv", "node_modules", "vendor", "dist", "build", "target", "coverage",
-  ".mypy_cache", ".pytest_cache", ".ruff_cache", ".tox", "fixtures", "__fixtures__", "testdata",
+  ".git",
+  ".hg",
+  ".venv",
+  "venv",
+  "node_modules",
+  "vendor",
+  "dist",
+  "build",
+  "target",
+  "coverage",
+  ".mypy_cache",
+  ".pytest_cache",
+  ".ruff_cache",
+  ".tox",
+  "fixtures",
+  "__fixtures__",
+  "testdata",
 ]);
 
 /** Vendored and build trees repository scan file listing skips. */
 const SCAN_SKIPPED_DIRECTORIES = new Set([
-  ".git", ".hg", ".venv", "venv", "node_modules", "vendor", "dist", "build", "target", "coverage",
-  ".mypy_cache", ".pytest_cache", ".ruff_cache", ".tox",
+  ".git",
+  ".hg",
+  ".venv",
+  "venv",
+  "node_modules",
+  "vendor",
+  "dist",
+  "build",
+  "target",
+  "coverage",
+  ".mypy_cache",
+  ".pytest_cache",
+  ".ruff_cache",
+  ".tox",
 ]);
 
 /**
@@ -108,10 +144,7 @@ export function defaultConfidence(finding: DetectorFinding): Confidence {
 const COVERAGE_SKIP_READ_CODES = new Set(["EACCES", "ENOENT", "ENOTDIR"]);
 
 /** Repository-relative paths under `root`, skipping vendored trees, capped for large repositories. */
-async function listCoverageFiles(
-  root: string,
-  walkLimit: number,
-): Promise<{ files: string[]; truncated: boolean }> {
+async function listCoverageFiles(root: string, walkLimit: number): Promise<{ files: string[]; truncated: boolean }> {
   const files: string[] = [];
   let visited = 0;
   let truncated = false;
@@ -213,7 +246,11 @@ export async function buildScanCoverage(
     return inputs ? [{ detector, inputs }] : [];
   });
   if (withInputs.length === 0) {
-    return { ecosystems: [], filesRead: [], unsupportedFiles: [...unsupportedFiles].sort((left, right) => left.localeCompare(right)) };
+    return {
+      ecosystems: [],
+      filesRead: [],
+      unsupportedFiles: [...unsupportedFiles].sort((left, right) => left.localeCompare(right)),
+    };
   }
   const directoryPrefixes = withInputs.flatMap(({ inputs }) =>
     (inputs.directories ?? []).map((directory) => `${trimTrailingSlashes(directory)}/`),
@@ -263,17 +300,18 @@ export function applyScanSelection(result: ScanResult, selection: ScanSelection)
     ...result,
     findings,
     ...(result.unclassified ? { unclassified: { count: references.length, references } } : {}),
-    ...((only.length || exclude.length) ? { selection } : {}),
+    ...(only.length || exclude.length ? { selection } : {}),
   };
 }
 
+/** Runs the detectors over a repository and returns the sorted, deduplicated findings. */
 export async function scanRepository(
   root: string,
   detectors: readonly Detector[] = [],
   options: ScanOptions = {},
 ): Promise<ScanResult> {
   const resolvedRoot = resolve(root);
-  const noCache = options.noCache ?? (process.env.EVERGREEN_NO_CACHE === "1");
+  const noCache = options.noCache ?? process.env.EVERGREEN_NO_CACHE === "1";
   const scanCache = options.cache ?? new ScanCache(options.cacheDirectory ?? defaultScanCacheDirectory());
 
   // One timestamp for the whole scan: detectors that need "today" (CLE scheduled dates) read it from
@@ -308,11 +346,12 @@ export async function scanRepository(
     return existing;
   };
 
-
   const analyses = await Promise.all(
     detectors.map(async (detector) => {
       assertDetectorCompatible(detector);
-      const detectorCode = computeFileHash(detector.scan.toString() + (detector.analyze ? detector.analyze.toString() : ""));
+      const detectorCode = computeFileHash(
+        detector.scan.toString() + (detector.analyze ? detector.analyze.toString() : ""),
+      );
       const detectorVersion = `${(detector as { version?: string }).version ?? detector.apiVersion}:${detectorCode}`;
 
       const disableCache = noCache || shouldDisableCacheForDetector(detector);
@@ -349,11 +388,11 @@ export async function scanRepository(
       const manifest = await scanCache.getDetectorManifest(resolvedRoot, detector.id, detectorVersion, dataVersion);
       const manifestMatches = Boolean(
         manifest &&
-        manifest.files.length === descriptors.length &&
-        manifest.files.every((file, index) => {
-          const current = descriptors[index];
-          return current && file.path === current.path && file.hash === current.hash;
-        }),
+          manifest.files.length === descriptors.length &&
+          manifest.files.every((file, index) => {
+            const current = descriptors[index];
+            return current && file.path === current.path && file.hash === current.hash;
+          }),
       );
 
       if (manifestMatches) {
@@ -559,8 +598,7 @@ export async function scanRepository(
       [left.detector, left.component, left.location.path, left.location.line ?? 0, left.reference]
         .join(":")
         .localeCompare(
-          [right.detector, right.component, right.location.path, right.location.line ?? 0, right.reference]
-            .join(":"),
+          [right.detector, right.component, right.location.path, right.location.line ?? 0, right.reference].join(":"),
         ),
     );
 
@@ -603,11 +641,6 @@ export async function scanRepository(
   };
 }
 
-export interface ProjectScan {
-  path: string;
-  result: ScanResult;
-}
-
 export interface MultiScanResult {
   schemaVersion: "evergreen.multi-scan.v1";
   projects: Array<{ path: string; findings: number; result: ScanResult }>;
@@ -622,7 +655,13 @@ export async function findRepositories(directory: string): Promise<string[]> {
   for (const entry of entries) {
     if (!entry.isDirectory()) continue;
     const candidate = join(root, entry.name);
-    if (await stat(join(candidate, ".git")).then(() => true, () => false)) repositories.push(candidate);
+    if (
+      await stat(join(candidate, ".git")).then(
+        () => true,
+        () => false,
+      )
+    )
+      repositories.push(candidate);
   }
   return repositories.sort((left, right) => left.localeCompare(right));
 }
@@ -647,7 +686,12 @@ export async function scanProjects(
 }
 
 export function renderMultiScanText(scan: MultiScanResult): string {
-  const lines = scan.projects.map((project) => `${project.path}: ${project.findings} ${project.findings === 1 ? "finding" : "findings"}`);
-  lines.push("", `Total: ${scan.total.findings} ${scan.total.findings === 1 ? "finding" : "findings"} across ${scan.total.projects} ${scan.total.projects === 1 ? "project" : "projects"}`);
+  const lines = scan.projects.map(
+    (project) => `${project.path}: ${project.findings} ${project.findings === 1 ? "finding" : "findings"}`,
+  );
+  lines.push(
+    "",
+    `Total: ${scan.total.findings} ${scan.total.findings === 1 ? "finding" : "findings"} across ${scan.total.projects} ${scan.total.projects === 1 ? "project" : "projects"}`,
+  );
   return lines.join("\n");
 }

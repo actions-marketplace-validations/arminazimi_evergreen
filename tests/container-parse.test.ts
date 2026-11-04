@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
-import { readFile } from "node:fs/promises";
+import { readFile, rm } from "node:fs/promises";
 import { resolve } from "node:path";
-import { test } from "node:test";
+import { after, before, test } from "node:test";
 
 import {
   MAXIMUM_INPUT_BYTES,
@@ -9,9 +9,21 @@ import {
   parseDockerfile,
 } from "../src/detectors/container/parse-dockerfile.js";
 import { parseImageReference } from "../src/detectors/container/parse-image.js";
+import { copyFixtureTree } from "./fixture-copies.js";
+
+let fixtures: string;
+const temporaryRoots: string[] = [];
+
+before(async () => {
+  fixtures = await copyFixtureTree(resolve("tests/fixtures/container"), temporaryRoots);
+});
+
+after(async () => {
+  await Promise.all(temporaryRoots.map((root) => rm(root, { recursive: true, force: true })));
+});
 
 async function fixture(caseName: string, file: string): Promise<string> {
-  return readFile(resolve("tests/fixtures/container", caseName, file), "utf8");
+  return readFile(resolve(fixtures, caseName, file), "utf8");
 }
 
 test("parses FROM lines with stage names, platforms, and qualified references", async () => {
@@ -23,7 +35,10 @@ test("parses FROM lines with stage names, platforms, and qualified references", 
   assert.deepEqual(parseDockerfile(await fixture("positive", "api.Dockerfile")), [
     { kind: "image", value: "postgres:11.5-bullseye", line: 1 },
   ]);
-  assert.equal(parseDockerfile(await fixture("positive", "Containerfile"))[0]?.value.startsWith("redis:5@sha256:"), true);
+  assert.equal(
+    parseDockerfile(await fixture("positive", "Containerfile"))[0]?.value.startsWith("redis:5@sha256:"),
+    true,
+  );
 });
 
 test("reports dynamic references and skips comments, scratch, stages, and RUN strings", async () => {
@@ -76,7 +91,9 @@ test("reports MAINTAINER and the legacy ENV form with exact lines and values", (
     "",
   ].join("\n");
   assert.deepEqual(
-    parseDockerfile(contents).filter((declaration) => declaration.kind === "maintainer" || declaration.kind === "legacy-env"),
+    parseDockerfile(contents).filter(
+      (declaration) => declaration.kind === "maintainer" || declaration.kind === "legacy-env",
+    ),
     [
       { kind: "maintainer", value: "Evergreen Team <team@example.com>", line: 2 },
       { kind: "legacy-env", key: "NODE_ENV", value: "production", line: 3 },

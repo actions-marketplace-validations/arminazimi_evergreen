@@ -3,21 +3,28 @@ import { spawnSync } from "node:child_process";
 import { cp, mkdtemp, readFile, readdir, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join, resolve } from "node:path";
-import { after, test } from "node:test";
+import { after, before, test } from "node:test";
 
 import { Ajv2020 } from "ajv/dist/2020.js";
 
 import { analyzeDrift } from "../src/drift/index.js";
 import { rubyDriftCollector } from "../src/drift/ruby.js";
 import { runCli } from "./cli-runner.js";
+import { copyFixtureTree } from "./fixture-copies.js";
 
 async function run(...args: string[]) {
   return runCli(args);
 }
-const fixture = (name: string) => resolve("tests/fixtures/drift/ruby", name);
+let fixtures: string;
+const roots: string[] = [];
+
+before(async () => {
+  fixtures = await copyFixtureTree(resolve("tests/fixtures/drift/ruby"), roots);
+});
+
+const fixture = (name: string) => resolve(fixtures, name);
 const collect = async (name: string) => (await analyzeDrift(fixture(name), [rubyDriftCollector])).runtimes[0]!;
 
-const roots: string[] = [];
 after(async () => {
   await Promise.all(roots.map((root) => rm(root, { recursive: true, force: true })));
 });
@@ -31,7 +38,8 @@ async function copyFixture(name: string): Promise<string> {
 
 test("collects every Ruby source the collector claims", async () => {
   const runtime = await collect("drifted");
-  const pin = (path: string, source: string) => runtime.pins.find((item) => item.path === path && item.source === source);
+  const pin = (path: string, source: string) =>
+    runtime.pins.find((item) => item.path === path && item.source === source);
 
   assert.equal(pin(".ruby-version", ".ruby-version")?.release, "3.3");
   assert.equal(pin(".tool-versions", ".tool-versions")?.raw, "3.4.1");
@@ -54,7 +62,10 @@ test("a Gemfile.lock that disagrees with .ruby-version is reported as drift", as
 
 test("a gemspec floor above the lowest pinned release is a floor conflict", async () => {
   const runtime = await collect("drifted");
-  assert.deepEqual(runtime.floorConflicts.map((pin) => [pin.path, pin.release]), [["demo.gemspec", "3.5"]]);
+  assert.deepEqual(
+    runtime.floorConflicts.map((pin) => [pin.path, pin.release]),
+    [["demo.gemspec", "3.5"]],
+  );
 });
 
 test("a repository whose pins agree reports no drift and no floor conflict", async () => {
@@ -68,8 +79,18 @@ test("a repository whose pins agree reports no drift and no floor conflict", asy
 test("Gemfile and gemspec requirements are floors, not pins", async () => {
   const runtime = await collect("floors");
   const bySource = new Map(runtime.pins.map((pin) => [pin.source, pin]));
-  assert.deepEqual([bySource.get("Gemfile ruby")?.kind, bySource.get("Gemfile ruby")?.raw, bySource.get("Gemfile ruby")?.release], ["floor", ">= 3.1.0", "3.1"]);
-  assert.deepEqual([bySource.get("gemspec required_ruby_version")?.kind, bySource.get("gemspec required_ruby_version")?.raw, bySource.get("gemspec required_ruby_version")?.release], ["floor", "~> 3.2", "3.2"]);
+  assert.deepEqual(
+    [bySource.get("Gemfile ruby")?.kind, bySource.get("Gemfile ruby")?.raw, bySource.get("Gemfile ruby")?.release],
+    ["floor", ">= 3.1.0", "3.1"],
+  );
+  assert.deepEqual(
+    [
+      bySource.get("gemspec required_ruby_version")?.kind,
+      bySource.get("gemspec required_ruby_version")?.raw,
+      bySource.get("gemspec required_ruby_version")?.release,
+    ],
+    ["floor", "~> 3.2", "3.2"],
+  );
   assert.deepEqual(runtime.releases, []);
   assert.equal(runtime.drifted, false);
 });
@@ -83,7 +104,10 @@ test("values that cannot be resolved offline are reported with a reason", async 
     assert.equal(pin.release, undefined);
     assert.ok(pin.unresolved, `${pin.source} has no unresolved reason`);
   }
-  assert.match(runtime.pins.find((pin) => pin.source === "GitHub Actions ruby/setup-ruby ruby-version")?.unresolved ?? "", /expression/);
+  assert.match(
+    runtime.pins.find((pin) => pin.source === "GitHub Actions ruby/setup-ruby ruby-version")?.unresolved ?? "",
+    /expression/,
+  );
   assert.match(runtime.pins.find((pin) => pin.source === "Dockerfile FROM")?.unresolved ?? "", /no tag/);
 });
 

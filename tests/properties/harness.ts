@@ -21,16 +21,7 @@ import { dirname, join } from "node:path";
 
 import fc from "fast-check";
 
-import {
-  detectorParsers,
-  documentParsers,
-  parsers,
-  sourceParsers,
-  type DetectorParserEntry,
-  type DocumentParserEntry,
-  type ParserEntry,
-  type SourceParserEntry,
-} from "../fuzz/parsers.js";
+import { detectorParsers, documentParsers, parsers, sourceParsers, type ParserEntry } from "../fuzz/parsers.js";
 
 /** Iterations per property. The nightly fuzz job raises this like `tests/fuzz/parsers.test.ts`. */
 export const RUNS = readPositiveInteger("EVERGREEN_FUZZ_RUNS", 40);
@@ -211,7 +202,10 @@ function assertCarries(what: string, carried: readonly string[], markers: readon
  */
 function assertCarriesText(what: string, text: string, markers: readonly string[], input: string): void {
   for (const marker of markers) {
-    assert.ok(text.includes(marker), `${what} did not carry "${marker}" back from:\n${input}\nit returned ${text || "(nothing)"}`);
+    assert.ok(
+      text.includes(marker),
+      `${what} did not carry "${marker}" back from:\n${input}\nit returned ${text || "(nothing)"}`,
+    );
   }
 }
 
@@ -259,7 +253,12 @@ export function checkRoundTrip(target: RoundTripCase): void {
     fc.property(valueArb(target), (generated) => {
       const contents = target.file(generated);
       const first = runEntry(entry, contents);
-      assertCarries(entry.name, stringsIn(first), target.markers?.(generated) ?? defaultMarkers(target, generated), contents);
+      assertCarries(
+        entry.name,
+        stringsIn(first),
+        target.markers?.(generated) ?? defaultMarkers(target, generated),
+        contents,
+      );
       assert.deepEqual(runEntry(entry, contents), first, `${target.name} is not stable on the same valid file`);
     }),
     PROPERTY_OPTIONS,
@@ -276,7 +275,11 @@ function checkMatcherRoundTrip(target: RoundTripCase): void {
   fc.assert(
     fc.property(values, fc.constantFrom(...rejected), (generated, refused) => {
       const contents = target.file(generated);
-      assert.equal(match(contents, generated.version), true, `${target.name} refused ${generated.version} under ${contents}`);
+      assert.equal(
+        match(contents, generated.version),
+        true,
+        `${target.name} refused ${generated.version} under ${contents}`,
+      );
       assert.notEqual(match(contents, refused), true, `${target.name} accepted ${refused} under ${contents}`);
       assert.deepEqual(runEntry(entry, contents), runEntry(entry, contents), `${target.name} is not stable`);
     }),
@@ -287,17 +290,23 @@ function checkMatcherRoundTrip(target: RoundTripCase): void {
 /** The round trip and stability properties for one document parser. */
 export async function checkDocumentRoundTrip(target: DocumentRoundTripCase): Promise<void> {
   const entry = entryNamed(documentParsers, target.name, "document");
-  await checkCase(target, entry.name, target.document, async (document) => {
-    const started = performance.now();
-    try {
-      return await entry.parse(document);
-    } catch (error: unknown) {
-      if (entry.allowedErrors?.some((expected) => error instanceof expected)) return undefined;
-      throw error;
-    } finally {
-      assertWithinBudget(entry.name, started);
-    }
-  }, carriesFields);
+  await checkCase(
+    target,
+    entry.name,
+    target.document,
+    async (document) => {
+      const started = performance.now();
+      try {
+        return await entry.parse(document);
+      } catch (error: unknown) {
+        if (entry.allowedErrors?.some((expected) => error instanceof expected)) return undefined;
+        throw error;
+      } finally {
+        assertWithinBudget(entry.name, started);
+      }
+    },
+    carriesFields,
+  );
 }
 
 /** The round trip and stability properties for one detector, in a temporary repository. */
@@ -363,7 +372,7 @@ export function registeredParserNames(): string[] {
 }
 
 export { detectorParsers, documentParsers, parsers, sourceParsers };
-export type { DetectorParserEntry, DocumentParserEntry, ParserEntry, SourceParserEntry };
+export type { ParserEntry };
 
 function readPositiveInteger(name: string, fallback: number): number {
   const raw = process.env[name];

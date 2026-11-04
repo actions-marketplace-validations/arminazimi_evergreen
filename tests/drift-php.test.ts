@@ -3,21 +3,28 @@ import { spawnSync } from "node:child_process";
 import { cp, mkdtemp, readFile, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join, resolve } from "node:path";
-import { after, test } from "node:test";
+import { after, before, test } from "node:test";
 
 import { Ajv2020 } from "ajv/dist/2020.js";
 
 import { analyzeDrift } from "../src/drift/index.js";
 import { phpDriftCollector } from "../src/drift/php.js";
 import { runCli } from "./cli-runner.js";
+import { copyFixtureTree } from "./fixture-copies.js";
 
 async function run(...args: string[]) {
   return runCli(args);
 }
-const fixture = (name: string) => resolve("tests/fixtures/drift/php", name);
+let fixtures: string;
+const roots: string[] = [];
+
+before(async () => {
+  fixtures = await copyFixtureTree(resolve("tests/fixtures/drift/php"), roots);
+});
+
+const fixture = (name: string) => resolve(fixtures, name);
 const collect = async (name: string) => (await analyzeDrift(fixture(name), [phpDriftCollector])).runtimes[0]!;
 
-const roots: string[] = [];
 after(async () => {
   await Promise.all(roots.map((root) => rm(root, { recursive: true, force: true })));
 });
@@ -31,7 +38,8 @@ async function copyFixture(name: string): Promise<string> {
 
 test("collects every PHP source the collector claims", async () => {
   const runtime = await collect("drifted");
-  const pin = (path: string, source: string) => runtime.pins.find((item) => item.path === path && item.source === source);
+  const pin = (path: string, source: string) =>
+    runtime.pins.find((item) => item.path === path && item.source === source);
 
   assert.equal(pin(".php-version", ".php-version")?.release, "8.2");
   assert.equal(pin(".tool-versions", ".tool-versions")?.raw, "8.2.29");
@@ -81,7 +89,10 @@ test("require.php ^8.2 against an 8.1 pin is a floor conflict", async () => {
   const runtime = await collect("floor-conflict");
   assert.deepEqual(runtime.releases, ["8.1"]);
   assert.equal(runtime.drifted, false);
-  assert.deepEqual(runtime.floorConflicts.map((pin) => [pin.path, pin.line, pin.raw, pin.release]), [["composer.json", 3, "^8.2", "8.2"]]);
+  assert.deepEqual(
+    runtime.floorConflicts.map((pin) => [pin.path, pin.line, pin.raw, pin.release]),
+    [["composer.json", 3, "^8.2", "8.2"]],
+  );
   const check = await run("drift", fixture("floor-conflict"), "--runtime", "php", "--check");
   assert.equal(check.code, 1);
   assert.match(check.stdout, /floor conflict: composer\.json:3/);
@@ -100,7 +111,15 @@ test("align patches every understood source, applies cleanly, and removes the dr
   const patchFile = `${root}.patch`;
   const aligned = await run("drift", root, "--runtime", "php", "--align", "8.3");
   assert.equal(aligned.code, 0, aligned.stderr);
-  for (const file of [".php-version", ".tool-versions", "composer.json", "Dockerfile", ".gitlab-ci.yml", ".circleci/config.yml", ".github/workflows/ci.yml"]) {
+  for (const file of [
+    ".php-version",
+    ".tool-versions",
+    "composer.json",
+    "Dockerfile",
+    ".gitlab-ci.yml",
+    ".circleci/config.yml",
+    ".github/workflows/ci.yml",
+  ]) {
     assert.ok(aligned.stdout.includes(`+++ b/${file}`), file);
   }
   assert.match(aligned.stderr, /Refused composer\.json:3 \(composer\.json require\.php \^8\.2\)/);
@@ -125,7 +144,9 @@ test("align patches every understood source, applies cleanly, and removes the dr
 
   const recheck = await run("drift", root, "--runtime", "php", "--check", "--json");
   assert.equal(recheck.code, 0, `${recheck.stdout}${recheck.stderr}`);
-  assert.deepEqual((JSON.parse(recheck.stdout) as { runtimes: Array<{ releases: string[] }> }).runtimes[0]!.releases, ["8.3"]);
+  assert.deepEqual((JSON.parse(recheck.stdout) as { runtimes: Array<{ releases: string[] }> }).runtimes[0]!.releases, [
+    "8.3",
+  ]);
 });
 
 test("align never writes a file", async () => {
