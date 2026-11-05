@@ -35,6 +35,7 @@ otherwise. Records are numbered in the order they were written; this page groups
 | [0017](0017-openeox-ingestion.md) | Do not read OpenEoX documents yet; keep CLE as the interchange target | Scans never read OpenEoX; do not ingest it until the Core Schema is final, and keep CLE as the standards interchange path. |
 | [0020](0020-data-license.md) | License the lifecycle dataset under CC BY 4.0 | License `registry/` and first-party schemas in the data-only package under CC BY 4.0; keep the rest of the repository Apache-2.0. |
 | [0022](0022-python-method-shape.md) | Match Python `TestCase` method calls with a `method` shape | Add a Python-only `method` symbol shape that matches a call by name on any receiver inside a class that directly subclasses `unittest.TestCase` or an alias of it. |
+| [0028](0028-mcp-schema-inlining-fails-closed.md) | Publish a self-contained MCP output schema | Inline every cross-file `$ref` before the MCP server advertises a tool's schema and throw when one cannot resolve; same-document references stay, and sibling keywords win over the inlined target. |
 
 ## Adoption
 
@@ -52,6 +53,7 @@ otherwise. Records are numbered in the order they were written; this page groups
 | [0025](0025-linter-and-formatter.md) | Choose the linter and formatter | Lint with ESLint and typescript-eslint (type-aware); format with Biome; do not use Biome for typed lint or Prettier for format. |
 | [0026](0026-public-api-doc-comments.md) | Document the public API and enforce it with lint | Put a behavior-focused doc comment on every public declaration and enforce it with a local ESLint rule; no contract semantics change. |
 | [0027](0027-fixtures-invisible-to-scanners.md) | Keep fixtures out of scanners' sight with neutral names | Commit manifest-shaped fixtures under a `.fixture` suffix and restore the real name in a temporary directory at test time; reject archives and dismissals; scanner config is a narrow fallback. |
+| [0029](0029-cut-scanner-complexity-by-extracting-the-line-masker.md) | Cut scanner complexity by extracting the line masker and replacing branch chains with tables | Move the per-language literal scanner to `src/usage/masking.ts`, dispatch readers on tables, and prove parity differentially against a build of `main`; the SDK export surface is unchanged. |
 
 ## Operations
 
