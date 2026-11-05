@@ -52,30 +52,6 @@
       "reason": "Measured 2026-11-04. Over the 50-line function limit; split it in the function-size follow-up."
     },
     {
-      "file": "src/commands/runtime.ts",
-      "function": "runScanFamily",
-      "lines": 167,
-      "owner": "#2049",
-      "expires": "2027-01-26",
-      "reason": "Measured 2026-11-04. Over the 50-line function limit; split it in the function-size follow-up."
-    },
-    {
-      "file": "src/commands/runtime.ts",
-      "function": "sharedGates",
-      "lines": 89,
-      "owner": "#2049",
-      "expires": "2027-01-26",
-      "reason": "Measured 2026-11-04. Over the 50-line function limit; split it in the function-size follow-up."
-    },
-    {
-      "file": "src/commands/setup.ts",
-      "function": "run",
-      "lines": 82,
-      "owner": "#2049",
-      "expires": "2027-01-26",
-      "reason": "Measured 2026-11-04. Over the 50-line function limit; split it in the function-size follow-up."
-    },
-    {
       "file": "src/config.ts",
       "function": "validateConfig",
       "lines": 80,
@@ -516,14 +492,6 @@
       "reason": "Measured 2026-11-04. Over the 50-line function limit; split it in the function-size follow-up."
     },
     {
-      "file": "src/detectors/terraform/plan.ts",
-      "function": "parseTerraformPlanJson",
-      "lines": 130,
-      "owner": "#2049",
-      "expires": "2027-01-26",
-      "reason": "Measured 2026-11-04. Over the 50-line function limit; split it in the function-size follow-up."
-    },
-    {
       "file": "src/drift/python.ts",
       "function": "collectRootFiles",
       "lines": 82,
@@ -636,38 +604,6 @@
       "reason": "Measured 2026-11-04. Over the 50-line function limit; split it in the function-size follow-up."
     },
     {
-      "file": "src/fix/codemods/python-utcnow.ts",
-      "function": "inspectDatetimeImports",
-      "lines": 52,
-      "owner": "#2049",
-      "expires": "2027-01-26",
-      "reason": "Measured 2026-11-04. Over the 50-line function limit; split it in the function-size follow-up."
-    },
-    {
-      "file": "src/fix/codemods/python-utcnow.ts",
-      "function": "plan",
-      "lines": 71,
-      "owner": "#2049",
-      "expires": "2027-01-26",
-      "reason": "Measured 2026-11-04. Over the 50-line function limit; split it in the function-size follow-up."
-    },
-    {
-      "file": "src/fix/codemods/python-utcnow.ts",
-      "function": "rewriteFor",
-      "lines": 54,
-      "owner": "#2049",
-      "expires": "2027-01-26",
-      "reason": "Measured 2026-11-04. Over the 50-line function limit; split it in the function-size follow-up."
-    },
-    {
-      "file": "src/fix/codemods/terraform-legacy.ts",
-      "function": "plan",
-      "lines": 89,
-      "owner": "#2049",
-      "expires": "2027-01-26",
-      "reason": "Measured 2026-11-04. Over the 50-line function limit; split it in the function-size follow-up."
-    },
-    {
       "file": "src/fix/dockerfile.ts",
       "function": "plan",
       "lines": 68,
@@ -678,7 +614,7 @@
     {
       "file": "src/fix/github-actions.ts",
       "function": "plan",
-      "lines": 56,
+      "lines": 55,
       "owner": "#2049",
       "expires": "2027-01-26",
       "reason": "Measured 2026-11-04. Over the 50-line function limit; split it in the function-size follow-up."
@@ -876,38 +812,6 @@
       "reason": "Measured 2026-11-04. Over the 50-line function limit; split it in the function-size follow-up."
     },
     {
-      "file": "src/sbom/cyclonedx.ts",
-      "function": "enrichCycloneDx",
-      "lines": 70,
-      "owner": "#2049",
-      "expires": "2027-01-26",
-      "reason": "Measured 2026-11-04. Over the 50-line function limit; split it in the function-size follow-up."
-    },
-    {
-      "file": "src/sbom/input.ts",
-      "function": "scanCycloneDx",
-      "lines": 62,
-      "owner": "#2049",
-      "expires": "2027-01-26",
-      "reason": "Measured 2026-11-04. Over the 50-line function limit; split it in the function-size follow-up."
-    },
-    {
-      "file": "src/sbom/input.ts",
-      "function": "scanSpdx",
-      "lines": 52,
-      "owner": "#2049",
-      "expires": "2027-01-26",
-      "reason": "Measured 2026-11-04. Over the 50-line function limit; split it in the function-size follow-up."
-    },
-    {
-      "file": "src/sbom/spdx.ts",
-      "function": "enrichSpdx",
-      "lines": 84,
-      "owner": "#2049",
-      "expires": "2027-01-26",
-      "reason": "Measured 2026-11-04. Over the 50-line function limit; split it in the function-size follow-up."
-    },
-    {
       "file": "src/source-usage.ts",
       "function": "readRubyLiteral",
       "lines": 63,
@@ -943,14 +847,6 @@
       "file": "src/usage/python.ts",
       "function": "analyzePythonFile",
       "lines": 181,
-      "owner": "#2049",
-      "expires": "2027-01-26",
-      "reason": "Measured 2026-11-04. Over the 50-line function limit; split it in the function-size follow-up."
-    },
-    {
-      "file": "src/vers/maven.ts",
-      "function": "parse",
-      "lines": 65,
       "owner": "#2049",
       "expires": "2027-01-26",
       "reason": "Measured 2026-11-04. Over the 50-line function limit; split it in the function-size follow-up."
@@ -994,38 +890,6 @@
       "function": "parseCleDocument",
       "complexity": 28,
       "owner": "#2272",
-      "expires": "2027-01-26",
-      "reason": "Measured 2026-11-02. Complexity over 15; reduce it in the complexity follow-up."
-    },
-    {
-      "file": "src/commands/runtime.ts",
-      "function": "runScanFamily",
-      "complexity": 77,
-      "owner": "#2254",
-      "expires": "2027-01-26",
-      "reason": "Measured 2026-11-02. Complexity over 15; reduce it in the complexity follow-up."
-    },
-    {
-      "file": "src/commands/runtime.ts",
-      "function": "sharedGates",
-      "complexity": 61,
-      "owner": "#2254",
-      "expires": "2027-01-26",
-      "reason": "Measured 2026-11-02. Complexity over 15; reduce it in the complexity follow-up."
-    },
-    {
-      "file": "src/commands/setup.ts",
-      "function": "run",
-      "complexity": 27,
-      "owner": "#2254",
-      "expires": "2027-01-26",
-      "reason": "Measured 2026-11-02. Complexity over 15; reduce it in the complexity follow-up."
-    },
-    {
-      "file": "src/commands/watch.ts",
-      "function": "run > <anonymous>",
-      "complexity": 20,
-      "owner": "#2254",
       "expires": "2027-01-26",
       "reason": "Measured 2026-11-02. Complexity over 15; reduce it in the complexity follow-up."
     },
@@ -1574,14 +1438,6 @@
       "reason": "Measured 2026-11-02. Complexity over 15; reduce it in the complexity follow-up."
     },
     {
-      "file": "src/detectors/terraform/plan.ts",
-      "function": "parseTerraformPlanJson",
-      "complexity": 43,
-      "owner": "#2264",
-      "expires": "2027-01-26",
-      "reason": "Measured 2026-11-02. Complexity over 15; reduce it in the complexity follow-up."
-    },
-    {
       "file": "src/drift/java.ts",
       "function": "setupJavaVersions",
       "complexity": 22,
@@ -1758,54 +1614,6 @@
       "reason": "Measured 2026-11-02. Complexity over 15; reduce it in the complexity follow-up."
     },
     {
-      "file": "src/fix/codemods/python-renames.ts",
-      "function": "unittestBindings",
-      "complexity": 23,
-      "owner": "#2270",
-      "expires": "2027-01-26",
-      "reason": "Measured 2026-11-02. Complexity over 15; reduce it in the complexity follow-up."
-    },
-    {
-      "file": "src/fix/codemods/python-utcnow.ts",
-      "function": "bindsTimezoneOutsideDatetimeImports",
-      "complexity": 20,
-      "owner": "#2270",
-      "expires": "2027-01-26",
-      "reason": "Measured 2026-11-02. Complexity over 15; reduce it in the complexity follow-up."
-    },
-    {
-      "file": "src/fix/codemods/python-utcnow.ts",
-      "function": "inspectDatetimeImports",
-      "complexity": 28,
-      "owner": "#2270",
-      "expires": "2027-01-26",
-      "reason": "Measured 2026-11-02. Complexity over 15; reduce it in the complexity follow-up."
-    },
-    {
-      "file": "src/fix/codemods/python-utcnow.ts",
-      "function": "plan",
-      "complexity": 17,
-      "owner": "#2270",
-      "expires": "2027-01-26",
-      "reason": "Measured 2026-11-02. Complexity over 15; reduce it in the complexity follow-up."
-    },
-    {
-      "file": "src/fix/codemods/python-utcnow.ts",
-      "function": "rewriteFor",
-      "complexity": 16,
-      "owner": "#2270",
-      "expires": "2027-01-26",
-      "reason": "Measured 2026-11-02. Complexity over 15; reduce it in the complexity follow-up."
-    },
-    {
-      "file": "src/fix/codemods/terraform-legacy.ts",
-      "function": "plan",
-      "complexity": 26,
-      "owner": "#2270",
-      "expires": "2027-01-26",
-      "reason": "Measured 2026-11-02. Complexity over 15; reduce it in the complexity follow-up."
-    },
-    {
       "file": "src/fix/dockerfile.ts",
       "function": "plan",
       "complexity": 18,
@@ -1934,38 +1742,6 @@
       "reason": "Measured 2026-11-02. Complexity over 15; reduce it in the complexity follow-up."
     },
     {
-      "file": "src/sbom/cyclonedx.ts",
-      "function": "enrichCycloneDx > component",
-      "complexity": 18,
-      "owner": "#2277",
-      "expires": "2027-01-26",
-      "reason": "Measured 2026-11-02. Complexity over 15; reduce it in the complexity follow-up."
-    },
-    {
-      "file": "src/sbom/input.ts",
-      "function": "scanCycloneDx",
-      "complexity": 22,
-      "owner": "#2277",
-      "expires": "2027-01-26",
-      "reason": "Measured 2026-11-02. Complexity over 15; reduce it in the complexity follow-up."
-    },
-    {
-      "file": "src/sbom/input.ts",
-      "function": "scanSpdx",
-      "complexity": 24,
-      "owner": "#2277",
-      "expires": "2027-01-26",
-      "reason": "Measured 2026-11-02. Complexity over 15; reduce it in the complexity follow-up."
-    },
-    {
-      "file": "src/sbom/spdx.ts",
-      "function": "enrichSpdx",
-      "complexity": 26,
-      "owner": "#2277",
-      "expires": "2027-01-26",
-      "reason": "Measured 2026-11-02. Complexity over 15; reduce it in the complexity follow-up."
-    },
-    {
       "file": "src/source-usage.ts",
       "function": "readRubyLiteral",
       "complexity": 35,
@@ -2046,22 +1822,6 @@
       "reason": "Measured 2026-11-02. Complexity over 15; reduce it in the complexity follow-up."
     },
     {
-      "file": "src/vers/maven.ts",
-      "function": "parse",
-      "complexity": 23,
-      "owner": "#2281",
-      "expires": "2027-01-26",
-      "reason": "Measured 2026-11-02. Complexity over 15; reduce it in the complexity follow-up."
-    },
-    {
-      "file": "src/vers/pep440.ts",
-      "function": "compareLocal",
-      "complexity": 17,
-      "owner": "#2281",
-      "expires": "2027-01-26",
-      "reason": "Measured 2026-11-02. Complexity over 15; reduce it in the complexity follow-up."
-    },
-    {
       "file": "src/workspaces.ts",
       "function": "findDirectories > walk",
       "complexity": 16,
@@ -2073,13 +1833,5 @@
   "asUnknownAs": [],
   "nonNull": [],
   "boundaries": [],
-  "audit": [
-    {
-      "advisory": "GHSA-g3hv-75wg-m249",
-      "package": "minimatch",
-      "owner": "#2231",
-      "expires": "2027-01-26",
-      "reason": "Measured 2026-11-02. Development-only dependency of minimatch; not shipped. Update it or drop it in the security follow-up."
-    }
-  ]
+  "audit": []
 }
