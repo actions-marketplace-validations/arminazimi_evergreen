@@ -8,12 +8,12 @@ This page publishes the task set, the two arms, the scoring rules, and the repro
 
 ### Run metadata
 
-| Field | Value |
-|---|---|
-| Page published | 2026-11-01 |
-| Benchmark implementation at | commit `1acd0968` |
-| Measured run | none recorded |
-| Agents and model versions measured | none recorded |
+| Field                              | Value             |
+| ---------------------------------- | ----------------- |
+| Page published                     | 2026-11-01        |
+| Benchmark implementation at        | commit `1acd0968` |
+| Measured run                       | none recorded     |
+| Agents and model versions measured | none recorded     |
 
 A measured run needs real agent hosts and local clones of the pinned repositories. It is tracked separately in [#1534](https://github.com/arminazimi/evergreen/issues/1534), which will publish the per-agent tables and link them here.
 
@@ -21,24 +21,24 @@ A measured run needs real agent hosts and local clones of the pinned repositorie
 
 The 20 tasks live in [`benchmarks/agent-migrations/tasks.json`](../benchmarks/agent-migrations/tasks.json). Each task pins a public repository and commit, one finding (`ruleId`, path, and line) that a scan of that commit reports, an expected end state, at least one verification command, and the real migration commit used as evidence.
 
-| Group | Tasks |
-|---|---|
-| Rust crates (`atty`, `ansi_term`) | `hyperfine-atty`, `just-ansi-term`, `dust-ansi-term`, `wasm-pack-atty` |
-| Go runtime and container image | `bubbletea-go`, `caddy-go`, `lazygit-go`, `lazygit-go-image`, `node-exporter-go` |
-| .NET runtime | `sloth-dotnet`, `sourcelink-dotnet` |
-| Node.js container image | `homepage-node-image` |
-| Node.js CI workflows | `lighthouse-node`, `paperhanger-node` |
-| PHP and Ruby runtimes | `behat-php`, `packwerk-ruby` |
-| npm packages and Node.js | `auth0-request`, `outline-koa-router`, `fork-corner-node-sass`, `outline-crypto-js` |
+| Group                             | Tasks                                                                               |
+| --------------------------------- | ----------------------------------------------------------------------------------- |
+| Rust crates (`atty`, `ansi_term`) | `hyperfine-atty`, `just-ansi-term`, `dust-ansi-term`, `wasm-pack-atty`              |
+| Go runtime and container image    | `bubbletea-go`, `caddy-go`, `lazygit-go`, `lazygit-go-image`, `node-exporter-go`    |
+| .NET runtime                      | `sloth-dotnet`, `sourcelink-dotnet`                                                 |
+| Node.js container image           | `homepage-node-image`                                                               |
+| Node.js CI workflows              | `lighthouse-node`, `paperhanger-node`                                               |
+| PHP and Ruby runtimes             | `behat-php`, `packwerk-ruby`                                                        |
+| npm packages and Node.js          | `auth0-request`, `outline-koa-router`, `fork-corner-node-sass`, `outline-crypto-js` |
 
 The expected end state is checked with regular expressions over the named files: each `mustNotMatch` must be absent and each `mustMatch` must be present. The verification commands are the project's own build or test commands, such as `cargo test --all --locked`, `go build ./...`, `dotnet build`, `docker build .`, or `yarn tsc`; they run in the migrated worktree.
 
 ### The two arms
 
-| Arm | Prompt |
-|---|---|
-| `baseline` | The task title, rule id, and finding location, with an instruction to make the smallest change and run the verification commands. No packet. |
-| `packet` | A fresh offline scan of the worktree must report the same rule at the same path and line. The harness then builds the finding's migration packet (affected files and usages, constraints, pinned runtimes, and verification commands) and renders it as the agent prompt. |
+| Arm        | Prompt                                                                                                                                                                                                                                                                    |
+| ---------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `baseline` | The task title, rule id, and finding location, with an instruction to make the smallest change and run the verification commands. No packet.                                                                                                                              |
+| `packet`   | A fresh offline scan of the worktree must report the same rule at the same path and line. The harness then builds the finding's migration packet (affected files and usages, constraints, pinned runtimes, and verification commands) and renders it as the agent prompt. |
 
 Both prompts are written to a temporary file outside the worktree and its path is exported as `EVERGREEN_MIGRATION_PROMPT_FILE`, so the agent command does not need to embed a multi-line prompt in `argv`. The harness never fetches; the repository must already contain the pinned commit. Each arm gets its own detached `git worktree`, which is removed after the run unless `--keep-worktrees` is passed.
 
@@ -121,6 +121,65 @@ console.log(JSON.stringify(rateByCondition(scoreMigrationRun(task, result).condi
 - Tests: [`tests/agent-migration-tasks.test.ts`](../tests/agent-migration-tasks.test.ts), [`tests/agent-migrations-run.test.ts`](../tests/agent-migrations-run.test.ts), [`tests/agent-migrations-score.test.ts`](../tests/agent-migrations-score.test.ts)
 - Plan-arm timings and guardrail outcomes use a separate proof page; see [#1534](https://github.com/arminazimi/evergreen/issues/1534).
 
+## Agent staleness benchmark
+
+The agent staleness benchmark measures how often coding agents write end-of-life or deprecated choices when they produce common project files — Dockerfiles, GitHub Actions workflows, Kubernetes manifests, package manifests, Terraform modules, and small Python or Node helpers — and whether Evergreen's agent hook changes that rate.
+
+Each task is a version-free prompt that names only the file to write. The harness runs every task twice in a fresh temporary directory: once with no Evergreen setup (`plain`), and once after `evergreen init --agents` plus `init --hooks-for <host>` when the host supports it (`hooks`). The produced file is saved under `outputs/<agent>/<arm>/<task>/` with a `meta.json` that records the agent version and date. Scoring is offline: `score.ts` scans each output directory with `scanRepository` and reports, per agent, arm, and category, the share of tasks with at least one finding, findings per task, and the rule ids seen.
+
+### Run metadata
+
+| Field                              | Value         |
+| ---------------------------------- | ------------- |
+| Page published                     | 2026-11-07    |
+| Benchmark implementation           | this section  |
+| Measured run                       | none recorded |
+| Agents and model versions measured | none recorded |
+
+A measured run needs installed agent CLIs (`claude -p`, `codex exec`, `gemini -p`, or equivalent) and network access. It is maintainer-only: after the first real run (at least three agents, both arms) the committed outputs and this table are updated. Until then the repository ships hand-written **seed** outputs under `outputs/seed/` so scoring stays tested in `npm run check`.
+
+### Limits
+
+- Prompt wording affects what agents write; the task set is fixed and version-free so runs stay comparable, but it is not a census of every prompt an engineer might type.
+- Agent and model versions drift. Publish the version string from `meta.json` with every measured row; do not compare rows across unstated versions.
+- The `hooks` arm only installs host configuration Evergreen knows how to write today (`claude-code`, `codex`, `cursor`, `gemini`, and `copilot` for `--hooks-for`). Hosts without a hook adapter still get `init --agents`.
+- Scoring judges the files the agent left on disk. It never executes repository code, never calls an agent, and never uses the network.
+
+### Reproduction
+
+```bash
+npm ci
+npm run build --silent
+
+# Offline score of committed outputs (also covered by unit tests):
+npm run bench:staleness:score
+npm run bench:staleness:score -- --write
+
+# Maintainer agent run (network + agent CLIs; not part of npm run check):
+npm run bench:staleness:run -- --list
+npm run bench:staleness:run -- --agent claude-code
+npm run bench:staleness:run -- --agent codex --task dockerfile-node-app --arm plain
+```
+
+### Results
+
+There are no measured agent rows yet. The seed aggregate from `npm run bench:staleness:score` (hand-written outputs, not a model) is:
+
+| Agent | Arm   | Tasks with finding / tasks | Share  |
+| ----- | ----- | -------------------------: | -----: |
+| seed  | plain |                        7 / 9 | 0.7778 |
+| seed  | hooks |                        0 / 7 | 0.0000 |
+
+Per-category seed rows and rule ids are in [`benchmarks/agent-staleness/results.json`](../benchmarks/agent-staleness/results.json). Replace this table when the maintainer commits the first three-agent run.
+
+### Artefacts
+
+- Task definitions: [`benchmarks/agent-staleness/tasks.json`](../benchmarks/agent-staleness/tasks.json)
+- Harness (network): [`benchmarks/agent-staleness/run.ts`](../benchmarks/agent-staleness/run.ts)
+- Offline scorer: [`benchmarks/agent-staleness/score.ts`](../benchmarks/agent-staleness/score.ts)
+- Seed outputs: [`benchmarks/agent-staleness/outputs/seed/`](../benchmarks/agent-staleness/outputs/seed/)
+- Tests: [`tests/agent-staleness-score.test.ts`](../tests/agent-staleness-score.test.ts)
+
 ## Source usage analysis
 
 Run `npm run benchmark:usage` to generate 200 TypeScript files in a temporary repository and scan them as one batch. Every file contains one aliased package import, one real method call, one comment lookalike, and one string lookalike.
@@ -135,10 +194,10 @@ The same command also compares the two usage engines on the repository's own `sr
 
 On 2026-10-21 on the development machine:
 
-| Engine | Median | p95 | Cold first run |
-|---|---|---|---|
-| Regex | 26.93 ms | 31.86 ms | n/a |
-| Tree-sitter | 131.70 ms | 151.55 ms | 240.60 ms |
+| Engine      | Median    | p95       | Cold first run |
+| ----------- | --------- | --------- | -------------- |
+| Regex       | 26.93 ms  | 31.86 ms  | n/a            |
+| Tree-sitter | 131.70 ms | 151.55 ms | 240.60 ms      |
 
 Tree-sitter took about 4.9 times as long at the median, roughly 1.1 ms per file, in exchange for finding multi-line calls, aliases and re-exports and rejecting method calls that only share a name with an import (see `tests/usage-parity.test.ts`). The figures are reference points, not a CI gate.
 
@@ -172,12 +231,22 @@ Run `npm run benchmark:perf-budget` to reproduce it locally. The benchmark (`ben
 
 ### Budgets
 
-| Measurement | Budget | Reference (2026-10-28, macOS, Apple silicon, Node.js 22) |
-|---|---|---|
-| Mean wall time over the measured runs | 2,000 ms | 4–11 ms |
-| Peak resident set size | 768 MB | 87 MB |
+| Measurement                           | Budget   | Reference (2026-10-28, macOS, Apple silicon, Node.js 22) |
+| ------------------------------------- | -------- | -------------------------------------------------------- |
+| Mean wall time over the measured runs | 2,000 ms | 4–11 ms                                                  |
+| Peak resident set size                | 768 MB   | 87 MB                                                    |
 
 Both budgets carry roughly an order of magnitude of margin over the reference measurement so that runner noise never trips the gate — only a deliberate or catastrophic slowdown does. Raise a budget in the same commit that intentionally regresses scans, state the reason in that commit, and update this table; the ceilings live in `PERF_BUDGET` in `benchmarks/perf-budget.ts` and are enforced by `tests/perf-budget.test.ts`.
+
+### Per-detector budgets
+
+The same job also protects each detector's speed. `benchmarks/detector-budget.ts` scans a clean copy of the committed fixture corpus (`tests/fixtures`, every ecosystem side by side) with one detector at a time, caches off, and compares each detector's median wall time over five scans with its ceiling in `benchmarks/detector-budgets.json`. A slow change fails with the detector's name:
+
+```text
+::error::detector ruby: median scan time 1900 ms exceeded the 1250 ms budget
+```
+
+Ceilings are eight times the median measured over repeated local runs, with a 750 ms floor, so runner noise does not trip them. A detector over its ceiling is measured up to two more times and fails only when its best median is still over. Every built-in detector must have a ceiling and every ceiling must name a built-in detector, so a new detector cannot ship unbudgeted. Raise a ceiling in the commit that intentionally regresses that detector, with the reason. Run `npm run benchmark:detector-budget` locally; `--simulate-slowdown go:2000 --check` proves the gate trips.
 
 ### Verifying the gate trips
 
@@ -190,6 +259,12 @@ node dist/benchmarks/perf-budget.js --simulate-slowdown-ms 3000 --check
 
 The unit tests cover the same path with a smaller simulated slowdown, so a gate that stopped tripping would fail `npm run check`.
 
+## CLI start-up budget
+
+`evergreen --version` must answer without loading the command table. `src/cli.ts` handles the bare version flag itself (help still wins, as in `cli-main`), because importing `cli-main` pulls in every detector. Before the fast path the call took about 940 ms on the development machine; it now takes about 22 ms. Run `npm run benchmark:startup` to reproduce it: `benchmarks/startup.ts` spawns the built CLI with `--version`, discards one warm-up run, and reports the median wall-clock time of seven runs.
+
+The `perf-budget` CI job fails when the median exceeds 400 ms (`STARTUP_BUDGET` in `benchmarks/startup.ts`), roughly an order of magnitude above the reference so that runner noise never trips it. Raise it only in the commit that intentionally regresses start-up, with the reason, and update this paragraph.
+
 ## Large-monorepo performance
 
 Run `npm run benchmark:monorepo` to time an in-process scan of a synthetic ~100k-file npm workspaces monorepo. The adoption goal is that a repository of that size finishes under 5 seconds mean wall time with caches disabled.
@@ -200,16 +275,17 @@ The benchmark (`benchmarks/monorepo.ts`) builds a temporary monorepo offline: a 
 
 ### Budget and reference
 
-| Measurement | Budget | Reference (2026-10-29, macOS, Apple silicon, Node.js 22.23) |
-|---|---|---|
-| Mean wall time over the measured runs (≥100,000 files, `noCache: true`) | 5,000 ms | 716 ms |
-| Peak resident set size | observational | 132 MB |
-| Findings (synthetic fixture) | > 0 | 9 |
+| Measurement                                                             | Budget        | Reference (2026-10-29, macOS, Apple silicon, Node.js 22.23) |
+| ----------------------------------------------------------------------- | ------------- | ----------------------------------------------------------- |
+| Mean wall time over the measured runs (≥100,000 files, `noCache: true`) | 5,000 ms      | 716 ms                                                      |
+| Peak resident set size                                                  | observational | 132 MB                                                      |
+| Findings (synthetic fixture)                                            | > 0           | 9                                                           |
 
-The 5-second ceiling is the product goal from the roadmap; the reference run sits well under it on the development machine. Raise the ceiling in `MONOREPO_BUDGET` in `benchmarks/monorepo.ts` in the same commit that intentionally regresses large-repo scans, state the reason, and update this table. Unit tests cover the evaluator and a small synthetic fixture; they do not create 100k files.
+The 5-second ceiling is the product goal from the roadmap; the reference run sits well under it on the development machine. Raise the ceiling in `MONOREPO_BUDGET` in `benchmarks/monorepo.ts` in the same commit that intentionally regresses large-repo scans, state the reason, and update this table. The benchmark also enforces a peak-memory ceiling (`maxPeakRssBytes`, 1536 MB; `--max-rss-mb` overrides it), and `--simulate-leak-mb N` retains N MB per measured run to prove the gate trips. The `perf-budget` CI job runs the synthetic fixture and a real monorepo (`babel/babel`, pinned by commit in `.github/workflows/ci.yml`, 768 MB ceiling); bump the pin deliberately. Unit tests cover the evaluator and a small synthetic fixture; they do not create 100k files.
 
 ```bash
 npm run benchmark:monorepo -- --check
 npm run benchmark:monorepo -- --files 5000 --runs 1 --warmup 0
+npm run benchmark:monorepo -- --check --simulate-leak-mb 1500   # a deliberate leak must fail the gate
 npm run benchmark:monorepo -- --path /path/to/local/monorepo --json
 ```

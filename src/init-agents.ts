@@ -255,6 +255,288 @@ export async function initCodexHooks(options: InitCodexHooksOptions): Promise<In
   return { file: CODEX_HOOKS_FILE, change, written: true, diff };
 }
 
+export const CURSOR_HOOKS_FILE = ".cursor/hooks.json";
+export const CURSOR_RULES_FILE = ".cursor/rules/evergreen.mdc";
+/** The same launcher as the other hosts: the project's own package first, the global `evergreen` bin as fallback. */
+export const CURSOR_HOOK_COMMAND = "npx --no-install evergreen-deprecation hook cursor";
+/** Front matter Cursor requires on a newly created project rule (matches `setup.ts`). */
+export const CURSOR_RULE_PREFIX =
+  "---\ndescription: Check a dependency with Evergreen before adding it\nalwaysApply: true\n---\n\n";
+
+export type InitCursorHooksOptions = InitClaudeHooksOptions;
+
+export interface InitCursorHooksResult {
+  hooks: InitClaudeHooksResult;
+  rule: InitAgentsResult;
+}
+
+/** Recognizes the Cursor hook this command wrote, however its launcher is spelled. */
+const EVERGREEN_CURSOR_HOOK_COMMAND = /\bevergreen(?:-deprecation)?\b.*\bhook\s+cursor\b/;
+
+function hasEvergreenAfterFileEdit(entries: readonly unknown[]): boolean {
+  return entries.some(
+    (entry) =>
+      isRecord(entry) && typeof entry.command === "string" && EVERGREEN_CURSOR_HOOK_COMMAND.test(entry.command),
+  );
+}
+
+/**
+ * Merges the `afterFileEdit` entry into a parsed Cursor hooks document, keeping every existing key and hook.
+ * Cursor's project file is `.cursor/hooks.json` with top-level `version` and a flat command list per event
+ * (<https://cursor.com/docs/hooks>, checked 2026-11-07).
+ */
+export function withCursorAfterFileEdit(document: unknown): {
+  document: Record<string, unknown>;
+  change: "added" | "unchanged";
+} {
+  if (!isRecord(document))
+    throw new AgentFileError(`${CURSOR_HOOKS_FILE} does not hold a JSON object, so it was not changed.`);
+  const hooksValue = document.hooks;
+  if (hooksValue !== undefined && !isRecord(hooksValue)) {
+    throw new AgentFileError(`${CURSOR_HOOKS_FILE} has a "hooks" value that is not an object, so it was not changed.`);
+  }
+  const events: Record<string, unknown> = hooksValue === undefined ? {} : hooksValue;
+  const afterValue = events.afterFileEdit;
+  if (afterValue !== undefined && !Array.isArray(afterValue)) {
+    throw new AgentFileError(
+      `${CURSOR_HOOKS_FILE} has a "hooks.afterFileEdit" value that is not an array, so it was not changed.`,
+    );
+  }
+  const afterFileEdit: unknown[] = afterValue === undefined ? [] : afterValue.map((entry: unknown) => entry);
+  if (hasEvergreenAfterFileEdit(afterFileEdit)) return { document: structuredClone(document), change: "unchanged" };
+  const entry = { command: CURSOR_HOOK_COMMAND, timeout: 60 };
+  return {
+    document: {
+      ...structuredClone(document),
+      version: typeof document.version === "number" ? document.version : 1,
+      hooks: { ...events, afterFileEdit: [...afterFileEdit, entry] },
+    },
+    change: "added",
+  };
+}
+
+/**
+ * Writes or merges the Cursor post-edit hook into `.cursor/hooks.json` and keeps `.cursor/rules/evergreen.mdc`.
+ * Cursor's `afterFileEdit` cannot return text to the agent, so the always-applied rule is the instruction path;
+ * the hook itself only audits to stderr. The home directory is never touched.
+ */
+export async function initCursorHooks(options: InitCursorHooksOptions): Promise<InitCursorHooksResult> {
+  const root = resolve(options.root);
+  const info = await lstat(root).catch(() => undefined);
+  if (!info?.isDirectory()) throw new AgentFileError(`${root} is not a directory.`);
+  const path = join(root, CURSOR_HOOKS_FILE);
+  await assertInside(root, path);
+  const before = await read(path);
+  let parsed: unknown = {};
+  if (before !== undefined) {
+    try {
+      parsed = JSON.parse(before);
+    } catch {
+      throw new AgentFileError(`${CURSOR_HOOKS_FILE} is not valid JSON, so it was not changed.`);
+    }
+  }
+  const update = withCursorAfterFileEdit(parsed);
+  const text = `${JSON.stringify(update.document, null, 2)}\n`;
+  const change = before === undefined ? "created" : update.change === "unchanged" ? "unchanged" : "updated";
+  const diff = change === "unchanged" ? "" : renderDiff(CURSOR_HOOKS_FILE, before ?? "", text);
+  let written = false;
+  if (change !== "unchanged" && !options.dryRun) {
+    await mkdir(dirname(path), { recursive: true });
+    await writeFile(path, text);
+    written = true;
+  }
+  const hooks: InitClaudeHooksResult = { file: CURSOR_HOOKS_FILE, change, written, diff };
+  const rule = await updateAgentFile(root, CURSOR_RULES_FILE, {
+    createPrefix: CURSOR_RULE_PREFIX,
+    ...(options.dryRun === undefined ? {} : { dryRun: options.dryRun }),
+  });
+  return { hooks, rule };
+}
+
+export const GEMINI_SETTINGS_FILE = ".gemini/settings.json";
+export const GEMINI_HOOK_MATCHER = "write_file|replace";
+/** The same launcher as the other hosts: the project's own package first, the global `evergreen` bin as fallback. */
+export const GEMINI_HOOK_COMMAND = "npx --no-install evergreen-deprecation hook gemini";
+/** Gemini CLI measures hook timeouts in milliseconds, so this is the documented default of one minute. */
+export const GEMINI_HOOK_TIMEOUT_MS = 60_000;
+
+export type InitGeminiHooksOptions = InitClaudeHooksOptions;
+export type InitGeminiHooksResult = InitClaudeHooksResult;
+
+/** Recognizes the Gemini CLI hook this command wrote, however its launcher is spelled. */
+const EVERGREEN_GEMINI_HOOK_COMMAND = /\bevergreen(?:-deprecation)?\b.*\bhook\s+gemini\b/;
+
+function hasEvergreenGeminiAfterTool(entries: readonly unknown[]): boolean {
+  return entries.some((entry) => {
+    if (!isRecord(entry) || !Array.isArray(entry.hooks)) return false;
+    return entry.hooks.some(
+      (hook) => isRecord(hook) && typeof hook.command === "string" && EVERGREEN_GEMINI_HOOK_COMMAND.test(hook.command),
+    );
+  });
+}
+
+/**
+ * Merges the `AfterTool` entry into a parsed Gemini CLI settings document, keeping every existing setting and
+ * hook. Gemini CLI reads the project file `.gemini/settings.json` with `hooks.<Event>` arrays of
+ * `{ matcher, hooks }` entries, and matchers are regular expressions
+ * (<https://github.com/google-gemini/gemini-cli/blob/main/docs/hooks/reference.md>, Gemini CLI 0.67.0, 2026-11-04).
+ */
+export function withGeminiAfterTool(settings: unknown): {
+  settings: Record<string, unknown>;
+  change: "added" | "unchanged";
+} {
+  if (!isRecord(settings))
+    throw new AgentFileError(`${GEMINI_SETTINGS_FILE} does not hold a JSON object, so it was not changed.`);
+  const hooksValue = settings.hooks;
+  if (hooksValue !== undefined && !isRecord(hooksValue)) {
+    throw new AgentFileError(
+      `${GEMINI_SETTINGS_FILE} has a "hooks" value that is not an object, so it was not changed.`,
+    );
+  }
+  const hooks: Record<string, unknown> = hooksValue === undefined ? {} : hooksValue;
+  const afterValue = hooks.AfterTool;
+  if (afterValue !== undefined && !Array.isArray(afterValue)) {
+    throw new AgentFileError(
+      `${GEMINI_SETTINGS_FILE} has a "hooks.AfterTool" value that is not an array, so it was not changed.`,
+    );
+  }
+  const afterTool = (afterValue ?? []) as unknown[];
+  if (hasEvergreenGeminiAfterTool(afterTool)) return { settings: structuredClone(settings), change: "unchanged" };
+  const entry = {
+    matcher: GEMINI_HOOK_MATCHER,
+    hooks: [{ name: "evergreen", type: "command", command: GEMINI_HOOK_COMMAND, timeout: GEMINI_HOOK_TIMEOUT_MS }],
+  };
+  return {
+    settings: {
+      ...structuredClone(settings),
+      hooks: { ...hooks, AfterTool: [...structuredClone(afterTool), entry] },
+    },
+    change: "added",
+  };
+}
+
+/**
+ * Writes or merges the Gemini CLI post-edit hook into `.gemini/settings.json`, preserving the user's settings
+ * and hooks. The home directory is never touched.
+ */
+export async function initGeminiHooks(options: InitGeminiHooksOptions): Promise<InitGeminiHooksResult> {
+  const root = resolve(options.root);
+  const info = await lstat(root).catch(() => undefined);
+  if (!info?.isDirectory()) throw new AgentFileError(`${root} is not a directory.`);
+  const path = join(root, GEMINI_SETTINGS_FILE);
+  await assertInside(root, path);
+  const before = await read(path);
+  let parsed: unknown = {};
+  if (before !== undefined) {
+    try {
+      parsed = JSON.parse(before);
+    } catch {
+      throw new AgentFileError(`${GEMINI_SETTINGS_FILE} is not valid JSON, so it was not changed.`);
+    }
+  }
+  const update = withGeminiAfterTool(parsed);
+  const text = `${JSON.stringify(update.settings, null, 2)}\n`;
+  const change = before === undefined ? "created" : update.change === "unchanged" ? "unchanged" : "updated";
+  const diff = change === "unchanged" ? "" : renderDiff(GEMINI_SETTINGS_FILE, before ?? "", text);
+  if (change === "unchanged" || options.dryRun) return { file: GEMINI_SETTINGS_FILE, change, written: false, diff };
+  await mkdir(dirname(path), { recursive: true });
+  await writeFile(path, text);
+  return { file: GEMINI_SETTINGS_FILE, change, written: true, diff };
+}
+
+export const COPILOT_HOOKS_FILE = ".github/hooks/evergreen.json";
+export const COPILOT_HOOK_MATCHER = "create|edit";
+/** The same launcher as the other hosts: the project's own package first, the global `evergreen` bin as fallback. */
+export const COPILOT_HOOK_COMMAND = "npx --no-install evergreen-deprecation hook copilot";
+/** Copilot measures hook timeouts in seconds, so this is a minute, matching the other hosts. */
+export const COPILOT_HOOK_TIMEOUT_SEC = 60;
+
+export type InitCopilotHooksOptions = InitClaudeHooksOptions;
+export type InitCopilotHooksResult = InitClaudeHooksResult;
+
+/** Recognizes a Copilot hook this command wrote, however its launcher is spelled and whichever command field holds it. */
+const EVERGREEN_COPILOT_HOOK_COMMAND = /\bevergreen(?:-deprecation)?\b.*\bhook\s+copilot\b/;
+
+function isEvergreenCopilotEntry(entry: unknown): boolean {
+  if (!isRecord(entry)) return false;
+  return [entry.command, entry.bash, entry.powershell].some(
+    (command) => typeof command === "string" && EVERGREEN_COPILOT_HOOK_COMMAND.test(command),
+  );
+}
+
+/**
+ * Merges the `postToolUse` entry into a parsed Copilot hooks document, keeping every existing key and hook.
+ * Copilot reads every `.github/hooks/*.json` file with `version: 1` and `hooks.<event>` arrays of command
+ * hooks, and matches `postToolUse` against the runtime tool name
+ * (<https://docs.github.com/en/copilot/reference/hooks-reference>, Copilot CLI 1.0.107, 2026-11-07).
+ */
+export function withCopilotPostToolUse(document: unknown): {
+  document: Record<string, unknown>;
+  change: "added" | "unchanged";
+} {
+  if (!isRecord(document))
+    throw new AgentFileError(`${COPILOT_HOOKS_FILE} does not hold a JSON object, so it was not changed.`);
+  if (document.version !== undefined && document.version !== 1)
+    throw new AgentFileError(`${COPILOT_HOOKS_FILE} has a "version" value other than 1, so it was not changed.`);
+  const hooksValue = document.hooks;
+  if (hooksValue !== undefined && !isRecord(hooksValue)) {
+    throw new AgentFileError(`${COPILOT_HOOKS_FILE} has a "hooks" value that is not an object, so it was not changed.`);
+  }
+  const hooks: Record<string, unknown> = hooksValue === undefined ? {} : hooksValue;
+  const postValue = hooks.postToolUse;
+  if (postValue !== undefined && !Array.isArray(postValue)) {
+    throw new AgentFileError(
+      `${COPILOT_HOOKS_FILE} has a "hooks.postToolUse" value that is not an array, so it was not changed.`,
+    );
+  }
+  const postToolUse = (postValue ?? []) as unknown[];
+  if (postToolUse.some(isEvergreenCopilotEntry)) return { document: structuredClone(document), change: "unchanged" };
+  const entry = {
+    type: "command",
+    matcher: COPILOT_HOOK_MATCHER,
+    command: COPILOT_HOOK_COMMAND,
+    timeoutSec: COPILOT_HOOK_TIMEOUT_SEC,
+  };
+  return {
+    document: {
+      ...structuredClone(document),
+      version: document.version ?? 1,
+      hooks: { ...hooks, postToolUse: [...structuredClone(postToolUse), entry] },
+    },
+    change: "added",
+  };
+}
+
+/**
+ * Writes or merges the Copilot post-edit hook into `.github/hooks/evergreen.json`, preserving the user's hooks.
+ * The repo-level file is the one Copilot CLI and Copilot in the cloud both load; the instruction file that
+ * `evergreen setup` writes stays untouched.
+ */
+export async function initCopilotHooks(options: InitCopilotHooksOptions): Promise<InitCopilotHooksResult> {
+  const root = resolve(options.root);
+  const info = await lstat(root).catch(() => undefined);
+  if (!info?.isDirectory()) throw new AgentFileError(`${root} is not a directory.`);
+  const path = join(root, COPILOT_HOOKS_FILE);
+  await assertInside(root, path);
+  const before = await read(path);
+  let parsed: unknown = {};
+  if (before !== undefined) {
+    try {
+      parsed = JSON.parse(before);
+    } catch {
+      throw new AgentFileError(`${COPILOT_HOOKS_FILE} is not valid JSON, so it was not changed.`);
+    }
+  }
+  const update = withCopilotPostToolUse(parsed);
+  const text = `${JSON.stringify(update.document, null, 2)}\n`;
+  const change = before === undefined ? "created" : update.change === "unchanged" ? "unchanged" : "updated";
+  const diff = change === "unchanged" ? "" : renderDiff(COPILOT_HOOKS_FILE, before ?? "", text);
+  if (change === "unchanged" || options.dryRun) return { file: COPILOT_HOOKS_FILE, change, written: false, diff };
+  await mkdir(dirname(path), { recursive: true });
+  await writeFile(path, text);
+  return { file: COPILOT_HOOKS_FILE, change, written: true, diff };
+}
+
 export async function initAgents(options: InitAgentsOptions): Promise<InitAgentsResult> {
   const root = resolve(options.root);
   const info = await lstat(root).catch(() => undefined);

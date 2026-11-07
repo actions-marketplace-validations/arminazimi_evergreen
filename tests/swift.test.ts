@@ -14,7 +14,7 @@ import { zeroFindingsCheck } from "../src/conformance/checks/zero.js";
 import { runDetectorConformance } from "../src/conformance/index.js";
 import { builtInDetectors } from "../src/detectors/index.js";
 import { SwiftDetector, swiftDetector } from "../src/detectors/swift/index.js";
-import { scanRepository } from "../src/engine.js";
+import { scanRepository } from "../src/engine/index.js";
 import { createMigrationPacket, validateMigrationPacket } from "../src/migration-packet.js";
 import { validateRegistryV2 } from "../src/registry.js";
 import type { RegistryV2Rule } from "../src/registry.js";
@@ -308,14 +308,14 @@ test("a migration packet for a Swift finding names the file, steps, and verifica
   assert.ok(packet.verification.some((check) => check.command === "swift build && swift test"));
 });
 
-test("the detector is registered and Swift is beta in the capability manifest", () => {
+test("the detector is registered and Swift is stable in the capability manifest", () => {
   assert.ok(builtInDetectors.some((detector) => detector.id === "swift"));
   assert.deepEqual(
     getCapabilityManifest().ecosystems.find((ecosystem) => ecosystem.id === "swift"),
     {
       id: "swift",
       status: "supported",
-      maturity: "beta",
+      maturity: "stable",
       detectorIds: ["swift"],
     },
   );

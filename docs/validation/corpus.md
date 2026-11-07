@@ -104,6 +104,40 @@ The search returns different results on another day, so the pinned list above, n
 
 Effect on the levels: `github-actions`, `nodejs`, `npm`, and `python` now meet `stable` on the corpus evidence, so none of them is grandfathered any more.
 
+## Python corpus at 200 repositories
+
+Selection for the 93 repositories added on 2026-11-07 (`benchmarks/public-repositories/python/0701` to `0793`) was fixed before Evergreen ran on them, following [decision 0030](../decisions/0030-corpus-selection-and-200-target.md).
+
+- **Discovery:** `gh search code` on 2026-11-07 for the root files `pyproject.toml`, `requirements.txt`, `setup.cfg`, and `.python-version`, with version-neutral terms (`python`, `version`, `pytest`, `django`, `flask`, `numpy`, `pandas`, `torch`, `setuptools`, `click`), 100 results per query. 992 distinct non-fork repositories had the file at the root.
+- **Eligibility:** public, not archived or a mirror, GitHub size at most 50,000 KB, a default-branch commit on or after 2024-11-07, a complete tree, an OSI-approved SPDX license with a license file in the tree, and the input file at the root. 420 passed. The rest failed on activity (341), size (136), missing or non-OSI license (92), or were already in the corpus (2).
+- **Order:** strata are the first matching input form in profile order (`pyproject.toml`, `requirements.txt`, `setup.cfg`, `.python-version`) by size band (at most 5,000 KB, then larger), sorted by lowercase `owner/name`, walked round-robin; the first 93 were kept. Each is pinned to its default-branch commit on that date, and none was chosen or dropped because of its score.
+- **Provenance limits:** license files were identified by name and GitHub's SPDX guess, not read for coverage of the input files. The search returns at most 100 hits per query, so the pool is limited by the queries, not by what exists.
+- **Ground truth:** every one of the 494 findings Evergreen reported on the 93 repositories had its cited line read in the pinned checkout and checked against the registry rule it was filed under. An independent `grep` for old GitHub Action majors, `python_requires` / `requires-python` floors, `FROM python:` tags, and `.python-version` files found the false negative below.
+- **Result on the 93 additions:** 494 findings reviewed. The review found three detector bugs (each its own issue: #2539, #2540, #2541); they were fixed in the same pull request, so the 93 additions end with 495 confirmed findings (the Poetry `python` floor is now at its real line 54, and the Django finding at line 57), precision 1.0 and recall 1.0 on this sample. The harness reports no false positives or negatives for the Python corpus.
+- **Problems found and fixed, repositories kept:** a Poetry `python = "^3.8"` floor was reported at the first line mentioning "python" (a classifier) instead of its own line (`2ik/django-editorjs-fields`); the Django package finding was anchored to `name = "django-editorjs-fields"` instead of `Django = "^4.2"`; and `uses: actions/checkout@v3 ` with a trailing space was not detected (`boxed/django-fastdev`, `.github/workflows/check_tests.yml:14`).
+
+## Rust corpus at 200 repositories
+
+Selection for the 122 repositories added on 2026-11-07 (`benchmarks/public-repositories/rust/0557` to `0678`) was fixed before Evergreen ran on them, following [decision 0030](../decisions/0030-corpus-selection-and-200-target.md).
+
+- **Discovery:** `gh search code` on 2026-11-07 for the root files `Cargo.toml`, `rust-toolchain.toml`, and `rust-toolchain`, with the version-neutral terms `dependencies`, `workspace`, `serde`, `tokio`, `clap`, `edition`, `name`, `version`, `license`, `repository`, `package`, `channel`, `components`, and `stable`; 100 results per query. 596 distinct repositories were returned, 288 of them with a Rust input file at the repository root. The code-search API rejects `fork:false`, so forks and other ineligible repositories were filtered from repository metadata instead.
+- **Eligibility:** public, not archived or a mirror, GitHub size at most 50,000 KB, a default-branch commit on or after 2024-11-07, a complete tree, an OSI-approved SPDX license with a license file in the tree, and the input file at the root. 195 passed. The rest failed on repository metadata (134), activity (114), a missing root input (60), or a missing or non-OSI license (93).
+- **Order:** strata are the first matching input form in profile order (`Cargo.toml`, `rust-toolchain.toml`, `rust-toolchain`) by size band (at most 5,000 KB, then larger), sorted by lowercase `owner/name`, walked round-robin; the first 122 eligible were kept (63 at most 5,000 KB, 59 larger; 115 `Cargo.toml`-first and 7 toolchain-first). Each is pinned to its default-branch commit on that date, and none was chosen or dropped because of its score.
+- **Provenance limits:** license files were identified by name and GitHub's SPDX guess, not read for coverage of the input files. The search returns at most 100 hits per query, so the pool is limited by the queries, not by what exists. The saved source responses were kept with the batch and not committed, as for the Python batch.
+- **Ground truth:** every one of the 900 findings Evergreen reported on the 122 repositories had its cited line read in the pinned checkout and checked against the registry rule it was filed under; no label needed correction. An independent pass over the pinned text (not Evergreen's output) for old GitHub Action majors, Rust toolchain channels, unmaintained crate declarations, Go `go`/`toolchain` directives, pinned container base images, `requires-python` floors, `TargetFramework`, `targetSdk`, `#Requires -Version`, and Azure `vmImage` labels found one additional miss (below). **Precision 1.0 (900/900); recall 900/902 = 0.9978 on this sample.**
+- **Result on the 200-repository Rust bucket:** `npm run validate:public-repos -- --ecosystem rust` reports 1,241 true positives, 0 false positives, and 0 false negatives, precision 1.0000.
+- **Problem found, repository kept:** the container detector declares `Dockerfile*` as an input, but its walker accepts only `Dockerfile` and `Dockerfile.<suffix>`; `cnosdb/docker/Dockerfile_meta` (legacy `ENV` lines 6 and 8) is not read and those two findings are missing. Filed as [#2569](https://github.com/arminazimi/evergreen/issues/2569); the pins were not changed or replaced. Not misses, because the detector documents the boundary: a Cargo dependency written as `workspace = true` is not read (the `[workspace.dependencies]` declaration is), and `.nvmrc` or `.node-version` files outside an npm project directory are not read.
+
+## Corpus targets
+
+Decision 0030 sets 200 reviewed projects per bucket as the growth goal. Most buckets are below it, so the goal is
+not the CI floor: failing every pull request below 200 would block all work until the corpus grows.
+
+`benchmarks/corpus-targets.json` records the minimum each bucket must keep. It started at the counts when the
+check landed and rises as the corpus grows. `node dist/benchmarks/corpus-targets.js` fails when a bucket is below
+its minimum, before any network step in the corpus workflow; `--write` records the current counts as a reviewable
+change. The [dashboard](../dashboard/) shows every bucket's count next to its minimum and the 200 goal.
+
 ## The held-out set
 
 The main corpus is circular: its expected findings were written by reviewing the same commits Evergreen is scored on, so 1.0 shows that nothing regressed and not that Evergreen generalizes (issue #740, decision 0013). The held-out set (`benchmarks/held-out-repositories.json`) is separate: it is never used to write or tune a rule, and its ground truth was committed before Evergreen scanned it.
@@ -116,3 +150,40 @@ The main corpus is circular: its expected findings were written by reviewing the
 First result (before #1101): 15 repositories, 55 true positives, 2 false positives, 18 false negatives, precision 0.9649, recall 0.7534. The 18 misses were all `nodejs.runtime` lines in workflows that pin Node.js 14 or 16 (for example `node-version: 16`): the GitHub Actions detector did not read the `node-version` of `actions/setup-node` at all. The main corpus never exercised that case, which is what a held-out set is for. Issue #1101 added it (see [DETECTORS.md](../DETECTORS.md)); the 130 `nodejs.runtime` findings it adds to the main corpus were each checked by reading the line.
 
 After #1101: 15 repositories, 73 true positives, 3 false positives, 0 false negatives, precision 0.9605, recall 1. The 3 "false positives" are not errors: two are `engines.node` declarations in `package.json` and one is a `strategy.matrix` Node.js list (`node: [8, 10, 12]` in `reid/node-jslint`), none of which the labeller reads. Because the rule was written after the first held-out run, this repository set no longer measures generalization for `node-version`; a fresh held-out set is needed for the next rule.
+
+## Replaying data releases
+
+`npm run replay:data` proves that a data update does not cause surprises. It scans the pinned repositories in `benchmarks/data-replay/repositories.json` (each also pinned in the public corpus at the same commit) once per data release (the last three `data-v*` tags) and once with the working tree's `registry/`, all with the same Evergreen code and the same scan time. The only input that differs between two scans is the data.
+
+Every finding that appears or disappears between two consecutive releases must be explained by a rule that was added, removed, or edited between them (an edit means any field a scan reads; sources and provenance do not count), or, for `github-actions.*` findings, by a change to the SHA map. The run prints each change with its explanation and exits with status 1 when any change is unexplained. `--releases <n>` sets how many releases to replay and `--output <file>` writes the JSON report.
+
+Notes:
+
+- Releases from before the `accessedAt` requirement are brought up to the current schema for the replay (a missing `accessedAt` takes the rule's `observedAt`, and a registry the release lacked is empty, so its rules count as added). Nothing a scan reads is changed.
+- The data bundle does not yet carry the deno, elixir, php, and scala registries; the replay installs them itself so every detector has its data.
+- The `data-replay` workflow runs this on `main` when `src/` or `registry/` change, weekly, and on demand. It needs the network only to fetch the pinned checkouts and would exceed the pull-request runner-minute budget, so it does not run on pull requests: run `npm run replay:data` before changing `registry/`.
+
+## Unreviewed expected findings
+
+Growing the corpus to 200 repositories per ecosystem means about 4,600 pins, far beyond hand labeling every finding before the first scan. The candidate finder freezes the pins ([decision 0030](../decisions/0030-corpus-selection-and-200-target.md)); a second tool scans a local checkout of each eligible pin and records what the current detectors report as **unreviewed** expected findings.
+
+- **Where they live.** `benchmarks/unreviewed-repositories/<ecosystem>.json`, separate from `benchmarks/public-repositories/`. Each entry has `reviewState: "unreviewed"`, `source: "scan-output"`, and `unreviewedExpected` instead of the reviewed corpus's `expected`. The different field name is deliberate: no scoring, threshold, or maturity function reads it, so an unreviewed entry cannot be mistaken for ground truth.
+- **How they are made.** The tool reads the frozen candidate report, takes only candidates with an eligible immutable pin, and scans `<checkouts-dir>/<owner>--<name>` with the bundled lifecycle data. It never fetches, installs, builds, or runs repository code, and it uses no network. Transitive findings are omitted for the same reason the harness omits them. A missing checkout or scan failure stops the batch rather than writing a partial result.
+- **What they count for.** Nothing. Unreviewed entries are not reviewed repositories, expected findings, precision or recall evidence, detector maturity evidence, or progress toward 200. Reports print the reviewed and unreviewed numbers in separate rows and mark only the reviewed row as precision evidence.
+- **How they become reviewed.** A reviewer reads the pinned file, adds a `groundTruthSource` note quoting the path and line, replaces `unreviewedExpected` with `expected`, and moves the entry to `benchmarks/public-repositories/<ecosystem>/`. The hand-review sample in #2119 is the first consumer.
+
+```bash
+node dist/benchmarks/candidates/expected-cli.js generate candidates.json <checkouts-dir> benchmarks/unreviewed-repositories
+node dist/benchmarks/candidates/expected-cli.js report
+```
+
+The first command prints a table such as:
+
+```text
+scope      repositories  findings  precision evidence
+reviewed            557      3174  yes
+unreviewed          300      1234  no
+```
+
+The unreviewed row says nothing about accuracy: its labels are the current output, so a run against them only shows that the output did not change. Precision still rests on the reviewed corpus and the held-out set.
+

@@ -4,7 +4,7 @@ title: Hooks
 
 # Hooks
 
-Evergreen ships a Git pre-push hook that scans before you push, Claude Code and Codex CLI edit hooks that check the files an agent just wrote, a Claude Code `PreToolUse` hook that checks packages before an agent installs them, a Cursor project rule, and a GitHub Copilot instructions file that tell the agent to check a dependency before it is added. All of them stay offline and use only the lifecycle rules bundled with Evergreen.
+Evergreen ships a Git pre-push hook that scans before you push, Claude Code, Codex CLI, Cursor, Gemini CLI, and GitHub Copilot edit hooks that check the files an agent just wrote, a Claude Code `PreToolUse` hook that checks packages before an agent installs them, a Cursor project rule, and a GitHub Copilot instructions file that tell the agent to check a dependency before it is added. All of them stay offline and use only the lifecycle rules bundled with Evergreen.
 
 ## Edit hooks
 
@@ -139,7 +139,200 @@ $ echo $?
 0
 ```
 
+### Gemini CLI
 
+Gemini CLI's `AfterTool` hook runs after a tool executes. Evergreen registers it for the `write_file` and `replace` tools, reads `tool_input.file_path`, takes the project root from `cwd` (with `GEMINI_PROJECT_DIR` as the documented fallback), and answers in the JSON documented for Gemini CLI 0.67.0 (current stable, 2026-11-04) at <https://github.com/google-gemini/gemini-cli/blob/main/docs/hooks/reference.md>: `hookSpecificOutput.additionalContext` is appended to the tool result in the model's context, `systemMessage` is shown in the terminal, and the hook exits `0` — the tool has already run, so this is feedback the model acts on in the same turn, never an error. No findings, or any hook failure, prints nothing and exits `0`.
+
+```bash
+npx evergreen-deprecation init --hooks-for gemini --dry-run   # show the diff first
+npx evergreen-deprecation init --hooks-for gemini             # merge into .gemini/settings.json
+```
+
+The command writes only the project-level file Gemini CLI documents, `<repo>/.gemini/settings.json` — never anything in your home directory — keeps every existing setting and hook (including `mcpServers`), and appends one `AfterTool` entry. Running it again changes nothing:
+
+```json
+{
+  "hooks": {
+    "AfterTool": [
+      {
+        "matcher": "write_file|replace",
+        "hooks": [
+          {
+            "name": "evergreen",
+            "type": "command",
+            "command": "npx --no-install evergreen-deprecation hook gemini",
+            "timeout": 60000
+          }
+        ]
+      }
+    ]
+  }
+}
+```
+
+`matcher` is a regular expression for tool events, and `timeout` is in milliseconds, so `60000` is Gemini CLI's documented default of one minute; Evergreen's own budget stays ten seconds, so a slow scan fails open instead of holding the turn. To turn it off, delete that `AfterTool` entry, or remove the whole `.gemini/settings.json` if Evergreen wrote it.
+
+The transcript below is real output from the built CLI on 2026-11-07, against the fixture repository in `tests/fixtures/agent-hooks/gemini/repo` with the `AfterTool` payload in `write-file.json` (its `cwd` pointed at that repository):
+
+```console
+$ cat Dockerfile
+FROM node:16
+WORKDIR /app
+COPY . .
+CMD ["node", "index.js"]
+
+$ node dist/src/cli.js hook gemini < aftertool.json
+{
+  "systemMessage": "Evergreen found 1 lifecycle issue in the files just changed.",
+  "hookSpecificOutput": {
+    "hookEventName": "AfterTool",
+    "additionalContext": "Evergreen found 1 lifecycle issue in Dockerfile:\n1) [high] Node.js image release lines 21 and older are end-of-life — Dockerfile:1\n   Replacement: A node image on a supported release line, such as node:22\n   Evidence: https://nodejs.org/en/about/eol\n\nFix this before continuing; nothing was changed automatically."
+  }
+}
+$ echo $?
+0
+```
+
+Gemini CLI appends that `additionalContext` to the tool result, which rewrites the base image in the same turn. The same payload for a file with no findings then exits `0` with no output:
+
+```console
+$ sed -i 's/node:16/node:22/' Dockerfile
+
+$ node dist/src/cli.js hook gemini < aftertool.json
+$ echo $?
+0
+```
+
+### Cursor
+
+Cursor's `afterFileEdit` hook runs after the Agent edits a file. Evergreen reads `file_path` and `workspace_roots` from the payload documented at <https://cursor.com/docs/hooks> (checked 2026-11-07 against the current Hooks reference; Cursor's project file is `.cursor/hooks.json` with `"version": 1`). **Limitation:** that reference documents no response fields for `afterFileEdit` that reach the agent — unlike Claude Code, Codex, and Gemini CLI, Cursor cannot feed findings back into the chat from this hook. Evergreen therefore:
+
+1. Writes an always-applied instruction in `.cursor/rules/evergreen.mdc` only through `init` (never at hook time), so the agent still knows to check lifecycle status before adding a dependency.
+2. Keeps the hook as an audit log on stderr and exits `0`. No findings, or any hook failure, prints nothing and exits `0`.
+
+```bash
+npx evergreen-deprecation init --hooks-for cursor --dry-run   # show the diff first
+npx evergreen-deprecation init --hooks-for cursor             # merge into .cursor/hooks.json and keep the rule
+```
+
+The command writes only the project-level file Cursor documents, `<repo>/.cursor/hooks.json` — never anything in your home directory — keeps every existing key and hook, appends one `afterFileEdit` entry, and keeps (or creates) `.cursor/rules/evergreen.mdc`. Running it again changes nothing:
+
+```json
+{
+  "version": 1,
+  "hooks": {
+    "afterFileEdit": [
+      {
+        "command": "npx --no-install evergreen-deprecation hook cursor",
+        "timeout": 60
+      }
+    ]
+  }
+}
+```
+
+If the workspace already has a `hooks.json`, the entry is merged into its `hooks.afterFileEdit` list. To turn it off, delete that entry, or remove the whole `.cursor/hooks.json` if Evergreen wrote it. The project rule stays until you delete `.cursor/rules/evergreen.mdc`.
+
+The transcript below is real output from the built CLI on 2026-11-07, against a repository holding the fixture Dockerfile from `tests/fixtures/agent-hooks/cursor/repo` with the `afterFileEdit` payload in `after-edit.json` (its `workspace_roots` pointed at that repository):
+
+```console
+$ cat Dockerfile
+FROM node:16
+WORKDIR /app
+COPY . .
+CMD ["node", "index.js"]
+
+$ node dist/src/cli.js hook cursor < afterfileedit.json
+Evergreen found 1 lifecycle issue in Dockerfile:
+1) [high] Node.js image release lines 21 and older are end-of-life — Dockerfile:1
+   Replacement: A node image on a supported release line, such as node:22
+   Evidence: https://nodejs.org/en/about/eol
+
+Fix this before continuing; nothing was changed automatically.
+$ echo $?
+0
+```
+
+That stderr is an audit log for the developer or CI watcher; Cursor does not inject it into the agent's context. The same payload for a file with no findings then exits `0` with no output:
+
+```console
+$ sed -i 's/node:16/node:22/' Dockerfile
+
+$ node dist/src/cli.js hook cursor < afterfileedit.json
+$ echo $?
+0
+```
+
+### GitHub Copilot
+
+Copilot's `postToolUse` hook runs after a tool succeeds, in both Copilot CLI and Copilot in the cloud. Evergreen registers it for the `create` and `edit` tools, reads the file from `toolArgs.path` (or `tool_input.file_path` in the PascalCase, VS Code compatible payload), takes the repository root from `cwd`, and answers in the JSON documented for Copilot CLI 1.0.107 (current stable, 2026-11-07) at <https://docs.github.com/en/copilot/reference/hooks-reference>: `additionalContext` is appended to the tool result the model sees, so the agent corrects the file in the same turn, and the hook exits `0` — the tool has already run, so this is feedback, never a block. Copilot may send `toolArgs` as a JSON-encoded string; Evergreen parses it before reading the path. No findings, or any hook failure, prints nothing and exits `0`.
+
+```bash
+npx evergreen-deprecation init --hooks-for copilot --dry-run   # show the diff first
+npx evergreen-deprecation init --hooks-for copilot             # merge into .github/hooks/evergreen.json
+```
+
+The command writes the repository-level file both surfaces load, `<repo>/.github/hooks/evergreen.json` — never anything in your home directory — keeps every existing entry in that file, and leaves the `.github/copilot-instructions.md` that `evergreen setup` manages untouched. Running it again changes nothing:
+
+```json
+{
+  "version": 1,
+  "hooks": {
+    "postToolUse": [
+      {
+        "type": "command",
+        "matcher": "create|edit",
+        "command": "npx --no-install evergreen-deprecation hook copilot",
+        "timeoutSec": 60
+      }
+    ]
+  }
+}
+```
+
+`matcher` is a regular expression matched against the runtime tool name, and `timeoutSec` is in seconds; Evergreen's own budget stays ten seconds, so a slow scan fails open instead of holding the turn. To turn it off, delete that `postToolUse` entry, or remove the whole file if Evergreen wrote it.
+
+**Copilot in the cloud.** The coding agent runs hooks in GitHub's ephemeral Linux sandbox and loads only `.github/hooks/*.json` files from the repository's default branch, so commit the file and merge it there. The command uses `npx --no-install`, which never downloads a package: `evergreen-deprecation` must already be installed in the checkout. Add it as a dev dependency and install the project's dependencies in the `copilot-setup-steps` job of `.github/workflows/copilot-setup-steps.yml` (documented at <https://docs.github.com/en/copilot/how-tos/copilot-on-github/customize-copilot/customize-cloud-agent/customize-the-agent-environment>):
+
+```yaml
+jobs:
+  copilot-setup-steps:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/setup-node@v7
+        with:
+          node-version: "22"
+          cache: "npm"
+      - run: npm ci
+```
+
+Copilot CLI reads the same file from the local checkout, where the project's own install or a global `evergreen` bin answers the command.
+
+The transcript below is real output from the built CLI on 2026-11-07, against the fixture repository in `tests/fixtures/agent-hooks/copilot/repo` with the `postToolUse` payload in `post-tool-use.json` (its `cwd` pointed at that repository). The hook prints one JSON object on one line, the form the Copilot documentation recommends for command hooks:
+
+```console
+$ cat Dockerfile
+FROM node:16
+WORKDIR /app
+COPY . .
+CMD ["node", "index.js"]
+
+$ node dist/src/cli.js hook copilot < posttooluse.json
+{"additionalContext":"Evergreen found 1 lifecycle issue in Dockerfile:\n1) [high] Node.js image release lines 21 and older are end-of-life — Dockerfile:1\n   Replacement: A node image on a supported release line, such as node:22\n   Evidence: https://nodejs.org/en/about/eol\n\nFix this before continuing; nothing was changed automatically."}
+$ echo $?
+0
+```
+
+The same payload for a file with no findings then exits `0` with no output:
+
+```console
+$ sed -i 's/node:16/node:22/' Dockerfile
+
+$ node dist/src/cli.js hook copilot < posttooluse.json
+$ echo $?
+0
+```
 
 ## Git pre-push
 
@@ -188,7 +381,7 @@ Teams that use [pre-commit](https://pre-commit.com) add Evergreen with three lin
 # .pre-commit-config.yaml
 repos:
   - repo: https://github.com/arminazimi/evergreen
-    rev: v0.7.2
+    rev: v0.7.3
     hooks:
       - id: evergreen
 ```

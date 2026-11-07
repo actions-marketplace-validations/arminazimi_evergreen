@@ -12,6 +12,7 @@ Three commands cover most agent use: `npx evergreen-deprecation check pkg:npm/le
 - [90-second demo](https://arminazimi.github.io/evergreen/DEMO.html): scan, explain, build migration context, and verify on a small repository.
 - [Local MCP server](https://arminazimi.github.io/evergreen/MCP.html): the tools, resources, prompt, and output schemas an agent can use, including `check_dependency`.
 - [Runtime drift](https://arminazimi.github.io/evergreen/DRIFT.html): `evergreen drift` reports every runtime version a repository states, whether those versions agree, and the patch that aligns them.
+- [Inventory](https://arminazimi.github.io/evergreen/INVENTORY.html): `evergreen inventory` reads the JSON or text exports that cloud and cluster tools already produce and reports end-of-life runtimes, engines, cluster versions, images, and operating systems, each with the exact pointer the claim rests on; it never calls a cloud API.
 - [MCP discovery](https://arminazimi.github.io/evergreen/.well-known/mcp.json): stdio server metadata, npm package, and tool list for agents that probe `/.well-known/mcp.json`.
 - [Agent card](https://arminazimi.github.io/evergreen/.well-known/agent.json): A2A agent card describing Evergreen's local MCP skills for agents that probe `/.well-known/agent.json`.
 - [Playbook: agent-driven migrations](https://arminazimi.github.io/evergreen/playbooks/agent.html): let a coding agent migrate one finding while Evergreen supplies the facts and the proof.
@@ -33,7 +34,7 @@ Three commands cover most agent use: `npx evergreen-deprecation check pkg:npm/le
 - [PHP detector](https://arminazimi.github.io/evergreen/compatibility/php.html): the PHP declarations Evergreen reads, what it reports, and its false-positive boundaries.
 - [Ruby detector](https://arminazimi.github.io/evergreen/compatibility/ruby.html): the Ruby declarations Evergreen reads, what it reports, and its false-positive boundaries.
 - [Android detector](https://arminazimi.github.io/evergreen/compatibility/android.html): the Android Gradle declarations Evergreen reads, what it reports, and its false-positive boundaries.
-- [C and C++ detector](https://arminazimi.github.io/evergreen/compatibility/cpp.html): the CMake, Conan, and vcpkg declarations Evergreen reads, what it reports, and its limits.
+- [C and C++](https://arminazimi.github.io/evergreen/detectors/cpp.html): the CMake, Conan, and vcpkg declarations Evergreen reads, what it reports, and its limits.
 - [CI runner images detector](https://arminazimi.github.io/evergreen/compatibility/ci-runner-images.html): the hosted Azure, GitLab, and CircleCI image declarations Evergreen reads and its limits.
 - [Evergreen compared with other tools](https://arminazimi.github.io/evergreen/compare/index.html): what Evergreen answers versus Renovate, Dependabot, and endoflife.date, and where each is stronger.
 - [Agent Skill](https://arminazimi.github.io/evergreen/AGENT_SKILLS.html): the portable skill for coding agents and how its triggering is evaluated.
@@ -51,6 +52,7 @@ Three commands cover most agent use: `npx evergreen-deprecation check pkg:npm/le
 - [State of EOL](https://arminazimi.github.io/evergreen/state-of-eol.html): corpus findings aggregated by product and release line.
 - [Privacy](https://arminazimi.github.io/evergreen/PRIVACY.html): what stays on your machine and the one command that uses the network.
 - [Threat model](https://arminazimi.github.io/evergreen/THREAT_MODEL.html): trust boundaries, STRIDE threats, mitigations, and residual risks for untrusted repositories, data bundles, the MCP server, and hooks.
+- [Runtime dependencies](https://arminazimi.github.io/evergreen/DEPENDENCIES.html): the eight packages Evergreen installs, the reason each one stays, and the checks a new runtime dependency must pass.
 
 ## Extend Evergreen
 

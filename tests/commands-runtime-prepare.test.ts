@@ -7,6 +7,7 @@ import { after, test } from "node:test";
 import type { CommandContext, FailureClass } from "../src/commands/types.js";
 import { EXIT_CODES } from "../src/commands/types.js";
 import { prepare, repositoryPhase, sharedGates } from "../src/commands/runtime.js";
+import { classifyError } from "../src/evergreen-error.js";
 import type { Gated, Prepared } from "../src/commands/runtime.js";
 
 const roots: string[] = [];
@@ -36,6 +37,7 @@ function context(): CapturedContext {
     debug: false,
     help: "help text",
     exitCodes: EXIT_CODES,
+    completionScript: () => undefined,
     failures,
     fail(kind: FailureClass, message: string, appendix = "") {
       failures.push(`${kind}: ${message}${appendix}`);
@@ -43,6 +45,11 @@ function context(): CapturedContext {
     },
     failActionable(kind: FailureClass, actionable) {
       failures.push(`${kind}: ${actionable.cause}`);
+      return EXIT_CODES[kind];
+    },
+    failError(error: unknown) {
+      const kind = classifyError(error).kind;
+      failures.push(`${kind}: ${error instanceof Error ? error.message : String(error)}`);
       return EXIT_CODES[kind];
     },
   };

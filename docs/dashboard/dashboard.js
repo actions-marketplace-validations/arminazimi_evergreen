@@ -116,6 +116,9 @@
     if (!Array.isArray(data.detectors)) return "data.json has no detectors list.";
     if (data.definitions === null || typeof data.definitions !== "object") return "data.json has no definitions.";
     if (!Array.isArray(data.limitations)) return "data.json has no limitations list.";
+    if (data.corpus === null || typeof data.corpus !== "object" || !Array.isArray(data.corpus.ecosystems)) {
+      return "data.json has no corpus ecosystems list.";
+    }
     return null;
   }
 
@@ -233,6 +236,61 @@
         "Results of the last full corpus run, per detector. Level is the configured promise; earned level is what the counted corpus evidence supports.",
       ]),
       element(doc, "thead", {}, [head]),
+      element(doc, "tbody", {}, body),
+    ]);
+  }
+
+  /** The corpus table: every bucket's pinned repositories, its committed minimum, and the growth target. */
+  function buildEcosystems(doc, data) {
+    const ecosystems = data.corpus.ecosystems;
+    const body = ecosystems.map((ecosystem) =>
+      element(doc, "tr", {}, [
+        element(doc, "th", { scope: "row" }, [textOf(ecosystem.id)]),
+        element(doc, "td", {}, [formatCount(ecosystem.repositories)]),
+        element(doc, "td", {}, [formatCount(ecosystem.minimum)]),
+        element(doc, "td", {}, [formatCount(ecosystem.target)]),
+      ]),
+    );
+    return element(doc, "table", {}, [
+      element(doc, "caption", {}, [
+        "Pinned public repositories per ecosystem bucket, against the committed minimum CI enforces and the 200-repository goal in decision 0030.",
+      ]),
+      element(doc, "thead", {}, [
+        element(doc, "tr", {}, [
+          element(doc, "th", { scope: "col" }, ["Ecosystem"]),
+          headerCell(doc, data, "corpusRepositories"),
+          headerCell(doc, data, "corpusMinimum"),
+          headerCell(doc, data, "corpusTarget"),
+        ]),
+      ]),
+      element(doc, "tbody", {}, body),
+    ]);
+  }
+
+  /** One row per importer source: its target, the age of its newest review, and whether the target is met. */
+  function buildFreshness(doc, data) {
+    const sources = data.sourceFreshness && Array.isArray(data.sourceFreshness.sources) ? data.sourceFreshness.sources : [];
+    if (sources.length === 0) return element(doc, "p", {}, ["No freshness targets are recorded."]);
+    const body = sources.map((source) =>
+      element(doc, "tr", {}, [
+        element(doc, "th", { scope: "row" }, [textOf(source.importer)]),
+        element(doc, "td", {}, [formatCount(source.targetDays) + " days"]),
+        element(doc, "td", {}, [typeof source.ageDays === "number" ? daysText(source.ageDays) : NOT_MEASURED]),
+        element(doc, "td", {}, [typeof source.lastReviewedAt === "string" ? source.lastReviewedAt : NOT_MEASURED]),
+        element(doc, "td", {}, [source.status === "missed" ? element(doc, "strong", { class: "badge" }, ["missed"]) : source.status === "met" ? "met" : "no reviewed rules"]),
+      ]),
+    );
+    return element(doc, "table", {}, [
+      element(doc, "caption", {}, ["Freshness target per importer source, against the newest review of a rule drafted from it."]),
+      element(doc, "thead", {}, [
+        element(doc, "tr", {}, [
+          element(doc, "th", { scope: "col" }, ["Source"]),
+          headerCell(doc, data, "freshnessTarget"),
+          headerCell(doc, data, "freshnessAge"),
+          element(doc, "th", { scope: "col" }, ["Last review"]),
+          element(doc, "th", { scope: "col" }, ["Status"]),
+        ]),
+      ]),
       element(doc, "tbody", {}, body),
     ]);
   }
@@ -365,7 +423,9 @@
         const problem = validateData(data);
         if (problem) throw new Error(problem);
         replaceContents(doc.getElementById("run"), [buildRun(doc, data)]);
+        replaceContents(doc.getElementById("ecosystems-table"), [buildEcosystems(doc, data)]);
         replaceContents(doc.getElementById("detectors-table"), [buildTable(doc, data)]);
+        replaceContents(doc.getElementById("freshness-table"), [buildFreshness(doc, data)]);
         replaceContents(doc.getElementById("minimums-table"), [buildMinimums(doc, data)]);
         replaceContents(doc.getElementById("definitions-list"), [buildDefinitions(doc, data)]);
         replaceContents(doc.getElementById("limitations-list"), buildLimitations(doc, data));
@@ -395,7 +455,9 @@
     runFacts,
     rowModel,
     buildTable,
+    buildEcosystems,
     buildMinimums,
+    buildFreshness,
     buildRun,
     buildDefinitions,
     buildLimitations,

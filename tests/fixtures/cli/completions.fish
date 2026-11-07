@@ -39,6 +39,9 @@ complete -c evergreen -n __fish_use_subcommand -a report-issue
 complete -c evergreen -n __fish_use_subcommand -a capabilities
 complete -c evergreen -n __fish_use_subcommand -a completions
 complete -c evergreen -n __fish_use_subcommand -a hook
+complete -c evergreen -n __fish_use_subcommand -a timelapse
+complete -c evergreen -n __fish_use_subcommand -a verify
+complete -c evergreen -n __fish_use_subcommand -a wrapped
 complete -c evergreen -n __fish_use_subcommand -l help
 complete -c evergreen -n __fish_use_subcommand -l version
 complete -c evergreen -n '__fish_seen_subcommand_from completions' -a 'bash zsh fish'
@@ -123,6 +126,8 @@ complete -c evergreen -n '__fish_seen_subcommand_from rollup' -l format
 complete -c evergreen -n '__fish_seen_subcommand_from renovate-preset' -l data-version
 complete -c evergreen -n '__fish_seen_subcommand_from dependabot-config' -l data-version
 complete -c evergreen -n '__fish_seen_subcommand_from fix' -l dry-run
+complete -c evergreen -n '__fish_seen_subcommand_from fix' -l show
+complete -c evergreen -n '__fish_seen_subcommand_from fix' -l no-animation
 complete -c evergreen -n '__fish_seen_subcommand_from fix' -l data-version
 complete -c evergreen -n '__fish_seen_subcommand_from check' -l json
 complete -c evergreen -n '__fish_seen_subcommand_from check' -l format
@@ -137,6 +142,7 @@ complete -c evergreen -n '__fish_seen_subcommand_from usage' -l json
 complete -c evergreen -n '__fish_seen_subcommand_from data' -l json
 complete -c evergreen -n '__fish_seen_subcommand_from data' -l data-version
 complete -c evergreen -n '__fish_seen_subcommand_from watch' -l weekly
+complete -c evergreen -n '__fish_seen_subcommand_from watch' -l board
 complete -c evergreen -n '__fish_seen_subcommand_from watch' -l json
 complete -c evergreen -n '__fish_seen_subcommand_from init' -l agents
 complete -c evergreen -n '__fish_seen_subcommand_from init' -l hooks
@@ -161,3 +167,13 @@ complete -c evergreen -n '__fish_seen_subcommand_from report-issue' -l output
 complete -c evergreen -n '__fish_seen_subcommand_from report-issue' -l data-version
 complete -c evergreen -n '__fish_seen_subcommand_from capabilities' -l json
 complete -c evergreen -n '__fish_seen_subcommand_from hook' -l fail-on
+complete -c evergreen -n '__fish_seen_subcommand_from timelapse' -l from
+complete -c evergreen -n '__fish_seen_subcommand_from timelapse' -l to
+complete -c evergreen -n '__fish_seen_subcommand_from timelapse' -l svg
+complete -c evergreen -n '__fish_seen_subcommand_from timelapse' -l json
+complete -c evergreen -n '__fish_seen_subcommand_from timelapse' -l no-animation
+complete -c evergreen -n '__fish_seen_subcommand_from verify' -l data-version
+complete -c evergreen -n '__fish_seen_subcommand_from wrapped' -l year
+complete -c evergreen -n '__fish_seen_subcommand_from wrapped' -l svg
+complete -c evergreen -n '__fish_seen_subcommand_from wrapped' -l json
+complete -c evergreen -n '__fish_seen_subcommand_from wrapped' -l no-animation

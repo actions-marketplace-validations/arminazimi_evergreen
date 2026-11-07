@@ -6,8 +6,8 @@ import { dirname, join } from "node:path";
 import { test, type TestContext } from "node:test";
 import { promisify } from "node:util";
 
-import { PythonDetector } from "../src/detectors/python.js";
-import { scanRepository } from "../src/engine.js";
+import { PythonDetector } from "../src/detectors/python/index.js";
+import { scanRepository } from "../src/engine/index.js";
 import { planFixes, pythonFixer, renderPatches } from "../src/fix/index.js";
 
 const execute = promisify(execFile);

@@ -75,7 +75,9 @@ interface DashboardApi {
   runFacts(run: unknown): Array<{ label: string; value: string }>;
   rowModel(detector: unknown, sources: unknown): { id: string; cells: Cell[] };
   buildTable(doc: unknown, data: unknown): ElementNode;
+  buildEcosystems(doc: unknown, data: unknown): ElementNode;
   buildMinimums(doc: unknown, data: unknown): ElementNode;
+  buildFreshness(doc: unknown, data: unknown): ElementNode;
   buildRun(doc: unknown, data: unknown, now?: Date): ElementNode;
   buildDefinitions(doc: unknown, data: unknown): ElementNode;
   buildLimitations(doc: unknown, data: unknown): ElementNode[];
@@ -87,6 +89,11 @@ interface Data {
   referenceDay: string;
   run: Record<string, unknown> | null;
   detectors: Detector[];
+  corpus: {
+    file: string;
+    repositories: number;
+    ecosystems: Array<{ id: string; repositories: number; minimum: number; target: number }>;
+  };
   definitions: Record<string, { label: string; meaning: string; computation: string; source: string }>;
   limitations: string[];
   sources: Record<string, string>;
@@ -369,6 +376,30 @@ test("the page renders a semantic table with a caption and scope attributes", ()
   assert.equal(walk(minimums).filter((node) => node.tag === "tr").length, 3);
 });
 
+test("the corpus table lists every ecosystem with its count, minimum, and target", () => {
+  const doc = fakeDocument();
+  const table = api.buildEcosystems(doc, data);
+  assert.equal(table.tag, "table");
+  assert.ok(find(table, (node) => node.tag === "caption")!.children.length > 0);
+  const rows = walk(find(table, (node) => node.tag === "tbody")!).filter((node) => node.tag === "tr");
+  assert.equal(rows.length, data.corpus.ecosystems.length);
+  for (const [index, row] of rows.entries()) {
+    const ecosystem = data.corpus.ecosystems[index]!;
+    assert.equal(
+      find(row, (node) => node.tag === "th")!
+        .children.map(text)
+        .join(""),
+      ecosystem.id,
+    );
+    const cells = row.children.filter((node): node is ElementNode => node.kind === "element" && node.tag === "td");
+    assert.deepEqual(cells.map(text), [
+      api.formatCount(ecosystem.repositories),
+      api.formatCount(ecosystem.minimum),
+      api.formatCount(ecosystem.target),
+    ]);
+  }
+});
+
 test("the real data renders every detector with its counts", () => {
   const doc = fakeDocument();
   const table = api.buildTable(doc, data);
@@ -411,7 +442,9 @@ test("a page served over HTTP fills every section and hides the status", async (
     "status",
     "data-sections",
     "run",
+    "ecosystems-table",
     "detectors-table",
+    "freshness-table",
     "minimums-table",
     "definitions-list",
     "limitations-list",
@@ -424,6 +457,7 @@ test("a page served over HTTP fills every section and hides the status", async (
   assert.equal(requested, "data.json");
   assert.match(text(byId.get("run")!), new RegExp(recorded.commit));
   assert.match(text(byId.get("run")!), /not measured/);
+  assert.ok(find(byId.get("ecosystems-table")!, (node) => node.tag === "table"));
   assert.ok(find(byId.get("detectors-table")!, (node) => node.tag === "table"));
   assert.ok(find(byId.get("minimums-table")!, (node) => node.tag === "table"));
   assert.match(text(byId.get("definitions-list")!), /truePositives|True positives/);
@@ -439,6 +473,7 @@ test("a page opened from disk says how to serve it, instead of failing silently"
     "data-sections",
     "run",
     "detectors-table",
+    "freshness-table",
     "minimums-table",
     "definitions-list",
     "limitations-list",
@@ -463,6 +498,7 @@ test("a failed request, or data in another schema, is reported with the reason",
     "data-sections",
     "run",
     "detectors-table",
+    "freshness-table",
     "minimums-table",
     "definitions-list",
     "limitations-list",
@@ -557,19 +593,18 @@ test("a visitor-clock age is extra text and never decides the badge", () => {
 });
 
 test("run status reads the recorded age and the reference day", () => {
+  const [runYear, runMonth, runDay] = String(data.run!.date).split("-").map(Number);
+  const visitor = new Date(runYear!, runMonth! - 1, runDay! + 2);
   assert.deepEqual(
     {
-      ...api.runStatus(
-        { ...data, referenceDay: "2026-11-02", run: { ...data.run, runAgeDays: 15 } },
-        new Date(2026, 10, 3),
-      ),
+      ...api.runStatus({ ...data, referenceDay: "2026-11-02", run: { ...data.run, runAgeDays: 15 } }, visitor),
     },
     {
       stale: true,
       ageDays: 15,
       runDate: data.run!.date,
       referenceDay: "2026-11-02",
-      visitorAgeDays: Math.round((Date.UTC(2026, 10, 3) - Date.parse(`${data.run!.date}T00:00:00Z`)) / 86_400_000),
+      visitorAgeDays: 2,
       staleAfterDays: 14,
     },
   );
@@ -600,11 +635,30 @@ test("the page loads nothing from elsewhere and is not in the sitemap", async ()
     "status",
     "data-sections",
     "run",
+    "ecosystems-table",
     "detectors-table",
+    "freshness-table",
     "minimums-table",
     "definitions-list",
     "limitations-list",
   ]) {
     assert.ok(html.includes(`id="${id}"`), id);
   }
+});
+
+test("the freshness table marks a missed source and says so for a source with no reviewed rules", () => {
+  const doc = fakeDocument();
+  const sourceFreshness = {
+    file: "tools/importers/freshness.json",
+    sources: [
+      { importer: "go-1", targetDays: 60, rules: 1, lastReviewedAt: "2026-01-01", ageDays: 200, status: "missed" },
+      { importer: "go-2", targetDays: 90, rules: 0, lastReviewedAt: null, ageDays: null, status: "no-rules" },
+    ],
+  };
+  const table = api.buildFreshness(doc, { ...data, sourceFreshness });
+  const rows = walk(find(table, (node) => node.tag === "tbody")!).filter((node) => node.tag === "tr");
+  assert.equal(rows.length, 2);
+  assert.match(text(rows[0]!), /go-1.*60 days.*200 days.*2026-01-01.*missed/);
+  assert.match(text(rows[1]!), /go-2.*90 days.*no reviewed rules/);
+  assert.equal(api.buildFreshness(doc, { ...data, sourceFreshness: undefined }).tag, "p");
 });

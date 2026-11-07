@@ -19,7 +19,7 @@ Every gate must pass on the commit you will tag. None of them is optional.
 | Public corpus | `npm run validate:public-repos` | Exact findings on every pinned public repository, and each detector's precision above its floor in `benchmarks/thresholds.json`. Needs network. |
 | Source freshness | `npm run check:sources` | No rule is stale and no source has moved or disappeared. Needs network. Review anything it reports before releasing. |
 | Package contents | `npm pack --dry-run` | Only `dist/src`, `examples`, `registry`, `schemas`, and `skills` ship; `registry/sources.lock.json` does not. |
-| Reproducible package | `npm run check:reproducible` | Two clean builds of the same commit pack to byte-identical npm tarballs. The release workflow runs the same check and fails on a mismatch. |
+| Reproducible package | `npm run check:reproducible` | Two clean builds of the same commit pack to byte-identical npm tarballs. CI records the tarball hash on Linux, Windows, and macOS and fails `ci-ok` when the runners disagree; the release workflow runs the local check and fails on a mismatch. |
 
 The last weekly runs of the corpus and source-freshness workflows should also be green. If either is red, fix or explain it before tagging.
 
@@ -29,7 +29,7 @@ The GitHub Action runs `dist/action/index.js`, one compiled bundle. `main` does 
 
 - A push to `main` that changes the version in `package.json` runs the *Release* workflow's `action-bundle` job. It builds `dist/action`, commits it on the branch `release/vX.Y.Z` (one commit on top of the release commit), and prints the tagging commands below.
 - The release tag points at that branch tip, not at a commit on `main`. The tag is created once and never moves, so `uses: arminazimi/evergreen@vX.Y.Z` keeps working for everyone who pinned it.
-- The Release chain's npm stage ([`publish.yml`](../.github/workflows/publish.yml)) refuses a tag that is not exactly that branch tip, or whose parent is not on `main`, or that changes anything besides `dist/action/`. `prepack` then rebuilds the bundle on the tagged commit and fails when the committed copy differs, so a stale or hand-edited bundle cannot be published.
+- The Release chain's `npm-publish` job ([`release.yml`](../.github/workflows/release.yml), guard in [`check-release-tip.sh`](../.github/scripts/check-release-tip.sh)) refuses a tag that is not exactly that branch tip, or whose parent is not on `main`, or that changes anything besides `dist/action/`. `prepack` then rebuilds the bundle on the tagged commit and fails when the committed copy differs, so a stale or hand-edited bundle cannot be published.
 - The npm tarball is unaffected: `package.json`'s `files` list does not include `dist/action`, so the tarball is byte-identical to one packed from the release commit on `main`.
 
 The tradeoff is that a release tag no longer points into `main` history, and its commit is not on `main`. The alternative, moving the tag onto a rebuilt commit after publishing, was rejected: the tag would move under users who already pinned it, the publish workflow would re-trigger, and every other release job (binaries, container, quickstart, major tag) selects the release by `git tag --points-at` on the commit it checked out.
@@ -46,9 +46,13 @@ npm ci && npm run check:reproducible
 
 The clone is the release branch tip: `git log -1` shows the commit that adds `dist/action/`, whose parent is the release commit on `main`. The printed SHA-256 must match the tarball npm serves for the version, which you can download and hash separately with `npm pack evergreen-deprecation@X.Y.Z` in an empty directory and `shasum -a 256 evergreen-deprecation-X.Y.Z.tgz`. npm normalizes the tar metadata (uid, gid, and mtimes) when packing, so the bytes depend on the shipped file contents only; a mismatch means the build is nondeterministic, and the check keeps both tarballs for diffing.
 
+Two builds on one machine share every host-dependent step, so CI also compares builds made elsewhere: the Linux, Windows, and macOS jobs pack the same commit with `npm run record:reproducible -- <file>` and `ci-ok` runs [`compare-build-hashes.mjs`](../tools/compare-build-hashes.mjs) on the records. A path, line ending, or file-ordering difference that only one host has fails the pull request or merge-queue run.
+
+An installed package carries `dist/src/release-manifest.json`, generated from the packed file list at publish time. `evergreen verify` checks every listed file offline and fails on a changed one; see [CLI](CLI.md#verify). It reports the npm registry signature and provenance attestation as unchecked because those live on the registry: `npm audit signatures` verifies them when the network is available.
+
 ## One-time npm setup
 
-Trusted publishing needs the package to name its publisher. On npmjs.com, open the `evergreen-deprecation` package, then Settings, then Trusted Publisher, choose GitHub Actions, and enter organization or user `arminazimi`, repository `evergreen`, and workflow filename `release.yml` (leave the environment empty). npm matches the calling workflow that starts the release chain, not the reusable `publish.yml` stage that runs `npm publish`. If an older trusted-publisher entry still names `publish.yml`, add `release.yml` as a second entry (a package may have more than one), publish once successfully, then delete the `publish.yml` entry. Once a release has published this way, set the package's publishing access to "Require two-factor authentication and disallow tokens" so that only this workflow can publish. To rehearse the path before a real release, set `package.json` to a pre-release version such as `X.Y.Z-rc.1` through a pull request and tag its release branch.
+Trusted publishing needs the package to name its publisher. On npmjs.com, open the `evergreen-deprecation` package, then Settings, then Trusted Publisher, choose GitHub Actions, and enter organization or user `arminazimi`, repository `evergreen`, and workflow filename `release.yml` (leave the environment empty). npm matches the workflow that runs `npm publish`, which is `release.yml` itself. If an older trusted-publisher entry still names `publish.yml`, add `release.yml` as a second entry (a package may have more than one), publish once successfully, then delete the `publish.yml` entry. Once a release has published this way, set the package's publishing access to "Require two-factor authentication and disallow tokens" so that only this workflow can publish. To rehearse the path before a real release, set `package.json` to a pre-release version such as `X.Y.Z-rc.1` through a pull request and tag its release branch.
 
 ## Steps
 
@@ -78,8 +82,8 @@ Trusted publishing needs the package to name its publisher. On npmjs.com, open t
 
    Tagging the merge commit on `main` does not work any more: that tree has no bundle, and the Release chain's npm stage refuses the tag with a message that says so. If the job failed, re-run it from the Actions tab; it does nothing when the branch already exists.
 
-6. **Publish to npm.** Pushing the tag in step 5 starts the *Release* workflow's one chain: the `publish-npm` stage ([`publish.yml`](../.github/workflows/publish.yml)) publishes with npm trusted publishing (no stored token, provenance attestation), then the same run continues through binaries, container, Homebrew, major tag, and smoke. It refuses a tag that does not match the version in `package.json`, a tag that is not the `release/vX.Y.Z` branch tip, or a release branch commit that changes anything besides `dist/action/`, and `prepack` runs `npm run check` again, so a broken tree or a stale bundle cannot be published. A pre-release tag such as `vX.Y.Z-rc.1` is published under the `next` tag, so `latest` does not move. After publishing, a job installs the published version on a fresh machine and runs `--help`, `capabilities`, and a scan of `tests/fixtures/smoke` (`.github/scripts/smoke.mjs`); a package that installs but does not work fails the run. If a later stage fails, re-run only the failed jobs of that Release run — successful stages (including npm publish) are left alone. Watch the run in the Actions tab, then confirm with `npm view evergreen-deprecation version` and run `npx evergreen-deprecation@X.Y.Z --help` in an empty directory. To publish by hand instead (for example if the workflow is unavailable), run `npm publish` from the tagged commit; it will have no provenance.
-7. **Publish to the MCP Registry.** The registry lists the server for MCP clients and tools that look for one. It holds only the metadata in `server.json`, which points at the npm package, so publish it **after** step 6, when `npm view evergreen-deprecation version` shows the new version (the registry checks the package on npm, so it must exist there first). This is automated: the same Release run's `publish-npm` stage runs the `registry` job of [`publish.yml`](../.github/workflows/publish.yml) after its npm smoke job. It refuses a tag that does not match `server.json`, skips pre-release tags, then publishes `server.json` through the `mcp-publisher` tool with a GitHub OIDC login — no stored secret, since the job's OIDC identity names this repository. The binary it downloads is pinned to release 1.8.6 and checked against the release's SHA-256; the pin is only moved after a maintainer reviews the new release first.
+6. **Publish to npm.** Pushing the tag in step 5 starts the *Release* workflow's one chain: the `npm-publish` job (in `release.yml` itself, so OpenSSF Scorecard sees the publish step) publishes with npm trusted publishing (no stored token, provenance attestation), then the same run continues through binaries and the signed SBOM, container, Homebrew, major tag, and smoke. It refuses a tag that does not match the version in `package.json`, a tag that is not the `release/vX.Y.Z` branch tip, or a release branch commit that changes anything besides `dist/action/`, and `prepack` runs `npm run check` again, so a broken tree or a stale bundle cannot be published. A pre-release tag such as `vX.Y.Z-rc.1` is published under the `next` tag, so `latest` does not move. After publishing, a job installs the published version on a fresh machine and runs `--help`, `capabilities`, and a scan of `tests/fixtures/smoke` (`.github/scripts/smoke.mjs`); a package that installs but does not work fails the run. If a later stage fails, re-run only the failed jobs of that Release run — successful stages (including npm publish) are left alone. Watch the run in the Actions tab, then confirm with `npm view evergreen-deprecation version` and run `npx evergreen-deprecation@X.Y.Z --help` in an empty directory. To publish by hand instead (for example if the workflow is unavailable), run `npm publish` from the tagged commit; it will have no provenance.
+7. **Publish to the MCP Registry.** The registry lists the server for MCP clients and tools that look for one. It holds only the metadata in `server.json`, which points at the npm package, so publish it **after** step 6, when `npm view evergreen-deprecation version` shows the new version (the registry checks the package on npm, so it must exist there first). This is automated: the same Release run's `publish-npm` stage runs, after `npm-publish`, the `registry` job of [`publish.yml`](../.github/workflows/publish.yml) after its npm smoke job. It refuses a tag that does not match `server.json`, skips pre-release tags, then publishes `server.json` through the `mcp-publisher` tool with a GitHub OIDC login — no stored secret, since the job's OIDC identity names this repository. The binary it downloads is pinned to release 1.8.6 and checked against the release's SHA-256; the pin is only moved after a maintainer reviews the new release first.
 
    A published registry version cannot be changed, so check that `server.json` carries the version you just released first — the workflow refuses otherwise. Then confirm it is the latest:
 
@@ -119,12 +123,48 @@ Each stable or pre-release tag also produces binaries that need no Node.js, for 
     evergreen-<version>-<os>-<arch>
   ```
 
-  Binaries from releases up to and including v0.7.2 were signed with older identities: the monolithic `https://github.com/arminazimi/evergreen/.github/workflows/release.yml@refs/heads/main`, and (after the stage split, while post-publish still ran via `workflow_run` on the default branch) `https://github.com/arminazimi/evergreen/.github/workflows/release-publish-binaries.yml@refs/heads/main`. Verify those with `--certificate-identity-regexp '^https://github\.com/arminazimi/evergreen/\.github/workflows/release\.yml@refs/heads/main$'` or `'^https://github\.com/arminazimi/evergreen/\.github/workflows/release-publish-binaries\.yml@refs/heads/main$'` respectively.
+  Binaries from releases up to and including v0.7.2 were signed with older identities: the monolithic `https://github.com/arminazimi/evergreen/.github/workflows/release.yml@refs/heads/main`, and (after the stage split, while post-publish still ran via `workflow_run` on the default branch) `https://github.com/arminazimi/evergreen/.github/workflows/release-publish-binaries.yml@refs/heads/main`. Verify those with `--certificate-identity-regexp '^https://github\.com/arminazimi/evergreen/\.github/workflows/release\.yml@refs/heads/main$'` or `'^https://github\.com/arminazimi/evergreen/\.github/workflows/release-publish-binaries\.yml@refs/heads/main$'` respectively. v0.7.0, v0.6.1, and v0.6.0 were cut before signing existed and carry signatures added later by the backfill described below.
 
   If no release exists for the tag yet, the job creates one; the following notes stage replaces its placeholder automatically as described in step 8.
 - **macOS.** The binaries are signed ad hoc, not notarized. Downloaded with `curl` or `gh release download` they run as they are; a browser download is quarantined, and `xattr -d com.apple.quarantine <file>` clears it.
 - **If a binary job fails.** The npm package is already published and is not affected. Fix the cause, then re-run the failed jobs of that same `Release` workflow run; `gh release upload --clobber` replaces files that were already attached.
 - **Trying it before a release.** From a built checkout with Node.js 25.5 or newer, `node .github/scripts/build-sea.mjs evergreen-test`, then `node .github/scripts/smoke.mjs tests/fixtures/smoke -- ./evergreen-test` (on macOS run `codesign --force --sign - evergreen-test` first). Use an official Node.js build; some distributions (Homebrew's, for one) are built without single-executable support.
+
+### SBOM
+
+Every release attaches `sbom.cdx.json`: a CycloneDX 1.5 software bill of materials for the npm package. The `sbom` stage in [`release.yml`](../.github/workflows/release.yml) generates it from the production dependency tree the package installs (`npm ls --omit=dev --all --json`), so development tooling is not listed. Before anything is signed, the same stage validates the document against the bundled CycloneDX 1.5 JSON schema and checks that it names this release, lists every runtime dependency, and matches the installed tree. It then signs the document keylessly with cosign and attaches it with its `.sigstore.json` bundle. Verify it with:
+
+```bash
+cosign verify-blob \
+  --bundle sbom.cdx.json.sigstore.json \
+  --certificate-oidc-issuer https://token.actions.githubusercontent.com \
+  --certificate-identity-regexp '^https://github\.com/arminazimi/evergreen/\.github/workflows/release-sbom\.yml@refs/tags/v[0-9]+\.[0-9]+\.[0-9]+(-.+)?$' \
+  sbom.cdx.json
+```
+
+A manual run with `dry_run` on generates and validates the SBOM and attaches nothing.
+
+### VEX statements
+
+Every release also attaches `vex.cdx.json`: a CycloneDX 1.5 VEX file that says which known dependency vulnerabilities do not affect Evergreen, with a reason for each. The statements are reviewed files in [`security/vex/`](../security/vex/README.md), one per advisory and package, each with a CycloneDX justification and a plain-words reason. The same stage that builds the SBOM turns them into the VEX file (`.github/scripts/release-vex.mjs`), keeps only the statements whose package is a component of that release's SBOM, links each to its component, validates the result against the CycloneDX 1.5 schema, and signs it with the same keyless identity as the SBOM. With no statements the file is valid and lists no vulnerabilities. Verify it like the SBOM, with `vex.cdx.json` and `vex.cdx.json.sigstore.json`. Add a statement when a dependency advisory does not affect Evergreen; fix the dependency when it does.
+
+### Signing a release that predates the signing stage
+
+Use this only for a release cut before the signing stage landed; a normal release signs itself. Run *Release backfill signatures* from Actions, enter the tags (for example `v0.7.0 v0.6.1`), and turn *dry run* off. The workflow downloads the assets already attached to those releases, signs those exact bytes with keyless Sigstore (cosign), verifies every signature, and uploads a `.sigstore.json` bundle next to each asset. It never rebuilds or replaces an asset.
+
+A backfilled signature proves that the release workflow vouched for the published bytes when the repair ran. It is **not** build provenance: there is no SLSA `multiple.intoto.jsonl`, and Scorecard scores that release 8 rather than 10. Say so in the release notes; do not present a backfilled release as built-and-signed. Prefer the next normal release whenever one is due.
+
+Verify a backfilled asset with the identity of the workflow at the ref it ran from. The v0.7.0, v0.6.1, and v0.6.0 backfill on 2026-11-06 ran from the pull-request branch that introduced the workflow:
+
+```bash
+cosign verify-blob \
+  --bundle evergreen-<version>-<os>-<arch>.sigstore.json \
+  --certificate-oidc-issuer https://token.actions.githubusercontent.com \
+  --certificate-identity-regexp '^https://github\.com/arminazimi/evergreen/\.github/workflows/release-backfill-signatures\.yml@refs/heads/ci/2289-signed-releases$' \
+  evergreen-<version>-<os>-<arch>
+```
+
+Later backfills run from `main`; use the same command with `@refs/heads/main`.
 
 ## Rule data
 

@@ -10,7 +10,7 @@ Evergreen reads code it did not write, loads data it did not build at the same t
 
 In scope: the CLI scan path, the GitHub Action and GitLab component, lifecycle data bundles, the local MCP server, and the Git and agent hooks.
 
-Out of scope: compromise of the operating system or the user's account, vulnerabilities in npm packages Evergreen depends on, the correctness of the Sigstore and GitHub infrastructure, and what an AI host does with the answers it receives. Report Evergreen vulnerabilities through [SECURITY.md](../SECURITY.md).
+Out of scope: compromise of the operating system or the user's account, vulnerabilities in npm packages Evergreen depends on (listed with their reasons in [Runtime dependencies](DEPENDENCIES.md)), the correctness of the Sigstore and GitHub infrastructure, and what an AI host does with the answers it receives. Report Evergreen vulnerabilities through [SECURITY.md](../SECURITY.md).
 
 Assumptions:
 
@@ -59,6 +59,12 @@ Lifecycle rules travel as one JSON bundle. The release workflow signs it with Si
 | Elevation of privilege | A bundle carries executable behavior. | Bundles and registries are declarative JSON, validated before use; no rule field is executed. | A correctly signed but wrong rule affects findings until the next data release. Bundles have no revocation list, and a pinned old bundle stays pinned. |
 
 The local calendar tool's `--bundle FILE` option reads a bundle the user names on the command line. It validates the registry schema but does not verify a signature, because the file is the user's own input, like any other path they pass.
+
+## Release verification
+
+`evergreen verify` reads the release manifest shipped in the package and hashes every file the manifest lists; a changed, shortened, or missing file fails. When a Sigstore bundle for the manifest is present, it verifies offline against the trusted root bundled with the package. The command never uses the network, so it does not verify the npm registry signature or the npm provenance attestation: those are served by the registry, not shipped in the tarball. The report names `npm audit signatures` and `gh attestation verify` as the commands that check them.
+
+The residual risk is the unsigned case. A manifest with no signature detects an accidental or partial change, but an attacker who can rewrite every file can also rewrite the manifest and its digests. Authenticity rests on npm's registry signature and provenance attestation, which need the network, or on a future release that ships a signed manifest.
 
 ## MCP server
 

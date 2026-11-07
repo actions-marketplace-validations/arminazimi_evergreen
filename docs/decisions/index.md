@@ -36,6 +36,10 @@ otherwise. Records are numbered in the order they were written; this page groups
 | [0020](0020-data-license.md) | License the lifecycle dataset under CC BY 4.0 | License `registry/` and first-party schemas in the data-only package under CC BY 4.0; keep the rest of the repository Apache-2.0. |
 | [0022](0022-python-method-shape.md) | Match Python `TestCase` method calls with a `method` shape | Add a Python-only `method` symbol shape that matches a call by name on any receiver inside a class that directly subclasses `unittest.TestCase` or an alias of it. |
 | [0028](0028-mcp-schema-inlining-fails-closed.md) | Publish a self-contained MCP output schema | Inline every cross-file `$ref` before the MCP server advertises a tool's schema and throw when one cannot resolve; same-document references stay, and sibling keywords win over the inlined target. |
+| [0032](0032-split-mcp-tools-into-one-file-per-tool.md) | Split the MCP server into one file per tool | Give each MCP tool its own file under `src/mcp/tools/`, list them in a small registry, and prove with a `tools/list` snapshot that no advertised name, description, input schema, output schema, or annotation changed. |
+| [0033](0033-required-source-access-date.md) | Require the retrieval date on every lifecycle source | Make `sources[].accessedAt` required in registry v2, backfill every bundled record, and let the importer runner stamp the run date so every finding shows when its source was read. |
+| [0036](0036-corpus-schema-deno-elixir.md) | Add Deno and Elixir to the public validation schema | Add `deno` and `elixir` to the published corpus ecosystem enum when those detectors gain a public corpus. The change is additive. |
+| [0034](0034-detector-limits-in-the-sdk.md) | Publish the detector limits in the SDK | Export `DETECTOR_LIMITS` and its `DetectorLimits` type so the file-size, depth, and vendored-directory bounds are part of the typed detector contract and conformance reads them from there. |
 
 ## Adoption
 
@@ -68,3 +72,5 @@ otherwise. Records are numbered in the order they were written; this page groups
 | --- | --- | --- |
 | [0001](0001-typescript-first.md) | TypeScript-first, local-first architecture | Build v0.1 in TypeScript on Node.js 22 or newer, sharing one language across CLI, engine, detectors, Action, and MCP, with no hosted backend. |
 | [0003](0003-shared-plugin-packaging.md) | Generate host plugins from shared Evergreen assets | Keep Skill, runtime, rules, and migration behavior as canonical shared sources and generate Codex and Claude plugins from them so CI fails on drift. |
+| [0031](0031-layered-architecture-and-allowed-imports.md) | Layered architecture and the allowed-imports table | **Proposed.** Seven layers (domain, SDK, core, detectors, services, reporters, adapters) with one allowed-imports table and runtime-access rules; each epic #1990 follow-up adds its rule to the checker. |
+| [0035](0035-one-error-model-with-stable-codes.md) | One error model with stable reason codes | Every failure carries one reason code that fixes its class and exit code; the CLI error document gains `error.reason` and MCP failures carry the code in `_meta.evergreen`. |

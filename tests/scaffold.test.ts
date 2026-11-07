@@ -177,6 +177,16 @@ test("the command creates the skeleton from a checkout, and explains itself else
   assert.equal(again.code, 2);
   assert.match(again.stderr, /Nothing was written/);
 
+  const rejected = await run(["new-detector", "Bad_Id", "--json"], checkout);
+  assert.equal(rejected.code, 2);
+  const document = JSON.parse(rejected.stdout) as {
+    schemaVersion: string;
+    error: { code: string; reason: string };
+  };
+  assert.equal(document.schemaVersion, "evergreen.error.v1");
+  assert.equal(document.error.code, "usage");
+  assert.equal(document.error.reason, "scaffold-failed");
+
   const outside = await mkdtemp(join(tmpdir(), "evergreen-outside-"));
   roots.push(outside);
   assert.match((await run(["new-detector", "tiny-lang"], outside)).stderr, /checkout of the Evergreen repository/);
@@ -196,14 +206,18 @@ test("the command creates the skeleton from a checkout, and explains itself else
 
 test("a detector id that is already taken is refused, and nothing is written", async () => {
   const checkout = await scaffoldCheckout(roots);
-  for (const taken of ["npm", "python", "github-actions"]) {
+  for (const [id, detectorFile] of [
+    ["npm", "src/detectors/npm/index.ts"],
+    ["python", "src/detectors/python/index.ts"],
+    ["github-actions", "src/detectors/github-actions.ts"],
+  ] as const) {
     await assert.rejects(
-      scaffoldDetector(taken, { root: checkout }),
+      scaffoldDetector(id, { root: checkout }),
       (error: unknown) =>
         error instanceof ScaffoldError &&
         error.message.startsWith("Nothing was written:") &&
-        error.message.includes(`the detector id "${taken}" is already used by src/detectors/${taken}.ts`),
-      taken,
+        error.message.includes(`the detector id "${id}" is already used by ${detectorFile}`),
+      id,
     );
   }
   assert.equal(await exists(join(checkout, "tests", "fixtures", "npm")), false);
@@ -279,5 +293,5 @@ test("the command reports a collision with a usage-style exit code", async () =>
   const checkout = await scaffoldCheckout(roots);
   const result = await runCli(["new-detector", "python"], { cwd: checkout });
   assert.equal(result.code, 2);
-  assert.match(result.stderr, /the detector id "python" is already used by src\/detectors\/python\.ts/);
+  assert.match(result.stderr, /the detector id "python" is already used by src\/detectors\/python\/index\.ts/);
 });

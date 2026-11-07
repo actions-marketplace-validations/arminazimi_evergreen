@@ -1,13 +1,13 @@
-import { readFile } from "node:fs/promises";
-import { isAbsolute, relative, resolve } from "node:path";
-
-import { renderDiff } from "../../agent-instructions.js";
-import type { Finding, ScanResult, SourceUsage, UsageMatcher } from "../../domain.js";
+import type { ScanResult, UsageMatcher } from "../../domain.js";
 import { required } from "../../required.js";
-import { analyzeSourceUsage } from "../../source-usage.js";
 import { parseSource } from "../../usage/tree-sitter.js";
 import type { Node } from "../../usage/vendor/tree-sitter/tree-sitter.js";
-import type { FilePatch, Fixer, Refuse } from "../index.js";
+import type { FilePatch, Fixer, Refuse } from "../types.js";
+import { callsByCallee } from "./shared/ast.js";
+import { type Edit, patchFor } from "./shared/edits.js";
+import { declineAll, groupByPath, planEachFile, sortTargets } from "./shared/plan.js";
+import { offsetOf, readRepositoryFile } from "./shared/source.js";
+import { analyzeTargets, syntheticFinding, type UsageTarget } from "./shared/targets.js";
 
 interface Rule {
   id: string;
@@ -117,17 +117,7 @@ const rules: readonly Rule[] = [
   },
 ];
 
-interface Target {
-  rule: Rule;
-  usage: SourceUsage;
-  finding: Finding;
-}
-
-interface Edit {
-  start: number;
-  end: number;
-  replacement: string;
-}
+type Target = UsageTarget<Rule>;
 
 /**
  * Rewrites `imp` calls that have an exact `importlib`, `types`, or `sys` equivalent. The replacements are applied only
@@ -138,105 +128,100 @@ interface Edit {
 export const pythonImpFixer: Fixer = {
   id: "python-imp",
   async plan(result, refuse) {
-    const targets = await targetsFor(result);
-    const byPath = new Map<string, Target[]>();
-    for (const target of targets) {
-      const list = byPath.get(target.usage.location.path) ?? [];
-      list.push(target);
-      byPath.set(target.usage.location.path, list);
-    }
-
-    const patches: FilePatch[] = [];
-    for (const [path, fileTargets] of [...byPath].sort(([left], [right]) => left.localeCompare(right))) {
-      const decline = (reason: string): void => {
-        for (const target of fileTargets) refuse?.(target.finding, reason);
-      };
-      const absolute = resolve(result.root, path);
-      const inside = relative(resolve(result.root), absolute);
-      if (inside.startsWith("..") || isAbsolute(inside)) {
-        decline("The path resolves outside the repository.");
-        continue;
-      }
-      const before = await readFile(absolute, "utf8").catch(() => undefined);
-      if (before === undefined) {
-        decline("The source file could not be read.");
-        continue;
-      }
-      if (!before.endsWith("\n")) {
-        decline("The source file does not end with a newline.");
-        continue;
-      }
-      const tree = await parseSource("python", before);
-      if (tree === undefined) {
-        decline("The source file could not be parsed.");
-        continue;
-      }
-      try {
-        if (tree.rootNode.hasError) {
-          decline("The source file has syntax errors.");
-          continue;
-        }
-        const imports = inspectImports(tree.rootNode, before);
-        const calls = callsByCallee(tree.rootNode);
-        const edits: Edit[] = [];
-        const rewritten = new Set<number>();
-        const needed: string[] = [];
-        for (const target of fileTargets.sort(compareTargets)) {
-          if (imports.problem !== undefined) {
-            declineOne(refuse, target, imports.problem);
-            continue;
-          }
-          if (target.rule.refusal !== undefined) {
-            declineOne(refuse, target, target.rule.refusal);
-            continue;
-          }
-          const rewrite = rewriteFor(target, calls, before);
-          if ("reason" in rewrite) {
-            declineOne(refuse, target, rewrite.reason);
-            continue;
-          }
-          edits.push(rewrite.edit);
-          rewritten.add(rewrite.calleeStart);
-          if (target.rule.module !== undefined) needed.push(target.rule.module);
-        }
-        if (rewritten.size === 0) continue;
-
-        const existing = importedModules(tree.rootNode);
-        const additions = [...new Set(needed)].filter((module) => !isImported(module, existing));
-        const importEdit = importEditFor(
-          required(imports.statement, "the `import imp` statement"),
-          additions,
-          hasRemainingImpReference(tree.rootNode, rewritten),
-          before,
-        );
-        if (importEdit !== undefined) edits.push(importEdit);
-
-        const text = applyEdits(before, edits);
-        if (text !== before) patches.push({ path, diff: renderDiff(path, before.slice(0, -1), text.slice(0, -1)) });
-      } finally {
-        tree.delete();
-      }
-    }
-    return patches;
+    return planEachFile(groupByPath(await targetsFor(result)), (path, fileTargets) =>
+      planPath(result.root, path, fileTargets, refuse),
+    );
   },
 };
 
-function matchers(rule: Rule): UsageMatcher[] {
-  return [{ kind: "symbol", language: "python", module: "imp", symbol: rule.symbol, shape: "call" }];
+async function planPath(
+  repositoryRoot: string,
+  path: string,
+  fileTargets: readonly Target[],
+  refuse: Refuse | undefined,
+): Promise<FilePatch | undefined> {
+  const source = await readRepositoryFile(repositoryRoot, path);
+  if ("reason" in source) {
+    declineAll(fileTargets, refuse, source.reason);
+    return undefined;
+  }
+  const tree = await parseSource("python", source.text);
+  if (tree === undefined) {
+    declineAll(fileTargets, refuse, "The source file could not be parsed.");
+    return undefined;
+  }
+  try {
+    if (tree.rootNode.hasError) {
+      declineAll(fileTargets, refuse, "The source file has syntax errors.");
+      return undefined;
+    }
+    return planSource(path, tree.rootNode, source.text, fileTargets, refuse);
+  } finally {
+    tree.delete();
+  }
 }
 
-function syntheticFinding(rule: Rule, usage: SourceUsage): Finding {
-  return {
-    id: `${rule.id}:${usage.location.path}:${usage.location.line ?? 1}`,
-    ruleId: rule.id,
-    detector: "codemod",
-    title: rule.title,
-    summary: "",
-    severity: "high",
-    confidence: "exact",
-    location: usage.location,
-    sources: [],
-  };
+interface Rewrites {
+  edits: Edit[];
+  rewritten: Set<number>;
+  needed: string[];
+}
+
+function planSource(
+  path: string,
+  root: Node,
+  source: string,
+  fileTargets: readonly Target[],
+  refuse: Refuse | undefined,
+): FilePatch | undefined {
+  const imports = inspectImports(root, source);
+  const rewrites = rewritesFor(fileTargets, callsByCallee(root, "call"), source, imports, refuse);
+  if (rewrites.edits.length === 0) return undefined;
+  const existing = importedModules(root);
+  const additions = [...new Set(rewrites.needed)].filter((module) => !isImported(module, existing));
+  const importEdit = importEditFor(
+    required(imports.statement, "the `import imp` statement"),
+    additions,
+    hasRemainingImpReference(root, rewrites.rewritten),
+    source,
+  );
+  const edits = importEdit === undefined ? rewrites.edits : [...rewrites.edits, importEdit];
+  return patchFor(path, source, edits);
+}
+
+function rewritesFor(
+  fileTargets: readonly Target[],
+  calls: Map<number, Node[]>,
+  source: string,
+  imports: Imports,
+  refuse: Refuse | undefined,
+): Rewrites {
+  const edits: Edit[] = [];
+  const rewritten = new Set<number>();
+  const needed: string[] = [];
+  for (const target of sortTargets(fileTargets, (candidate) => candidate.rule.id)) {
+    if (imports.problem !== undefined) {
+      refuse?.(target.finding, imports.problem);
+      continue;
+    }
+    if (target.rule.refusal !== undefined) {
+      refuse?.(target.finding, target.rule.refusal);
+      continue;
+    }
+    const rewrite = rewriteFor(target, calls, source);
+    if ("reason" in rewrite) {
+      refuse?.(target.finding, rewrite.reason);
+      continue;
+    }
+    edits.push(rewrite.edit);
+    rewritten.add(rewrite.calleeStart);
+    if (target.rule.module !== undefined) needed.push(target.rule.module);
+  }
+  return { edits, rewritten, needed };
+}
+
+function matchers(rule: Rule): UsageMatcher[] {
+  return [{ kind: "symbol", language: "python", module: "imp", symbol: rule.symbol, shape: "call" }];
 }
 
 /**
@@ -244,54 +229,11 @@ function syntheticFinding(rule: Rule, usage: SourceUsage): Finding {
  * fixer falls back to the same parser-backed usage analysis the detectors use, over the rules it covers.
  */
 async function targetsFor(result: ScanResult): Promise<Target[]> {
-  const reported = new Map(
-    rules.map((rule) => [rule.id, result.findings.filter((finding) => finding.ruleId === rule.id)]),
-  );
-  const missing = rules.filter((rule) => required(reported.get(rule.id), "reported findings").length === 0);
-  const analyses =
-    missing.length === 0
-      ? []
-      : await analyzeSourceUsage(
-          result.root,
-          missing.map((rule) => ({ id: rule.id, matchers: matchers(rule) })),
-        );
-  const derived = new Map(analyses.map((analysis) => [analysis.contractId, analysis.usages]));
-
-  const targets: Target[] = [];
-  for (const rule of rules) {
-    const findings = required(reported.get(rule.id), "reported findings");
-    if (findings.length > 0) {
-      for (const finding of findings) {
-        for (const usage of finding.usages ?? []) targets.push({ rule, usage, finding });
-      }
-      continue;
-    }
-    for (const usage of derived.get(rule.id) ?? [])
-      targets.push({ rule, usage, finding: syntheticFinding(rule, usage) });
-  }
+  const { targets } = await analyzeTargets(result, rules, {
+    matchers: (rule) => matchers(rule),
+    finding: (rule, usage) => syntheticFinding({ id: rule.id, title: rule.title, severity: "high" }, usage),
+  });
   return targets;
-}
-
-function compareTargets(left: Target, right: Target): number {
-  return (
-    (left.usage.location.line ?? 0) - (right.usage.location.line ?? 0) ||
-    (left.usage.location.column ?? 0) - (right.usage.location.column ?? 0) ||
-    left.rule.id.localeCompare(right.rule.id)
-  );
-}
-
-/** Calls keyed by the offset where their callee starts, which is the location a symbol usage reports. */
-function callsByCallee(root: Node): Map<number, Node[]> {
-  const calls = new Map<number, Node[]>();
-  for (const node of root.descendantsOfType("call")) {
-    if (!node) continue;
-    const callee = node.childForFieldName("function");
-    if (!callee) continue;
-    const list = calls.get(callee.startIndex) ?? [];
-    list.push(node);
-    calls.set(callee.startIndex, list);
-  }
-  return calls;
 }
 
 function rewriteFor(
@@ -482,29 +424,4 @@ function importEditFor(
   }
   const end = newlineIndex === -1 ? source.length : newlineIndex + 1;
   return { start: lineStart, end, replacement: lines.length > 0 ? `${lines.join(newline)}${newline}` : "" };
-}
-
-function declineOne(refuse: Refuse | undefined, target: Target, reason: string): void {
-  refuse?.(target.finding, reason);
-}
-
-/** The character offset of a one-based line and column, or -1 when it is past the end of the source. */
-function offsetOf(source: string, line: number, column: number): number {
-  let start = 0;
-  for (let current = 1; current < line; current += 1) {
-    const next = source.indexOf("\n", start);
-    if (next === -1) return -1;
-    start = next + 1;
-  }
-  const offset = start + column - 1;
-  return offset <= source.length ? offset : -1;
-}
-
-/** Applies edits from the end of the file backwards so earlier offsets stay valid; nested calls never overlap. */
-function applyEdits(source: string, edits: readonly Edit[]): string {
-  let text = source;
-  for (const edit of [...edits].sort((left, right) => right.start - left.start)) {
-    text = `${text.slice(0, edit.start)}${edit.replacement}${text.slice(edit.end)}`;
-  }
-  return text;
 }

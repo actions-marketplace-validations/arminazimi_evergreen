@@ -5,19 +5,19 @@ _evergreen() {
   prev="${COMP_WORDS[COMP_CWORD-1]}"
   command="${COMP_WORDS[1]}"
   if [ "$COMP_CWORD" -eq 1 ]; then
-    COMPREPLY=($(compgen -W "scan baseline forecast forecast countdown plan status-card glance lookup drift upgrade-check inventory badge diff drift receipt rollup renovate-preset dependabot-config fix check check-snippet guard usage mcp data watch init setup new-detector new-rule rules explain context doctor report-issue capabilities completions hook --help --version" -- "$cur"))
+    COMPREPLY=($(compgen -W "scan baseline forecast forecast countdown plan status-card glance lookup drift upgrade-check inventory badge diff drift receipt rollup renovate-preset dependabot-config fix check check-snippet guard usage mcp data watch init setup new-detector new-rule rules explain context doctor report-issue capabilities completions hook timelapse verify wrapped --help --version" -- "$cur"))
     return
   fi
   case "$prev" in
     --format) COMPREPLY=($(compgen -W "text json sarif rdjson compact html mermaid" -- "$cur")); return ;;
     --fail-on) COMPREPLY=($(compgen -W "info low medium high critical none" -- "$cur")); return ;;
     --on-expired) COMPREPLY=($(compgen -W "resurface fail" -- "$cur")); return ;;
-    --file|--output|--baseline|--all|--before) COMPREPLY=($(compgen -f -- "$cur")); return ;;
+    --file|--output|--baseline|--all|--before|--svg) COMPREPLY=($(compgen -f -- "$cur")); return ;;
   esac
   case "$command" in
     completions) opts="bash zsh fish" ;;
     data) opts="status update --json --data-version" ;;
-    watch) opts="add remove run list --weekly --json" ;;
+    watch) opts="add remove run list --weekly --board --json" ;;
     scan) opts="--demo --json --format --baseline --baseline-warn-days --on-expired --today --write-status --interactive --fail-on --all --by-owner --data-version --only --exclude" ;;
     baseline) opts="--output --data-version" ;;
     forecast) opts="--months --as-of --today --svg --animate --timeline --json --format --data-version" ;;
@@ -37,14 +37,14 @@ _evergreen() {
     rollup) opts="--owners --json --html --format" ;;
     renovate-preset) opts="--data-version" ;;
     dependabot-config) opts="--data-version" ;;
-    fix) opts="--dry-run --data-version" ;;
+    fix) opts="--dry-run --show --no-animation --data-version" ;;
     check) opts="--fail-on --json --format --data-version" ;;
     check-snippet) opts="--path --json" ;;
     guard) opts="--fail-on --force --data-version" ;;
     usage) opts="--file --json" ;;
     mcp) opts="" ;;
     data) opts="--json --data-version" ;;
-    watch) opts="--weekly --json" ;;
+    watch) opts="--weekly --board --json" ;;
     init) opts="--agents --hooks --personal --hooks-for --file --fail-on --yes --dry-run" ;;
     setup) opts="--yes --dry-run" ;;
     new-detector) opts="--ecosystem" ;;
@@ -57,6 +57,9 @@ _evergreen() {
     capabilities) opts="--json" ;;
     completions) opts="" ;;
     hook) opts="--fail-on" ;;
+    timelapse) opts="--from --to --svg --json --no-animation" ;;
+    verify) opts="--data-version" ;;
+    wrapped) opts="--year --svg --json --no-animation" ;;
     *) opts="" ;;
   esac
   COMPREPLY=($(compgen -W "$opts" -- "$cur"))

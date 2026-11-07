@@ -39,9 +39,9 @@ pub.dev marks analysis_server_client as discontinued.
 
 ## Sources
 
-- [analysis_server_client on pub.dev](https://pub.dev/packages/analysis_server_client)
-- [analysis_server_client package metadata](https://pub.dev/api/packages/analysis_server_client)
-- [Hosted Pub Repository Specification Version 2](https://github.com/dart-lang/pub/blob/master/doc/repository-spec-v2.md)
+- [analysis_server_client on pub.dev](https://pub.dev/packages/analysis_server_client) (accessed 2026-10-21)
+- [analysis_server_client package metadata](https://pub.dev/api/packages/analysis_server_client) (accessed 2026-10-21)
+- [Hosted Pub Repository Specification Version 2](https://github.com/dart-lang/pub/blob/master/doc/repository-spec-v2.md) (accessed 2026-10-21)
 
 ## Migration
 
@@ -70,11 +70,14 @@ The `dart` detector. See [Detectors](../DETECTORS.md) and [Compatibility](../COM
 
 ### Same ecosystem
 
+- [Dart 2 and older no longer receive security updates](dart.sdk.end-of-support-2-and-older.html)
+- [Dart 3.0 no longer receives security updates](dart.sdk.end-of-support-3.0.html)
+- [Dart 3.1 no longer receives security updates](dart.sdk.end-of-support-3.1.html)
 - [Dart 3.10 no longer receives security updates](dart.sdk.end-of-support-3.10.html)
 - [Dart 3.11 no longer receives security updates](dart.sdk.end-of-support-3.11.html)
 - [Dart 3.12 no longer receives security updates](dart.sdk.end-of-support-3.12.html)
-- [Dart 3.8 no longer receives security updates](dart.sdk.end-of-support-3.8.html)
-- [Dart 3.9 no longer receives security updates](dart.sdk.end-of-support-3.9.html)
+- [Dart 3.2 no longer receives security updates](dart.sdk.end-of-support-3.2.html)
+- [Dart 3.3 no longer receives security updates](dart.sdk.end-of-support-3.3.html)
 
 
 ## Data

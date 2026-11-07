@@ -5,7 +5,7 @@ import { join } from "node:path";
 import { test, type TestContext } from "node:test";
 
 import { declaresInput } from "../src/detector-inputs.js";
-import { PythonDetector } from "../src/detectors/python.js";
+import { PythonDetector } from "../src/detectors/python/index.js";
 
 async function scan(t: TestContext, files: Record<string, string>) {
   const root = await mkdtemp(join(tmpdir(), "evergreen-python-runtime-"));
@@ -24,6 +24,12 @@ for (const [path, contents, line, severity] of [
   ["setup.py", 'from setuptools import setup\nsetup(name="app", python_requires=">=3.9,<4")\n', 2, "medium"],
   ["setup.py", 'import setuptools\nsetuptools.setup(\n    python_requires=">=3.9,<4",\n)\n', 3, "medium"],
   ["tox.ini", "[tox]\nenvlist = py39\n", 2, "high"],
+  [
+    "pyproject.toml",
+    '[tool.poetry]\ndescription = "A modern Python project"\n\n[tool.poetry.dependencies]\npython = "^3.9"\n',
+    5,
+    "medium",
+  ],
 ] as const) {
   test(`reports an end-of-life interpreter in ${path} at line ${line} (${contents.trim()})`, async (t) => {
     const findings = await scan(t, { [path]: contents });
@@ -125,4 +131,24 @@ test("reports every declaration when all four runtime sources coexist", async (t
     "setup.cfg",
     "tox.ini",
   ]);
+});
+
+test("reports a Poetry python floor and a Poetry dependency on their own declaration lines, not on keywords or classifiers", async (t) => {
+  const findings = await scan(t, {
+    "pyproject.toml": [
+      "[tool.poetry]",
+      'name = "django-thing"',
+      'keywords = ["python", "django"]',
+      'classifiers = ["Programming Language :: Python :: 3"]',
+      "[tool.poetry.dependencies]",
+      'python = "^3.8"',
+      'Django = "^4.2"',
+      "",
+    ].join("\n"),
+    "poetry.lock": '[[package]]\nname = "django"\nversion = "4.2.11"\n',
+  });
+  const lines = new Map(findings.map((f) => [f.ruleId, f.location.line]));
+  assert.equal(lines.get("python.runtime.eol-3.9-and-older"), 6);
+  assert.equal(lines.get("python.package.django-4.2.eol"), 7);
+  assert.ok(findings.every((f) => (f.location.line ?? 0) >= 6));
 });

@@ -2,6 +2,14 @@
 
 Instructions for coding agents (Codex, Claude Code, Cursor, Copilot, Kilo Code, and others) and for people working the same way. Read this before changing the repository.
 
+## Before you change anything
+
+CI rejects a pull request that edits a generated or release-time file, so these three rules save a failed run:
+
+- **Never edit `CHANGELOG.md`.** Add one fragment file under `changes/` instead (see [changes/README.md](changes/README.md)). Only the release pull request, whose title starts with `chore: release`, changes `CHANGELOG.md`.
+- **Never commit a generated file** (`docs/llms-full.txt`, `dist/action/index.js`, `docs/api/v1/`, and the rest of the build-time list in [docs/generated-files.md](docs/generated-files.md)). Change the source and regenerate locally.
+- **Run `npm run check` before you open the pull request.** It is the same gate CI runs.
+
 ## What Evergreen is
 
 Evergreen is a local-first CLI that finds evidence-backed lifecycle risks (deprecations, end-of-life runtimes, retired APIs) in a repository, shows exactly where they are used, and produces migration context for humans and agents. It ships as one TypeScript package with a CLI, a local MCP server, a GitHub Action, an Agent Skill, and Codex and Claude plugins.
@@ -14,6 +22,7 @@ Requires Node.js 22 or newer.
 npm ci                # install
 npm run check         # build, Action bundle, tests, plugin checks, evals — must pass before every PR
 npm test              # tests only
+npm run check:fast    # quick local loop: format, lint, affected tests; does not replace check
 npm run dev -- scan   # run the CLI from source
 ```
 
@@ -37,7 +46,7 @@ Full detail: [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md).
 
 | Layer | Lives in | Owns | Must not |
 |---|---|---|---|
-| Scan engine | `src/engine.ts`, `src/domain.ts` | Detector attribution, sorting, output contracts | Import built-in detectors or contain ecosystem-specific logic |
+| Scan engine | `src/engine/`, `src/domain.ts` | Detector attribution, sorting, output contracts | Import built-in detectors or contain ecosystem-specific logic |
 | Detector SDK | `src/sdk.ts` | The public seam: API version, stable ID, one `scan` operation | Change without a versioned decision |
 | Detectors | `src/detectors/` | Reading manifests and lockfiles for one ecosystem | Make network calls or execute repository code |
 | Registry | `registry/*.json` | Reviewed lifecycle rules with authoritative sources | Contain executable logic or unsourced claims |
@@ -138,7 +147,7 @@ Reference quality is measured in [docs/QUALITY.md](docs/QUALITY.md) and enforced
 - **Type safety:** no explicit `any`, no `@ts-ignore` or `@ts-expect-error`; no new `as unknown as` or non-null assertion. `strict`, `noImplicitOverride`, `noUnusedLocals`, and `noUnusedParameters` stay on.
 - **Boundaries:** the six rules in [Architecture boundaries](#architecture-boundaries) hold.
 - **Coverage:** lines 93%, branches 87%, functions 93%. No pull request lowers a total below `main`.
-- **Mutation:** break at 60, high at 80, on the mutated core. The nightly run gates once its first complete score exists.
+- **Mutation:** break at 60, high at 80, on the mutated core. The nightly run fails a complete score below the break.
 - **Docs:** generated pages and indexes match their sources, and the documentation site builds.
 - **Security:** no runtime advisory and no high or critical advisory; a medium or low advisory only when it is listed by id. The OpenSSF Scorecard is 6.0 or more by v0.8.0.
 

@@ -9,6 +9,10 @@ Short, copy-pasteable ways to show what Evergreen found. Every command runs loca
 ## Live countdown
 
 ```bash
+# From a clone of Evergreen:
+npm ci
+npm run build
+demo="$(node dist/tools/examples.js demo)"
 npm run --silent example -- gallery countdown --as-of 2026-10-25
 ```
 
@@ -17,6 +21,18 @@ Prints one row per dated deadline that affects the project: the subject, a bar s
 On a terminal the frame redraws once per second for six seconds and stops on the final frame. `--once` prints one frame, `--no-animation` keeps one static frame, and piping the output prints one plain frame. `--json` prints the same rows with `subject`, `deadline`, `remainingSeconds`, `ruleId`, and `location`, so a script can chart or gate on them.
 
 The example uses `examples/gallery`, which has upcoming deadlines across container, runtime, and package rules. The gallery is committed with scanner-neutral names, so the command copies it to a temporary directory and restores the real names before scanning. `docs/demos/countdown.tape` records the animation with [VHS](https://github.com/charmbracelet/vhs); regenerate the GIF with `vhs docs/demos/countdown.tape`.
+
+## Fix before and after
+
+```bash
+evergreen fix . --show
+```
+
+Plays the deterministic fixes in the terminal. Each patch shows its file, the removed lines in red typed out first and the added lines in green after them, then the findings no fixer could repair appear in dim text with their reasons. The last line is the finding count before and the count after the patches, such as `12 → 3 findings`.
+
+Nothing is written to the repository. The "after" count comes from a scan of a temporary copy of the repository with the patches applied, and the copy is removed afterwards. With `--branch` the fixes are committed on `evergreen/fix` as usual and the view shows what was committed, with the count from the re-scan of the real repository.
+
+The play is held to six seconds: a long plan is typed faster, and if time still runs out the rest is printed at once. `--no-animation` prints the same content as static colored diffs, and piping the output prints it without color. `--show` cannot be combined with `--json`. `docs/demos/fix-show.tape` records the animation with [VHS](https://github.com/charmbracelet/vhs); regenerate the GIF with `vhs docs/demos/fix-show.tape`.
 
 ## Glance card
 
@@ -28,10 +44,40 @@ Prints a one-screen summary of the repository's lifecycle state, laid out like `
 
 Under 80 terminal columns the mark is dropped and the facts keep the full width. `--json` prints the facts alone as an `evergreen.glance.v1` document, so a script or a dashboard can reuse them. `docs/demos/glance.tape` records the card with [VHS](https://github.com/charmbracelet/vhs); regenerate the GIF with `vhs docs/demos/glance.tape`.
 
+## Watch board
+
+```bash
+evergreen watch --board
+```
+
+Ranks every project registered with `evergreen watch` by lifecycle risk. Each row is the rank, the project name, findings by severity as small colored bars, the next deadline, and a trend arrow against the previous board (▲ worse, ▼ better, ● same). Ranking uses the same severity weights as the HTML treemap (critical 8, high 4, medium 2, low 1, info 0.5), then the earliest deadline, then the project name.
+
+The board re-scans like `watch run`, stores a per-project summary in the watch state file, and leaves the digest history alone. An older state file without summaries shows ● for every project. `--json` prints the ranked rows as an `evergreen.watch-board.v1` document. On a terminal the severity bars are colored; `NO_COLOR` or a pipe turns that off. `docs/demos/watch-board.tape` records the table with [VHS](https://github.com/charmbracelet/vhs); regenerate the GIF with `vhs docs/demos/watch-board.tape`.
+
+## Year in review
+
+```bash
+evergreen wrapped . --year 2025
+```
+
+Plays a year-in-review of lifecycle findings for the repository. Each card is backed by data: findings fixed, findings introduced, net change, the longest-ended item still present, the top three CODEOWNERS owners by fixed findings (skipped when there is no CODEOWNERS file), and the next deadline in the coming year. Fixed and introduced counts match `evergreen diff <base>..<head> --json` for the same refs.
+
+The base is the last commit before 1 January of the year; when the repository has none, the command says so and compares against the first commit. For a past year the head is the last commit of that year; for the current year it is `HEAD`. Scans use git objects only, so the working tree is never modified.
+
+On a terminal the cards play one at a time within six seconds. `--no-animation` prints them all at once, and piping the output does the same. `--svg wrapped.svg` writes one 1200×630 summary card with no script and no external references. `--json` prints the `evergreen.wrapped.v1` document. `docs/demos/wrapped.tape` records the play with [VHS](https://github.com/charmbracelet/vhs); regenerate the GIF with `vhs docs/demos/wrapped.tape`.
+
+## Time-lapse of a repository aging
+
+```bash
+evergreen timelapse . --from 2026-11 --to 2028-10 --no-animation
+```
+
+Plays 24 monthly frames of the same repository: each frame is the scan projected onto that month's last day with `scan --as-of` logic, so finding counts stay honest. Affected files start dim and turn red as their deadlines pass, with a running count under the tree. `--svg timelapse.svg` writes a 1200×630 CSS animation of those frames for a README; `--json` prints `{ month, findings, files }` for each month. `docs/demos/timelapse.tape` records the play with [VHS](https://github.com/charmbracelet/vhs); regenerate the GIF with `vhs docs/demos/timelapse.tape`.
+
 ## Mermaid support windows
 
 ```bash
-npx evergreen-deprecation scan --format mermaid --as-of 2026-10-30 examples/demo
+npx evergreen-deprecation scan --format mermaid --as-of 2026-10-30 "$demo"
 ```
 
 Prints a fenced `mermaid` block containing a Gantt chart: one section per ecosystem and one bar per subject from the day the scan observed it to its deadline. A subject that has already ended is a `crit` milestone at its deadline; one that ends within 30 days is a `crit` bar. A `today` milestone follows `--as-of`. Paste the whole block into a README, an issue, or a pull request comment and GitHub renders the chart without an image file.
@@ -63,7 +109,7 @@ gantt
 The same chart is available for the look-ahead window:
 
 ```bash
-npx evergreen-deprecation forecast --format mermaid --as-of 2026-10-30 examples/demo
+npx evergreen-deprecation forecast --format mermaid --as-of 2026-10-30 "$demo"
 ```
 
 `forecast --format mermaid` draws one bar per dated event in the forecast window, grouped by ecosystem, instead of only the findings in this repository.

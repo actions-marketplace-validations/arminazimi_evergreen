@@ -1,17 +1,17 @@
 import { createHash } from "node:crypto";
 import { resolve } from "node:path";
 
-import { applyBaseline, findingFingerprint, readBaseline } from "./baseline.js";
+import { findingFingerprint } from "./baseline.js";
 import { bundledRules } from "./check-dependency.js";
-import { builtInDetectors } from "./detectors/index.js";
 import type { DataInfo, Finding, ScanResult, Severity, SourceLocation, VerificationCommand } from "./domain.js";
-import { scanRepository } from "./engine.js";
 import { createMigrationPacket } from "./migration-packet.js";
 import type { Receipt } from "./receipt.js";
 import { buildReceipt } from "./receipt.js";
 import { renderReceiptMarkdown } from "./receipt-markdown.js";
 import { readPinnedRuntimes } from "./runtime-pin.js";
+import { runScanRequest } from "./scan-request.js";
 import type { MigrationPacket } from "./migration-packet.js";
+import { EvergreenError } from "./evergreen-error.js";
 
 /** A finding reduced to what a list of deprecations shows. */
 export interface DeprecationSummary {
@@ -62,9 +62,10 @@ export interface ObservedFinding {
 export const repositoryKey = (root: string): string => createHash("sha256").update(root).digest("hex").slice(0, 8);
 
 /** Thrown when a finding is used before this session scanned the repository that contains it. */
-export class FindingNotObservedError extends Error {
+export class FindingNotObservedError extends EvergreenError {
   constructor(findingId: string) {
     super(
+      "finding-not-observed",
       `Finding was not observed in this MCP session: ${findingId}. Call scan_repository, explain_deprecation, or create_migration_context before editing the repository.`,
     );
     this.name = "FindingNotObservedError";
@@ -81,13 +82,11 @@ export class EvergreenAgentTools {
   private readonly lastScan = new Map<string, ScanResult>();
 
   async scan(repositoryPath = ".", baselinePath?: string): Promise<ScanResult> {
-    let result = await scanRepository(repositoryPath, builtInDetectors);
-    if (baselinePath) {
-      // A baseline path is relative to the repository, as in the Action. The reference day is today in UTC.
-      result = applyBaseline(result, await readBaseline(resolve(repositoryPath, baselinePath)), {
-        today: new Date().toISOString().slice(0, 10),
-      });
-    }
+    // A baseline path is relative to the repository, as in the Action.
+    const { result } = await runScanRequest({
+      root: repositoryPath,
+      ...(baselinePath ? { baselinePath } : {}),
+    });
     this.remember(result);
     return result;
   }
@@ -116,7 +115,7 @@ export class EvergreenAgentTools {
   async explain(findingId: string, repositoryPath = "."): Promise<Finding> {
     const result = await this.scan(repositoryPath);
     const finding = result.findings.find((candidate) => candidate.id === findingId);
-    if (!finding) throw new Error(`Finding not found: ${findingId}`);
+    if (!finding) throw new EvergreenError("finding-not-found", `Finding not found: ${findingId}`);
     return finding;
   }
 
@@ -131,7 +130,7 @@ export class EvergreenAgentTools {
     if (!observed) throw new FindingNotObservedError(findingId);
 
     const before = this.lastScan.get(root);
-    const result = await scanRepository(root, builtInDetectors);
+    const { result } = await runScanRequest({ root });
     const remainingFindings = result.findings.filter(
       (finding) => finding.ruleId === observed.ruleId && finding.location.path === observed.location.path,
     );

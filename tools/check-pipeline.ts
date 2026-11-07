@@ -101,6 +101,8 @@ export const COVERAGE_EXCLUDES: readonly string[] = [
   "dist/benchmarks/**",
   "dist/action/**",
   "dist/src/usage/vendor/**",
+  // CLI entry for the onboarding app; covered by dedicated tests, not the package coverage floor.
+  "integrations/github-app/replay.mjs",
 ];
 
 /** Whether this process should collect coverage, from the environment or an explicit option. */
@@ -450,6 +452,7 @@ export async function runCheck(options: RunCheckOptions = {}): Promise<void> {
       },
       { id: "lint", run: () => run(process.execPath, lintArgs(eslintCli)) },
       { id: "check:quality", run: () => run(process.execPath, ["dist/tools/check-quality.js"]) },
+      { id: "check:binaries", run: () => run(process.execPath, ["dist/tools/check-binary-artifacts.js"]) },
       { id: "check:plugins", run: () => run(process.execPath, ["dist/tools/plugin-packages.js", "--check"]) },
       { id: "check:workflows", run: () => run(process.execPath, ["dist/tools/check-workflow-change.js"]) },
       ...evals.map((evalStep) => ({

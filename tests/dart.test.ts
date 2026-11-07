@@ -13,7 +13,7 @@ import { zeroFindingsCheck } from "../src/conformance/checks/zero.js";
 import { runDetectorConformance } from "../src/conformance/index.js";
 import { DartDetector, dartDetector } from "../src/detectors/dart/index.js";
 import { builtInDetectors } from "../src/detectors/index.js";
-import { scanRepository } from "../src/engine.js";
+import { scanRepository } from "../src/engine/index.js";
 import { createMigrationPacket, validateMigrationPacket } from "../src/migration-packet.js";
 import { validateRegistryV2 } from "../src/registry.js";
 import type { RegistryV2Rule } from "../src/registry.js";
@@ -112,12 +112,27 @@ test("dart passes detector conformance on every fixture", async () => {
   });
 });
 
-test("the old-SDK positive fixture matches no committed rule because a range admits newer SDKs", async () => {
-  assert.deepEqual(await dartDetector.scan({ root: resolve(fixtures, "positive") }), []);
+test("the old-SDK positive fixture reports Dart 2 constraints that admit only end-of-support lines", async () => {
+  const dart2 = (await committedRules()).find((item) => item.id === "dart.sdk.end-of-support-2-and-older")!;
+  const findings = await dartDetector.scan({ root: resolve(fixtures, "positive") });
+  assert.ok(findings.some((finding) => finding.ruleId === dart2.id));
+  assert.ok(findings.every((finding) => finding.ruleId === dart2.id));
 });
 
 test("is registered as a built-in detector", () => {
   assert.ok(builtInDetectors.some((detector) => detector.id === "dart"));
+});
+
+test("analyze returns the findings and an empty unclassified list", async () => {
+  const detector = new DartDetector(async () => [rule()]);
+  const analysis = await detector.analyze({
+    root: await repository({ "pubspec.yaml": "dependencies:\n  example_widgets: ^1.0.0\n" }),
+  });
+  assert.deepEqual(analysis.unclassified, []);
+  assert.deepEqual(
+    analysis.findings.map((finding) => [finding.ruleId, finding.location.path, finding.location.line]),
+    [["dart.package.example-widgets.discontinued", "pubspec.yaml", 2]],
+  );
 });
 
 test("reports an exact Dart SDK pin and ignores a constraint that admits newer SDKs", async () => {
@@ -262,4 +277,39 @@ test("a migration packet for a Dart SDK finding names the file, steps, and verif
     ["raise-sdk-pin", "raise-sdk-constraint", "align-ci-toolchain"],
   );
   assert.ok(packet.verification.some((check) => check.command === "dart analyze && flutter test"));
+});
+
+test("reports a Dart SDK constraint that allows only end-of-support lines", async () => {
+  const dart2 = (await committedRules()).find((item) => item.id === "dart.sdk.end-of-support-2-and-older")!;
+  const dart34 = (await committedRules()).find((item) => item.id === "dart.sdk.end-of-support-3.4")!;
+  const onlyDart2 = await dartDetector.scan({
+    root: await repository({ "pubspec.yaml": 'environment:\n  sdk: ">=2.17.0 <3.0.0"\n' }),
+  });
+  assert.deepEqual(
+    onlyDart2.map((finding) => [finding.ruleId, finding.location.line]),
+    [[dart2.id, 2]],
+  );
+  assert.match(onlyDart2[0]!.summary, /declares Dart SDK >=2\.17\.0 <3\.0\.0/);
+  const onlyOld3 = await dartDetector.scan({
+    root: await repository({ "pubspec.yaml": 'environment:\n  sdk: ">=3.0.0 <3.5.0"\n' }),
+  });
+  assert.deepEqual(
+    onlyOld3.map((finding) => [finding.ruleId, finding.location.line]),
+    [[dart34.id, 2]],
+  );
+});
+
+test("does not report a Dart SDK constraint that admits the current stable line", async () => {
+  assert.deepEqual(
+    await dartDetector.scan({
+      root: await repository({ "pubspec.yaml": "environment:\n  sdk: ^3.11.0\n" }),
+    }),
+    [],
+  );
+  assert.deepEqual(
+    await dartDetector.scan({
+      root: await repository({ "pubspec.yaml": 'environment:\n  sdk: ">=3.8.0 <4.0.0"\n' }),
+    }),
+    [],
+  );
 });

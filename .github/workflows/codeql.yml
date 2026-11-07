@@ -1,9 +1,14 @@
 name: CodeQL
 
-# Static analysis of `main` every week and on demand, so it no longer queues behind every merge.
+# Static analysis before merge, in the merge queue so every commit that reaches main is analyzed,
+# on main, and weekly or on demand.
 # Results go to the same code-scanning dashboard as the Scorecard and Evergreen
 # SARIF uploads. Pinned to full commit SHAs; see SECURITY.md for token scopes.
 on:
+  pull_request:
+  merge_group:
+  push:
+    branches: [main]
   schedule:
     - cron: "41 2 * * 1"
   workflow_dispatch:
@@ -13,7 +18,7 @@ permissions:
 
 concurrency:
   group: codeql-${{ github.workflow }}-${{ github.ref }}
-  cancel-in-progress: true
+  cancel-in-progress: ${{ github.event_name != 'merge_group' }}
 
 jobs:
   analyze:

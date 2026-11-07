@@ -14,7 +14,7 @@ import { zeroFindingsCheck } from "../src/conformance/checks/zero.js";
 import { runDetectorConformance } from "../src/conformance/index.js";
 import { builtInDetectors } from "../src/detectors/index.js";
 import { CppDetector, cppDetector } from "../src/detectors/cpp/index.js";
-import { scanRepository } from "../src/engine.js";
+import { scanRepository } from "../src/engine/index.js";
 import { createMigrationPacket, validateMigrationPacket } from "../src/migration-packet.js";
 import { validateRegistryV2 } from "../src/registry.js";
 import type { RegistryV2Rule } from "../src/registry.js";
@@ -290,14 +290,14 @@ test("a migration packet for a CMake finding names the file, steps, and verifica
   assert.ok(packet.verification.some((check) => check.command === "cmake -S . -B build"));
 });
 
-test("the detector is registered and C and C++ is experimental in the capability manifest", () => {
+test("the detector is registered and C and C++ is supported in the capability manifest", () => {
   assert.ok(builtInDetectors.some((detector) => detector.id === "cpp"));
   assert.deepEqual(
     getCapabilityManifest().ecosystems.find((ecosystem) => ecosystem.id === "cpp"),
     {
       id: "cpp",
-      status: "experimental",
-      maturity: "experimental",
+      status: "supported",
+      maturity: "stable",
       detectorIds: ["cpp"],
     },
   );

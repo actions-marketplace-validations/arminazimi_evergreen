@@ -4,9 +4,9 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { test } from "node:test";
 
-import { defaultConfidence, scanRepository } from "../src/engine.js";
+import { defaultConfidence, scanRepository } from "../src/engine/index.js";
 import { renderSarif, renderText } from "../src/reporters.js";
-import { npmDetector } from "../src/detectors/npm.js";
+import { npmDetector } from "../src/detectors/npm/index.js";
 import type { DetectorFinding } from "../src/sdk.js";
 
 const base: DetectorFinding = {

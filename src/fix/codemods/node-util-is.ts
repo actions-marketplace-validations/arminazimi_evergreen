@@ -1,13 +1,14 @@
-import { readFile } from "node:fs/promises";
-import { isAbsolute, relative, resolve } from "node:path";
-
-import { renderDiff } from "../../agent-instructions.js";
-import type { Finding, ScanResult, Severity, SourceUsage, UsageMatcher } from "../../domain.js";
+import type { ScanResult, Severity, UsageMatcher } from "../../domain.js";
 import { required } from "../../required.js";
-import { analyzeSourceUsage } from "../../source-usage.js";
-import { grammarFor, parseSource } from "../../usage/tree-sitter.js";
+import { parseSource } from "../../usage/tree-sitter.js";
 import type { Node } from "../../usage/vendor/tree-sitter/tree-sitter.js";
-import type { FilePatch, Fixer } from "../index.js";
+import type { FilePatch, Fixer, Refuse } from "../types.js";
+import { callsByCallee } from "./shared/ast.js";
+import { type Edit, patchFor } from "./shared/edits.js";
+import { optionalCall, requiredModule, normalizeModule, unquote } from "./shared/javascript.js";
+import { declineAll, groupByPath, planEachFile, sortTargets } from "./shared/plan.js";
+import { offsetOf, readParseableFile } from "./shared/source.js";
+import { analyzeTargets, syntheticFinding, type UsageTarget } from "./shared/targets.js";
 
 interface Rule {
   id: string;
@@ -194,17 +195,7 @@ const rules: readonly Rule[] = [
   },
 ];
 
-interface Target {
-  rule: Rule;
-  usage: SourceUsage;
-  finding: Finding;
-}
-
-interface Edit {
-  start: number;
-  end: number;
-  replacement: string;
-}
+type Target = UsageTarget<Rule>;
 
 /** What a call's callee reads: the deprecated function, and the util expression when the call already has one. */
 interface Callee {
@@ -225,91 +216,54 @@ const utilModule = "util";
 export const nodeUtilIsFixer: Fixer = {
   id: "node-util-is",
   async plan(result, refuse) {
-    const targets = await targetsFor(result);
-    const byPath = new Map<string, Target[]>();
-    for (const target of targets) {
-      const list = byPath.get(target.usage.location.path) ?? [];
-      list.push(target);
-      byPath.set(target.usage.location.path, list);
-    }
-
-    const patches: FilePatch[] = [];
-    for (const [path, fileTargets] of [...byPath].sort(([left], [right]) => left.localeCompare(right))) {
-      const decline = (reason: string): void => {
-        for (const target of fileTargets) refuse?.(target.finding, reason);
-      };
-      const absolute = resolve(result.root, path);
-      const inside = relative(resolve(result.root), absolute);
-      if (inside.startsWith("..") || isAbsolute(inside)) {
-        decline("The path resolves outside the repository.");
-        continue;
-      }
-      const before = await readFile(absolute, "utf8").catch(() => undefined);
-      if (before === undefined) {
-        decline("The source file could not be read.");
-        continue;
-      }
-      if (!before.endsWith("\n")) {
-        decline("The source file does not end with a newline.");
-        continue;
-      }
-      const grammar = grammarFor(required(fileTargets[0], "the file target").usage.language, path);
-      if (grammar === undefined) {
-        decline("No parser covers this source language.");
-        continue;
-      }
-      const tree = await parseSource(grammar, before);
-      if (tree === undefined) {
-        decline("The source file could not be parsed.");
-        continue;
-      }
-      try {
-        const root = tree.rootNode;
-        const bindings = utilBindings(root);
-        const reassigned = reassignedNames(root);
-        const namespace = namespaceBinding(bindings, reassigned);
-        const calls = callsByCallee(root);
-        const targetOffsets = new Set<number>();
-        for (const target of fileTargets) {
-          const offset =
-            target.usage.location.line === undefined || target.usage.location.column === undefined
-              ? -1
-              : offsetOf(before, target.usage.location.line, target.usage.location.column);
-          if (offset !== -1) targetOffsets.add(offset);
-        }
-        const edits: Edit[] = [];
-        for (const target of fileTargets.sort(compareTargets)) {
-          const rewrite = rewriteFor(target, calls, targetOffsets, { bindings, reassigned, namespace }, before);
-          if ("reason" in rewrite) {
-            refuse?.(target.finding, rewrite.reason);
-            continue;
-          }
-          edits.push(rewrite);
-        }
-        if (edits.length === 0) continue;
-        const text = applyEdits(before, edits);
-        if (text !== before) patches.push({ path, diff: renderDiff(path, before.slice(0, -1), text.slice(0, -1)) });
-      } finally {
-        tree.delete();
-      }
-    }
-    return patches;
+    return planEachFile(groupByPath(await targetsFor(result)), (path, fileTargets) =>
+      planFile(result.root, path, fileTargets, refuse),
+    );
   },
 };
 
-function syntheticFinding(rule: Rule, usage: SourceUsage): Finding {
-  const line = usage.location.line ?? 1;
-  return {
-    id: `${rule.id}:${usage.location.path}:${line}:${usage.location.column ?? 1}`,
-    ruleId: rule.id,
-    detector: "codemod",
-    title: rule.title,
-    summary: "",
-    severity: rule.severity,
-    confidence: "exact",
-    location: usage.location,
-    sources: [],
-  };
+async function planFile(
+  root: string,
+  path: string,
+  fileTargets: readonly Target[],
+  refuse: Refuse | undefined,
+): Promise<FilePatch | undefined> {
+  const source = await readParseableFile(root, path, required(fileTargets[0], "the file target").usage.language);
+  if ("reason" in source) {
+    declineAll(fileTargets, refuse, source.reason);
+    return undefined;
+  }
+  const tree = await parseSource(source.grammar, source.text);
+  if (tree === undefined) {
+    declineAll(fileTargets, refuse, "The source file could not be parsed.");
+    return undefined;
+  }
+  try {
+    return patchFor(path, source.text, editsForFile(fileTargets, tree.rootNode, source.text, refuse));
+  } finally {
+    tree.delete();
+  }
+}
+
+function editsForFile(fileTargets: readonly Target[], root: Node, source: string, refuse: Refuse | undefined): Edit[] {
+  const bindings = utilBindings(root);
+  const reassigned = reassignedNames(root);
+  const context = { bindings, reassigned, namespace: namespaceBinding(bindings, reassigned) };
+  const calls = callsByCallee(root);
+  const targetOffsets = new Set<number>();
+  for (const target of fileTargets) {
+    const { line, column } = target.usage.location;
+    if (line === undefined || column === undefined) continue;
+    const offset = offsetOf(source, line, column);
+    if (offset !== -1) targetOffsets.add(offset);
+  }
+  const edits: Edit[] = [];
+  for (const target of sortTargets(fileTargets, (candidate) => candidate.rule.id)) {
+    const rewrite = rewriteFor(target, calls, targetOffsets, context, source);
+    if ("reason" in rewrite) refuse?.(target.finding, rewrite.reason);
+    else edits.push(rewrite);
+  }
+  return edits;
 }
 
 /**
@@ -317,54 +271,11 @@ function syntheticFinding(rule: Rule, usage: SourceUsage): Finding {
  * fixer falls back to the same parser-backed usage analysis the detectors use, over the rules it covers.
  */
 async function targetsFor(result: ScanResult): Promise<Target[]> {
-  const targets: Target[] = [];
-  const reported = new Map(
-    rules.map((rule) => [rule.id, result.findings.filter((finding) => finding.ruleId === rule.id)]),
-  );
-  const missing = rules.filter((rule) => required(reported.get(rule.id), "reported findings").length === 0);
-  const analyses =
-    missing.length === 0
-      ? []
-      : await analyzeSourceUsage(
-          result.root,
-          missing.map((rule) => ({ id: rule.id, matchers: matchers(rule.name) })),
-        );
-  const derived = new Map(analyses.map((analysis) => [analysis.contractId, analysis.usages]));
-
-  for (const rule of rules) {
-    const findings = required(reported.get(rule.id), "reported findings");
-    if (findings.length > 0) {
-      for (const finding of findings) {
-        for (const usage of finding.usages ?? []) targets.push({ rule, usage, finding });
-      }
-      continue;
-    }
-    for (const usage of derived.get(rule.id) ?? [])
-      targets.push({ rule, usage, finding: syntheticFinding(rule, usage) });
-  }
+  const { targets } = await analyzeTargets(result, rules, {
+    matchers: (rule) => matchers(rule.name),
+    finding: (rule, usage) => syntheticFinding(rule, usage, true),
+  });
   return targets;
-}
-
-function compareTargets(left: Target, right: Target): number {
-  return (
-    (left.usage.location.line ?? 0) - (right.usage.location.line ?? 0) ||
-    (left.usage.location.column ?? 0) - (right.usage.location.column ?? 0) ||
-    left.rule.id.localeCompare(right.rule.id)
-  );
-}
-
-/** Calls keyed by the offset where their callee starts, which is the location a symbol usage reports. */
-function callsByCallee(root: Node): Map<number, Node[]> {
-  const calls = new Map<number, Node[]>();
-  for (const node of root.descendantsOfType("call_expression")) {
-    if (!node) continue;
-    const callee = node.childForFieldName("function");
-    if (!callee) continue;
-    const list = calls.get(callee.startIndex) ?? [];
-    list.push(node);
-    calls.set(callee.startIndex, list);
-  }
-  return calls;
 }
 
 interface FileContext {
@@ -390,53 +301,85 @@ function rewriteFor(
   if (candidates === undefined) return { reason: `No \`util.${rule.name}\` call is at the reported location.` };
 
   for (const call of candidates) {
-    const calleeNode = call.childForFieldName("function");
-    if (!calleeNode) continue;
-    if (optionalCall(call, calleeNode, source)) {
-      return { reason: "The call is optional (`?.`), so replacing it would change when it runs." };
-    }
-    const callee = resolveCallee(calleeNode, context.bindings);
-    if (callee?.symbol !== rule.name) continue;
-    if (callee.local !== undefined && context.reassigned.has(callee.local)) {
-      return {
-        reason: `The binding \`${callee.local}\` is reassigned in this file, so the call may not reach \`util.${rule.name}\`.`,
-      };
-    }
-    const args = call.childForFieldName("arguments");
-    if (!args) return { reason: "The call has no argument list." };
-    if (nestedTarget(call, targetOffsets)) {
-      return {
-        reason:
-          "The call contains another `util.is*` call, so replacing both would overlap; the codemod leaves the outer call unchanged.",
-      };
-    }
-    const values = args.namedChildren.filter((value): value is Node => value !== null);
-    if (values.length === 0) return { reason: `The call passes no argument; \`util.${rule.name}\` takes exactly one.` };
-    if (values.length > 1)
-      return { reason: `The call passes ${values.length} arguments; \`util.${rule.name}\` takes exactly one.` };
-    const argument = required(values[0], "the single argument");
-    if (argument.type === "spread_element")
-      return { reason: "The call spreads its argument, so the single value is not visible in the source text." };
-    if (rule.form === "refuse")
-      return { reason: rule.reason ?? `\`util.${rule.name}\` has no exact native equivalent.` };
-    if (rule.durable && !durableReference(argument)) {
-      return {
-        reason:
-          "The argument is not an identifier or a member chain without calls, so the replacement would evaluate it more than once.",
-      };
-    }
-    const util = rule.types ? (callee.utilExpression ?? context.namespace) : undefined;
-    if (rule.types && util === undefined) {
-      return {
-        reason:
-          "This file imports `util` only by name, so `util.types` is not reachable; the codemod does not add an import.",
-      };
-    }
-    const replacement = render(rule, argumentText(argument, source), util);
-    const wrapped = rule.form === "binary" && needsParentheses(call) ? `(${replacement})` : replacement;
-    return { start: call.startIndex, end: call.endIndex, replacement: wrapped };
+    const rewrite = rewriteCall(call, rule, targetOffsets, context, source);
+    if (rewrite !== undefined) return rewrite;
   }
   return { reason: `The call at the reported location is not a direct \`util.${rule.name}\` call.` };
+}
+
+/** The edit for one candidate call, or undefined when the call does not go through `util.<rule.name>`. */
+function rewriteCall(
+  call: Node,
+  rule: Rule,
+  targetOffsets: ReadonlySet<number>,
+  context: FileContext,
+  source: string,
+): Edit | { reason: string } | undefined {
+  const callee = resolveTargetCallee(call, rule, context, source);
+  if (callee === undefined || "reason" in callee) return callee;
+  const checked = checkedArgument(call, rule, targetOffsets);
+  if ("reason" in checked) return checked;
+  const util = rule.types ? (callee.utilExpression ?? context.namespace) : undefined;
+  if (rule.types && util === undefined) {
+    return {
+      reason:
+        "This file imports `util` only by name, so `util.types` is not reachable; the codemod does not add an import.",
+    };
+  }
+  const replacement = render(rule, argumentText(checked.argument, source), util);
+  const wrapped = rule.form === "binary" && needsParentheses(call) ? `(${replacement})` : replacement;
+  return { start: call.startIndex, end: call.endIndex, replacement: wrapped };
+}
+
+function resolveTargetCallee(
+  call: Node,
+  rule: Rule,
+  context: FileContext,
+  source: string,
+): Callee | { reason: string } | undefined {
+  const calleeNode = call.childForFieldName("function");
+  if (!calleeNode) return undefined;
+  if (optionalCall(call, calleeNode, source)) {
+    return { reason: "The call is optional (`?.`), so replacing it would change when it runs." };
+  }
+  const callee = resolveCallee(calleeNode, context.bindings);
+  if (callee?.symbol !== rule.name) return undefined;
+  if (callee.local !== undefined && context.reassigned.has(callee.local)) {
+    return {
+      reason: `The binding \`${callee.local}\` is reassigned in this file, so the call may not reach \`util.${rule.name}\`.`,
+    };
+  }
+  return callee;
+}
+
+function checkedArgument(
+  call: Node,
+  rule: Rule,
+  targetOffsets: ReadonlySet<number>,
+): { argument: Node } | { reason: string } {
+  const args = call.childForFieldName("arguments");
+  if (!args) return { reason: "The call has no argument list." };
+  if (nestedTarget(call, targetOffsets)) {
+    return {
+      reason:
+        "The call contains another `util.is*` call, so replacing both would overlap; the codemod leaves the outer call unchanged.",
+    };
+  }
+  const values = args.namedChildren.filter((value): value is Node => value !== null);
+  if (values.length === 0) return { reason: `The call passes no argument; \`util.${rule.name}\` takes exactly one.` };
+  if (values.length > 1)
+    return { reason: `The call passes ${values.length} arguments; \`util.${rule.name}\` takes exactly one.` };
+  const argument = required(values[0], "the single argument");
+  if (argument.type === "spread_element")
+    return { reason: "The call spreads its argument, so the single value is not visible in the source text." };
+  if (rule.form === "refuse") return { reason: rule.reason ?? `\`util.${rule.name}\` has no exact native equivalent.` };
+  if (rule.durable && !durableReference(argument)) {
+    return {
+      reason:
+        "The argument is not an identifier or a member chain without calls, so the replacement would evaluate it more than once.",
+    };
+  }
+  return { argument };
 }
 
 function render(rule: Rule, argument: string, util: string | undefined): string {
@@ -453,17 +396,6 @@ function nestedTarget(call: Node, offsets: ReadonlySet<number>): boolean {
     if (offset > call.startIndex && offset < call.endIndex) return true;
   }
   return false;
-}
-
-/**
- * `os.tmpDir?.()` and `util?.isArray(x)` put the chain on the call in the JavaScript grammar but drop the node in the
- * TypeScript grammar, so the `?.` is also read from the source around the callee.
- */
-function optionalCall(call: Node, callee: Node, source: string): boolean {
-  if (call.childForFieldName("optional_chain") !== null) return true;
-  const args = call.childForFieldName("arguments");
-  const gap = args ? source.slice(callee.endIndex, args.startIndex) : "";
-  return source.slice(callee.startIndex, callee.endIndex).includes("?.") || gap.includes("?.");
 }
 
 /** The function a callee reads and, when it names the module, the expression that reads `util`. */
@@ -487,61 +419,86 @@ function resolveCallee(callee: Node, bindings: ReadonlyMap<string, string>): Cal
   return undefined;
 }
 
+type Bindings = Map<string, string>;
+
+function addBinding(bindings: Bindings, local: string, imported: string): void {
+  if (!bindings.has(local)) bindings.set(local, imported);
+}
+
 /** The local names a file binds to `util`, from `import`, `import * as`, `require`, and their destructured forms. */
-function utilBindings(root: Node): Map<string, string> {
-  const bindings = new Map<string, string>();
-  const add = (local: string, imported: string): void => {
-    if (!bindings.has(local)) bindings.set(local, imported);
-  };
+function utilBindings(root: Node): Bindings {
+  const bindings: Bindings = new Map();
   for (const statement of root.descendantsOfType("import_statement")) {
-    if (!statement) continue;
-    const source =
-      statement.childForFieldName("source") ?? statement.namedChildren.find((child) => child?.type === "string");
-    if (!source || normalizeModule(unquote(source.text)) !== utilModule) continue;
-    const clause = statement.namedChildren.find((child) => child?.type === "import_clause");
-    if (!clause) continue;
-    for (const child of clause.namedChildren) {
-      if (!child) continue;
-      if (child.type === "identifier") add(child.text, "default");
-      else if (child.type === "namespace_import") {
-        const local = child.namedChildren.find((candidate) => candidate?.type === "identifier");
-        if (local) add(local.text, "*");
-      } else if (child.type === "named_imports") {
-        for (const specifier of child.namedChildren) {
-          if (specifier?.type !== "import_specifier") continue;
-          const imported = specifier.childForFieldName("name");
-          const alias = specifier.childForFieldName("alias");
-          if (!imported) continue;
-          add(alias?.type === "identifier" ? alias.text : imported.text, unquote(imported.text));
-        }
-      }
-    }
+    if (statement) addImportBindings(statement, bindings);
   }
+  for (const declarator of root.descendantsOfType("variable_declarator")) {
+    if (declarator) addDeclaratorBindings(declarator, bindings);
+  }
+  addAliasBindings(root, bindings);
+  return bindings;
+}
+
+function addImportBindings(statement: Node, bindings: Bindings): void {
+  const source =
+    statement.childForFieldName("source") ?? statement.namedChildren.find((child) => child?.type === "string");
+  if (!source || normalizeModule(unquote(source.text)) !== utilModule) return;
+  const clause = statement.namedChildren.find((child) => child?.type === "import_clause");
+  if (!clause) return;
+  for (const child of clause.namedChildren) {
+    if (child) addImportClause(child, bindings);
+  }
+}
+
+function addImportClause(child: Node, bindings: Bindings): void {
+  if (child.type === "identifier") addBinding(bindings, child.text, "default");
+  else if (child.type === "namespace_import") addNamespaceImport(child, bindings);
+  else if (child.type === "named_imports") addNamedImports(child, bindings);
+}
+
+function addNamespaceImport(node: Node, bindings: Bindings): void {
+  const local = node.namedChildren.find((candidate) => candidate?.type === "identifier");
+  if (local) addBinding(bindings, local.text, "*");
+}
+
+function addNamedImports(node: Node, bindings: Bindings): void {
+  for (const specifier of node.namedChildren) {
+    if (specifier?.type !== "import_specifier") continue;
+    const imported = specifier.childForFieldName("name");
+    const alias = specifier.childForFieldName("alias");
+    if (!imported) continue;
+    addBinding(bindings, alias?.type === "identifier" ? alias.text : imported.text, unquote(imported.text));
+  }
+}
+
+function addDeclaratorBindings(declarator: Node, bindings: Bindings): void {
+  const name = declarator.childForFieldName("name");
+  const value = declarator.childForFieldName("value");
+  if (requiredModule(value) !== utilModule) return;
+  if (name?.type === "identifier") addBinding(bindings, name.text, "*");
+  else if (name?.type === "object_pattern") {
+    for (const entry of patternEntries(name)) addBinding(bindings, entry.local, entry.key);
+  }
+}
+
+/** `const u = util` and `const check = util.isArray` reach the same functions under another name. */
+function addAliasBindings(root: Node, bindings: Bindings): void {
+  for (let pass = 0; pass < 4; pass += 1) {
+    if (!addAliasPass(root, bindings)) return;
+  }
+}
+
+function addAliasPass(root: Node, bindings: Bindings): boolean {
+  let changed = false;
   for (const declarator of root.descendantsOfType("variable_declarator")) {
     if (!declarator) continue;
     const name = declarator.childForFieldName("name");
-    const value = declarator.childForFieldName("value");
-    if (requiredModule(value) !== utilModule) continue;
-    if (name?.type === "identifier") add(name.text, "*");
-    else if (name?.type === "object_pattern") {
-      for (const entry of patternEntries(name)) add(entry.local, entry.key);
-    }
+    if (name?.type !== "identifier" || bindings.has(name.text)) continue;
+    const imported = aliasTarget(declarator.childForFieldName("value"), bindings);
+    if (imported === undefined) continue;
+    addBinding(bindings, name.text, imported);
+    changed = true;
   }
-  // `const u = util` and `const check = util.isArray` reach the same functions under another name.
-  for (let pass = 0; pass < 4; pass += 1) {
-    let changed = false;
-    for (const declarator of root.descendantsOfType("variable_declarator")) {
-      if (!declarator) continue;
-      const name = declarator.childForFieldName("name");
-      if (name?.type !== "identifier" || bindings.has(name.text)) continue;
-      const imported = aliasTarget(declarator.childForFieldName("value"), bindings);
-      if (imported === undefined) continue;
-      add(name.text, imported);
-      changed = true;
-    }
-    if (!changed) break;
-  }
-  return bindings;
+  return changed;
 }
 
 /** The util name an alias's value reads, such as "*" for `util` or "isArray" for `util.isArray`. */
@@ -581,23 +538,6 @@ function patternEntries(pattern: Node): { key: string; local: string }[] {
   return entries;
 }
 
-/** The module `require("m")` reads, including the `node:` prefix, or undefined for any other expression. */
-function requiredModule(node: Node | null | undefined): string | undefined {
-  if (node?.type !== "call_expression") return undefined;
-  const callee = node.childForFieldName("function");
-  if (callee?.type !== "identifier" || callee.text !== "require") return undefined;
-  const argument = node.childForFieldName("arguments")?.namedChildren[0];
-  return argument?.type === "string" ? normalizeModule(unquote(argument.text)) : undefined;
-}
-
-function normalizeModule(module: string): string {
-  return module.startsWith("node:") ? module.slice(5) : module;
-}
-
-function unquote(text: string): string {
-  return text.replace(/^["'`]|["'`]$/g, "");
-}
-
 /** Local names a file assigns to, so a call through one cannot be assumed to reach `util`. */
 function reassignedNames(root: Node): Set<string> {
   const names = new Set<string>();
@@ -616,41 +556,47 @@ function namespaceBinding(bindings: ReadonlyMap<string, string>, reassigned: Rea
   return undefined;
 }
 
+type DurableCheck = (node: Node) => boolean;
+
+const durableChecks = new Map<string, DurableCheck>([
+  ["identifier", () => true],
+  ["this", () => true],
+  ["member_expression", durableMember],
+  ["subscript_expression", durableSubscript],
+  ["parenthesized_expression", durableWrapped],
+  ["non_null_expression", durableWrapped],
+  ["type_assertion", durableWrapped],
+]);
+
 /** True for a name whose value can be substituted twice without a second call or construction. */
 function durableReference(node: Node): boolean {
-  switch (node.type) {
-    case "identifier":
-    case "this":
-      return true;
-    case "member_expression": {
-      const object = node.childForFieldName("object");
-      const property = node.childForFieldName("property");
-      return (
-        property?.type === "property_identifier" && object !== null && object !== undefined && durableReference(object)
-      );
-    }
-    case "subscript_expression": {
-      const object = node.childForFieldName("object");
-      const index = node.childForFieldName("index");
-      return (
-        object !== null &&
-        object !== undefined &&
-        durableReference(object) &&
-        index !== null &&
-        index !== undefined &&
-        ["identifier", "number", "string"].includes(index.type)
-      );
-    }
+  return durableChecks.get(node.type)?.(node) ?? false;
+}
 
-    case "parenthesized_expression":
-    case "non_null_expression":
-    case "type_assertion": {
-      const inner = node.namedChildren.find((child) => child !== null);
-      return inner !== undefined && durableReference(inner);
-    }
-    default:
-      return false;
-  }
+function durableMember(node: Node): boolean {
+  const object = node.childForFieldName("object");
+  const property = node.childForFieldName("property");
+  return (
+    property?.type === "property_identifier" && object !== null && object !== undefined && durableReference(object)
+  );
+}
+
+function durableSubscript(node: Node): boolean {
+  const object = node.childForFieldName("object");
+  const index = node.childForFieldName("index");
+  return (
+    object !== null &&
+    object !== undefined &&
+    durableReference(object) &&
+    index !== null &&
+    index !== undefined &&
+    ["identifier", "number", "string"].includes(index.type)
+  );
+}
+
+function durableWrapped(node: Node): boolean {
+  const inner = node.namedChildren.find((child) => child !== null);
+  return inner !== undefined && durableReference(inner);
 }
 
 /** Argument node types that bind tighter than every operator in a replacement, so they need no parentheses. */
@@ -701,23 +647,4 @@ function needsParentheses(call: Node): boolean {
     default:
       return true;
   }
-}
-
-function offsetOf(source: string, line: number, column: number): number {
-  let start = 0;
-  for (let current = 1; current < line; current += 1) {
-    const next = source.indexOf("\n", start);
-    if (next === -1) return -1;
-    start = next + 1;
-  }
-  return start + column - 1 <= source.length ? start + column - 1 : -1;
-}
-
-/** Applies edits from the end of the file backwards so earlier offsets stay valid; their ranges never overlap. */
-function applyEdits(source: string, edits: readonly Edit[]): string {
-  let text = source;
-  for (const edit of [...edits].sort((left, right) => right.start - left.start)) {
-    text = `${text.slice(0, edit.start)}${edit.replacement}${text.slice(edit.end)}`;
-  }
-  return text;
 }

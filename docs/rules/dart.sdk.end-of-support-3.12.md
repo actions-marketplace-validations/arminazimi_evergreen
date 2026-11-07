@@ -40,8 +40,8 @@ The Dart security policy commits security updates only for the most recent stabl
 
 ## Sources
 
-- [Dart security policy](https://dart.dev/security)
-- [Dart changelog](https://dart.dev/changelog)
+- [Dart security policy](https://dart.dev/security) (accessed 2026-10-21)
+- [Dart changelog](https://dart.dev/changelog) (accessed 2026-10-21)
 
 ## Migration
 
@@ -71,14 +71,23 @@ The `dart` detector. See [Detectors](../DETECTORS.md) and [Compatibility](../COM
 
 ### Other versions of this product
 
+- [Dart 2 and older no longer receive security updates](dart.sdk.end-of-support-2-and-older.html)
+- [Dart 3.0 no longer receives security updates](dart.sdk.end-of-support-3.0.html)
+- [Dart 3.1 no longer receives security updates](dart.sdk.end-of-support-3.1.html)
 - [Dart 3.10 no longer receives security updates](dart.sdk.end-of-support-3.10.html)
 - [Dart 3.11 no longer receives security updates](dart.sdk.end-of-support-3.11.html)
+- [Dart 3.2 no longer receives security updates](dart.sdk.end-of-support-3.2.html)
+- [Dart 3.3 no longer receives security updates](dart.sdk.end-of-support-3.3.html)
+- [Dart 3.4 no longer receives security updates](dart.sdk.end-of-support-3.4.html)
+- [Dart 3.5 no longer receives security updates](dart.sdk.end-of-support-3.5.html)
+- [Dart 3.6 no longer receives security updates](dart.sdk.end-of-support-3.6.html)
+- [Dart 3.7 no longer receives security updates](dart.sdk.end-of-support-3.7.html)
 - [Dart 3.8 no longer receives security updates](dart.sdk.end-of-support-3.8.html)
-- [Dart 3.9 no longer receives security updates](dart.sdk.end-of-support-3.9.html)
 
 ### Same ecosystem
 
 - [analysis_server_client is discontinued on pub.dev](dart.package.analysis-server-client.discontinued.html)
+- [Dart 3.9 no longer receives security updates](dart.sdk.end-of-support-3.9.html)
 
 
 ## Data

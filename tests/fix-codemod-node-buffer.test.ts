@@ -1,42 +1,13 @@
 import assert from "node:assert/strict";
-import { execFile } from "node:child_process";
-import { mkdtemp, readFile, rm, writeFile } from "node:fs/promises";
-import { tmpdir } from "node:os";
+import { readFile } from "node:fs/promises";
 import { join, resolve } from "node:path";
-import { promisify } from "node:util";
 import { after, test } from "node:test";
 
-import { builtInDetectors as detectors } from "../src/detectors/index.js";
-import { scanRepository } from "../src/engine.js";
-import { planFixReport } from "../src/fix/index.js";
-import type { FilePatch, FixRefusal } from "../src/fix/index.js";
-import { grammarFor, parseSource } from "../src/usage/tree-sitter.js";
+import { apply, assertParses, cleanup, normalized, plan } from "./codemod-helpers.js";
 
-const execute = promisify(execFile);
 const fixtures = resolve("tests/fixtures/fix/node-buffer");
-const temporaryRoots: string[] = [];
 
-after(async () => {
-  await Promise.all(temporaryRoots.map((root) => rm(root, { recursive: true, force: true })));
-});
-
-interface Plan {
-  root: string;
-  patches: FilePatch[];
-  refusals: FixRefusal[];
-}
-
-async function plan(files: Record<string, string>): Promise<Plan> {
-  const root = await mkdtemp(join(tmpdir(), "evergreen-node-buffer-"));
-  temporaryRoots.push(root);
-  for (const [path, contents] of Object.entries(files)) await writeFile(join(root, path), contents);
-  const result = await scanRepository(root, detectors, { noCache: true });
-  return { root, ...(await planFixReport(result)) };
-}
-
-function normalized(text: string): string {
-  return text.replace(/\r\n/g, "\n");
-}
+after(cleanup);
 
 for (const [extension, language] of [
   ["js", "javascript"],
@@ -45,33 +16,29 @@ for (const [extension, language] of [
   test(`rewrites every literal form in ${extension} and the patch applies cleanly`, async () => {
     const before = await readFile(join(fixtures, `before.${extension}`), "utf8");
     const expected = await readFile(join(fixtures, `after.${extension}`), "utf8");
-    const { root, patches } = await plan({ [`index.${extension}`]: before });
+    const { root, patches } = await plan({ [`index.${extension}`]: before }, "node-buffer");
 
     assert.equal(patches.length, 1);
     assert.equal(patches[0]!.path, `index.${extension}`);
-    const patch = join(root, "fix.patch");
-    await writeFile(patch, `${patches[0]!.diff}\n`);
-    await execute("git", ["apply", "--check", patch], { cwd: root });
-    await execute("git", ["apply", patch], { cwd: root });
-    assert.equal(normalized(await readFile(join(root, `index.${extension}`), "utf8")), normalized(expected));
-
-    const tree = await parseSource(grammarFor(language, `index.${extension}`)!, expected);
-    assert.ok(tree);
-    assert.equal(tree.rootNode.hasError, false);
-    tree.delete();
+    const fixed = await apply(root, patches[0]!.diff, `index.${extension}`);
+    assert.equal(fixed, normalized(expected));
+    await assertParses(fixed, language);
   });
 
   test(`plans nothing for already-rewritten ${extension}`, async () => {
     const expected = await readFile(join(fixtures, `after.${extension}`), "utf8");
-    assert.deepEqual((await plan({ [`index.${extension}`]: expected })).patches, []);
+    assert.deepEqual((await plan({ [`index.${extension}`]: expected }, "node-buffer")).patches, []);
   });
 }
 
 test("refuses every shape whose argument kind is not visible in the source text", async () => {
-  const { refusals } = await plan({
-    "index.js": await readFile(join(fixtures, "refusals.js"), "utf8"),
-    "index.ts": await readFile(join(fixtures, "refusals.ts"), "utf8"),
-  });
+  const { refusals } = await plan(
+    {
+      "index.js": await readFile(join(fixtures, "refusals.js"), "utf8"),
+      "index.ts": await readFile(join(fixtures, "refusals.ts"), "utf8"),
+    },
+    "node-buffer",
+  );
 
   assert.equal(refusals.length, 9);
   assert.ok(refusals.every((refusal) => refusal.fixer === "node-buffer"));
@@ -84,4 +51,33 @@ test("refuses every shape whose argument kind is not visible in the source text"
   assert.ok(reasons.some((reason) => reason.includes("not a direct reference to `SlowBuffer`")));
   assert.ok(reasons.some((reason) => reason.includes("constructed with `new`")));
   assert.equal(reasons.filter((reason) => reason.includes("TypeScript type assertion")).length, 3);
+});
+
+test("classify accepts a number or a string with an encoding and refuses every other argument shape", async () => {
+  const source = [
+    "const one = new Buffer(5);",
+    'const two = Buffer("hello", "utf8");',
+    "const big = Buffer(10n);",
+    "const numeric = Buffer(5, 0, 2);",
+    'const encoding = Buffer("hello", 1);',
+    "const array = Buffer([1, 2], 0);",
+    "const template = Buffer(`hi ${name}`);",
+    "",
+  ].join("\n");
+  const { patches, refusals } = await plan({ "index.js": source }, "node-buffer");
+
+  assert.equal(patches.length, 1);
+  const added = patches[0]!.diff
+    .split("\n")
+    .filter((line) => line.startsWith("+"))
+    .map((line) => line.slice(1));
+  assert.ok(added.includes("const one = Buffer.alloc(5);"));
+  assert.ok(added.includes('const two = Buffer.from("hello", "utf8");'));
+
+  const reasons = refusals.map((refusal) => refusal.reason);
+  assert.ok(reasons.some((reason) => reason.includes("BigInt literal")));
+  assert.ok(reasons.some((reason) => reason.includes("numeric form takes exactly one argument")));
+  assert.ok(reasons.some((reason) => reason.includes("second argument is not a string literal encoding")));
+  assert.ok(reasons.some((reason) => reason.includes("array form takes exactly one argument")));
+  assert.ok(reasons.some((reason) => reason.includes("substitutions")));
 });

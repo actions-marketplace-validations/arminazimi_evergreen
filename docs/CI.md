@@ -73,10 +73,17 @@ Do not raise it to make a single change pass.
 
 - Classify docs-only vs code ([`ci.yml`](../.github/workflows/ci.yml) `changes` job).
 - `npm run check` on Ubuntu with Node 24 and Node 22.
+- Run only the test files a change can reach, from an import map
+  ([`tools/run-tests-selection.ts`](../tools/run-tests-selection.ts)); the `coverage` job still measures the
+  whole suite on every pull request. Shared paths, configuration, fixtures, the registry, and the
+  map's own code run everything.
 - `npm run check` on Windows with Node 24 (path and line-ending bugs before merge).
 - Quality gate against `origin/main`, dependency audit, Action cold-start budget, generated docs
   and data checks, coverage floors and per-file coverage diff — on the Linux Node 24 job.
 - Dogfood the Action against this repository's baseline on that same job.
+- Pack the npm tarball on Linux and on the cross-OS runner and compare the hashes in `ci-ok`, so a
+  build step that depends on the host — a path, a line ending, a file-ordering difference — fails
+  before merge (`record:reproducible`, [`compare-build-hashes.mjs`](../tools/compare-build-hashes.mjs)).
 - Decision-record presence when `schemas/`, `src/sdk.ts`, or `src/mcp.ts` change
   ([`decisions.yml`](../.github/workflows/decisions.yml)).
 - Rules lint when registry files change ([`rules.yml`](../.github/workflows/rules.yml)).
@@ -111,9 +118,11 @@ the site instead.
 
 **Runs.**
 
-- The full code gate from the pull-request lane, including Windows.
+- The full code gate from the pull-request lane, including Windows — and the whole test suite,
+  never the affected subset the pull-request lane runs.
 - macOS with Node 24 (`check-cross-os`), because that runner is scarce and belongs on the landing
-  proof rather than every pull-request push.
+  proof rather than every pull-request push. Its tarball hash joins the Linux and Windows records,
+  so the merge-queue comparison covers all three runners.
 - Self-scan: fail on findings outside `.evergreen-baseline.json`.
 - Performance budget on the fixed fixture.
 - Package smoke (npm tarball, Docker image, local Action) when the lane still lists it on
@@ -160,12 +169,12 @@ covered. That transitional cost is accepted; removing it is #2030's job after #2
 | Source freshness | `sources.yml` | Weekly |
 | Lifecycle importers | `importers.yml` | Weekly |
 | Scorecard + floor | `scorecard.yml`, `scorecard-floor.yml` | Weekly |
-| CodeQL | `codeql.yml` | Weekly |
+| CodeQL (scheduled scan) | `codeql.yml` | Weekly (also runs on every PR and main push) |
 | Open alerts gate | `open-alerts.yml` | Push to main + daily |
 | MCP listings | `mcp-listings.yml` | Weekly |
 | Label sync | `labels.yml` | Weekly + path pushes |
 
-These must not be required status checks. A red nightly run opens follow-up work; it does not block
+The scheduled runs must not be required status checks. A red nightly run opens follow-up work; it does not block
 a green queue. Affected, full, and record corpus runs live in one file (`corpus.yml`) with a
 `mode` input for `workflow_dispatch`.
 
@@ -184,7 +193,7 @@ a green queue. Affected, full, and record corpus runs live in one file (`corpus.
 - Data-bundle release when registry data changes ([`data-release.yml`](../.github/workflows/data-release.yml)).
 
 **Stages.** `release.yml` is a thin orchestrator that calls reusable stage workflows (verify, build,
-publish per channel including npm via `publish.yml`, smoke). A version tag runs the full chain in
+publish per channel including npm via the `npm-publish` job, smoke). A version tag runs the full chain in
 one workflow run so a failed stage is safe to re-run. A manual run with `dry_run` exercises every
 stage and publishes nothing. Those tasks keep this lane's budget and the rule that `main` does not
 carry the Action bundle.
@@ -556,7 +565,7 @@ hand, and do not re-run the failing `main` commit hoping for green; fix forward 
 ### Nightly and scheduled signal, not a gate
 
 Red `corpus.yml` (affected, full, or record), `mutation.yml`, `sources.yml`, `importers.yml`,
-`scorecard.yml`, CodeQL, or MCP-listing runs **never block a green queue** — see the Nightly lane
+`scorecard.yml`, scheduled CodeQL, or MCP-listing runs **never block a green queue** — see the Nightly lane
 and [What this design deliberately leaves out](#what-this-design-deliberately-leaves-out-of-the-merge-gate).
 The affected-corpus job was the second-heaviest failure source in the 30-day window above; it needs
 the network, so its red is signal rather than a merge blocker, and what it means (upstream flakiness
@@ -569,7 +578,7 @@ fixtures locally with `npm run corpus:warm` and check the tracked repositories w
 ### Release chain
 
 **Symptom.** A `release.yml` run on a `v*` tag fails in one of its stages; `publish.yml` never runs
-on its own (`workflow_call` from `release.yml` only, the npm publish stage since #2337).
+on its own (`workflow_call` from `release.yml` only; it runs package smoke and the MCP Registry after the `npm-publish` job).
 
 **Cause.** Verify, build, per-channel publish (npm, binaries, container, Homebrew, data bundle), or
 smoke failed. Stages receive the audited `release_sha` (since #2340), so a mid-chain failure cannot
@@ -610,19 +619,19 @@ just because a later task will fold it.
 | `workflow-lint.yml` | Main | `push` to `main` on workflow paths; `workflow_dispatch` | actionlint + zizmor on workflow YAML and `action.yml` |
 | `pages.yml` | Main | `push` to `main`; `workflow_dispatch` | Build the docs site, Seaworthy + Lighthouse, deploy to GitHub Pages |
 | `labels.yml` | Main / nightly | `pull_request` / `push` on label paths; weekly schedule; `workflow_dispatch` | Sync `.github/labels.yml` and check good-first-issue briefs |
-| `release.yml` | Main / release | `push` to `main`; version `v*` tags; `workflow_dispatch` | One release chain: Action bundle on `release/<tag>`, npm via `publish.yml`, binaries, provenance, channels, smoke |
+| `release.yml` | Main / release | `push` to `main`; version `v*` tags; `workflow_dispatch` | One release chain: Action bundle on `release/<tag>`, npm via the `npm-publish` job, binaries, provenance, channels, smoke |
 | `package-smoke.yml` | Merge queue / nightly | `merge_group`; nightly schedule; `workflow_dispatch` | Prove npm tarball, Docker image, and local Action scan the same fixture |
 | `ci-health.yml` | Nightly | `workflow_run` of CI on `main`; schedules; `workflow_dispatch` | Open/close devops issues on main failures, measure CI duration, quarantine flaky tests |
 | `mutation.yml` | Nightly | Nightly schedule; `workflow_dispatch` | Mutation testing matrix (too slow for the merge gate) |
-| `corpus.yml` | Pull request / main / nightly | `pull_request` / `push` on detector paths; weekly + twice-monthly schedules; `workflow_dispatch` with `mode` (`affected` / `full` / `record`) | Affected-ecosystem signal, full public corpus validate, and recorded full-run PR |
+| `corpus.yml` | Pull request / main / nightly | `pull_request` / `push` on detector paths; weekly + twice-monthly schedules; `workflow_dispatch` with `mode` (`affected` / `full` / `record`) | Affected-ecosystem signal; full public corpus validate in eight shards plus a merge job; recorded full-run PR |
 | `sources.yml` | Nightly | Weekly schedule; `workflow_dispatch` | Evidence URL reachability and rule freshness windows |
 | `importers.yml` | Nightly | Weekly schedule; `workflow_dispatch` | Draft lifecycle rules from authoritative sources; open one PR per importer |
 | `scorecard.yml` | Nightly | Weekly schedule; `branch_protection_rule`; `workflow_dispatch` | OpenSSF Scorecard publish + SARIF upload |
 | `scorecard-floor.yml` | Nightly | Weekly schedule (after Scorecard); `workflow_dispatch` | Alert when the published Scorecard score is below the QUALITY.md floor |
-| `codeql.yml` | Nightly | Weekly schedule; `workflow_dispatch` | CodeQL analysis of `main` |
+| `codeql.yml` | Pull request / main / nightly | Every `pull_request`; `push` to `main`; weekly schedule; `workflow_dispatch` | CodeQL analysis of every proposed change and `main` |
 | `open-alerts.yml` | Push to main | Push to `main`; daily schedule; `workflow_dispatch` | Fail on any open code-scanning or Dependabot alert on `main` that `tools/open-alerts-baseline.json` does not accept |
 | `mcp-listings.yml` | Nightly | Weekly schedule; `workflow_dispatch` | Compare tracked MCP directory listings to `server.json` |
-| `publish.yml` | Release | `workflow_call` from `release.yml` | npm trusted publish with provenance, package smoke, MCP Registry |
+| `publish.yml` | Release | `workflow_call` from `release.yml` | package smoke and MCP Registry (the npm publish itself is in `release.yml`) |
 | `data-release.yml` | Release | `data-v*` tags; dry-run `workflow_dispatch` | Build, sign, and publish the lifecycle data bundle |
 | `gitlab-sync.yml` | Release | `v*` tags; `workflow_dispatch` | Push the release commit and tags to the GitLab CI/CD Catalog project |
 | `evergreen-reusable.yml` | Product (caller) | `workflow_call` only | Reusable per-repository Evergreen scan for other repositories to `uses:` |

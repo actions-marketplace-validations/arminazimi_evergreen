@@ -154,6 +154,43 @@ Prints a one-screen summary of the repository's lifecycle state, laid out like `
 
 Below 80 terminal columns the mark is dropped and the facts keep the full width. On a terminal the severity blocks are colored; `NO_COLOR` turns that off. [Showcase](SHOWCASE.md) shows the card and [docs/demos/glance.tape](demos/glance.tape) records it.
 
+### `wrapped`
+
+```bash
+evergreen wrapped [path] [--year <YYYY>] [--svg <file>] [--json]
+```
+
+Prints a year-in-review of lifecycle findings for a Git repository: how many were fixed, how many were introduced, the net change, the longest-ended item still present, the top three CODEOWNERS owners by fixed findings (skipped when there is no CODEOWNERS file), and the next deadline in the coming year. Fixed and introduced counts match `evergreen diff <base>..<head> --json` for the same refs. The base is the last commit before 1 January of the year (or the first commit when none exists); the head is `HEAD`, or the last commit of that year when reviewing a past year. Scans read git objects only; the working tree is never modified.
+
+| Flag | What it does |
+| --- | --- |
+| `[path]` | Repository path. Default `.`. |
+| `--year <YYYY>` | Calendar year to review. Default: the current UTC year. |
+| `--svg <file>` | Write one 1200×630 summary card to this path instead of playing the terminal cards. Cannot be combined with `--json`. |
+| `--json` | Print the `evergreen.wrapped.v1` document. |
+| `--no-animation` | Print every card at once, even on a terminal. |
+
+On a terminal the cards play one at a time within six seconds. Off a terminal, or with `--no-animation`, the same content prints as static text. When the repository has no commit before the year, the command says so and compares against the first commit. [Showcase](SHOWCASE.md) shows the cards and [docs/demos/wrapped.tape](demos/wrapped.tape) records them.
+
+### `timelapse`
+
+```bash
+evergreen timelapse [path] [--from <YYYY-MM>] [--to <YYYY-MM>] [--svg <file>] [--json]
+```
+
+Plays a month-by-month time-lapse of how lifecycle findings age in a repository. The repository is scanned once; each month is projected with the same as-of logic as `scan --as-of` on that month's last day. Files that carry a finding whose deadline has been reached turn red, and a running count of appeared findings updates with each frame. Defaults cover this UTC month through 23 months ahead (24 frames).
+
+| Flag | What it does |
+| --- | --- |
+| `[path]` | Repository path. Default `.`. |
+| `--from <YYYY-MM>` | First month to show. Default: the current UTC month. |
+| `--to <YYYY-MM>` | Last month to show. Default: 23 months after `--from`. |
+| `--svg <file>` | Write a 1200×630 CSS-keyframe animation of the same frames. Cannot be combined with `--json`. |
+| `--json` | Print an array of `{ month, findings, files }`. |
+| `--no-animation` | Print every frame at once, even on a terminal. |
+
+On a terminal the frames play within six seconds. Off a terminal, under `CI`, or with `--no-animation`, the same content prints as static text. The SVG keeps the final frame under `prefers-reduced-motion` and avoids `<script>`, `<foreignObject>`, and external references so it survives GitHub's sanitizer. [Showcase](SHOWCASE.md) shows the play and [docs/demos/timelapse.tape](demos/timelapse.tape) records it.
+
 ### `lookup`
 
 ```bash
@@ -166,21 +203,6 @@ Resolves a product and optional version against the bundled lifecycle rules and 
 | --- | --- |
 | `--json` | Print the structured lookup result. |
 
-### `drift`
-
-```bash
-evergreen drift [path] [--json] [--check] [--runtime <id>] [--align <release>]
-```
-
-Reports every place a repository states a runtime version and whether those values select the same release line. Each pin carries its file and line, the source it came from, the value as written, and the release it resolves to offline; a floor above the lowest pin is reported as a floor conflict. Nothing is written. See [Drift](DRIFT.md) for the sources and granularity of each runtime.
-
-| Flag | What it does |
-| --- | --- |
-| `[path]` | Repository path. Default `.`. |
-| `--json` | Print the `evergreen.drift.v1` document defined by [`schemas/drift.v1.schema.json`](../schemas/drift.v1.schema.json). |
-| `--check` | Exit `1` when any runtime drifted or has a floor conflict. |
-| `--runtime <id>` | Report one runtime only. |
-| `--align <release>` | Print a unified diff that makes the pins Evergreen understands select `release`; requires `--runtime`. Refused pins are listed on stderr, and no file is written. |
 ### `upgrade-check`
 evergreen upgrade-check --to <runtime@version> [path] [--json]
 Answers from files already in the repository whether the project can move to a target runtime. It reads lockfiles and manifests only: no package manager runs, nothing is installed, and nothing is fetched.
@@ -218,28 +240,6 @@ Scans both refs and reports the findings the change introduced and the ones it f
 | `[path]` | Repository path. Default `.`. |
 | `--json` | Print the structured diff. |
 
-### `drift`
-
-```bash
-evergreen drift [path] [--json] [--check] [--runtime <id>] [--align <release>]
-```
-
-Reports every runtime version a repository states and whether the values agree. It reads repository files and nothing else: no network, no commands, and no file is written. See [Runtime drift](DRIFT.md) for the sources each runtime reads and how it resolves them.
-Reports every place a repository states a runtime version, with its exact file and line, the release it resolves to offline, and whether the versions agree. It reads files only: nothing is executed, no network is used, and no file is written. See [Runtime drift](DRIFT.md) for the sources each runtime reads.
-
-| Flag | What it does |
-| --- | --- |
-| `[path]` | Repository path. Default `.`. |
-| `--json` | Print the `evergreen.drift.v1` document, which conforms to [`schemas/drift.v1.schema.json`](../schemas/drift.v1.schema.json). |
-| `--check` | Exit `1` when any runtime has more than one pinned release or a floor conflict. |
-| `--runtime <id>` | Report only this runtime, such as `java`. |
-| `--align <release>` | Print a unified diff for the pins of `--runtime` that can be rewritten to select `release`, and list the refused pins on stderr. Requires `--runtime`. |
-| `--json` | Print the drift report, which conforms to [`schemas/drift.v1.schema.json`](../schemas/drift.v1.schema.json). |
-| `--check` | Exit `1` when any runtime's pins disagree or a floor is above the lowest pinned release. |
-| `--runtime <id>` | Limit the report to one runtime, such as `rust`. |
-| `--runtime <id>` | Limit the report to one runtime, such as `go`. |
-| `--align <release>` | Print a unified diff that makes every understood pin select `<release>`. Requires `--runtime`; values it will not rewrite are listed on stderr. |
-
 ### `rollup`
 
 ```bash
@@ -273,7 +273,7 @@ Prints a `dependabot.yml` that groups updates for deprecated packages. It writes
 ### `fix`
 
 ```bash
-evergreen fix [path] [--dry-run | --branch] [--json]
+evergreen fix [path] [--dry-run | --branch] [--json | --show [--no-animation]]
 ```
 
 Prints patches for deterministic fixes; nothing is written by default. Apply the printed patches with `evergreen fix | git apply`.
@@ -283,6 +283,8 @@ Prints patches for deterministic fixes; nothing is written by default. Apply the
 | `--dry-run` | Print the patches and write nothing. This is the default behaviour. |
 | `--branch` | Apply the fixes on a local `evergreen/fix` branch and commit them. It never pushes. Cannot be combined with `--dry-run` or `--json`. |
 | `--json` | Print the fix plan as JSON. |
+| `--show` | Play the fix as a before-and-after view: each patch's removed lines in red, then its added lines in green, then the findings left unchanged in dim text with their reasons, ending on `12 → 3 findings`. Without `--branch` nothing is written to the repository; the "after" count comes from scanning a temporary copy with the patches applied. With `--branch` it shows what was committed. Cannot be combined with `--json`. |
+| `--no-animation` | With `--show`, print the static view instead of typing it out. Off a terminal the static view is always used. |
 
 ### `baseline`
 
@@ -427,14 +429,16 @@ Prints an enriched CycloneDX or SPDX 2.3 document; the format is detected from t
 evergreen watch add|remove <path>
 evergreen watch list [--json]
 evergreen watch [run] [--weekly] [--json]
+evergreen watch --board [--json]
 ```
 
-`add` and `remove` maintain the list of watched projects, `list` prints it, and `run` (the default subcommand) re-scans them and prints only what changed.
+`add` and `remove` maintain the list of watched projects, `list` prints it, and `run` (the default subcommand) re-scans them and prints only what changed. `--board` re-scans the same list and prints a ranked risk table: rank, project, findings by severity as small bars, the next deadline, and a trend arrow against the previous board (▲ worse, ▼ better, ● same). Older state files without summaries show ● for every project.
 
 | Flag | What it does |
 | --- | --- |
 | `--weekly` | With `run`, build a weekly digest instead of the usual since-last-run changes. |
-| `--json` | Print `list` or the digest as JSON. |
+| `--board` | Rank every watched project by severity-weighted findings, with trend arrows since the last board. |
+| `--json` | Print `list`, the digest, or the board as JSON. |
 
 ## Setup and authoring
 
@@ -552,6 +556,24 @@ Checks the runtime, package, MCP, Skill, plugin, and CI setup around a repositor
 
 The command exits `1` when any check fails.
 
+### `verify`
+
+```bash
+evergreen verify [path]
+```
+
+Checks the installed Evergreen release against the release manifest the package ships (`dist/src/release-manifest.json`), then says plainly what it could not check. `path` is a package root, for checking an unpacked copy; it defaults to the package that is running.
+
+The manifest lists every shipped file with its SHA-256 and size, so the command exits `1` when a file was changed, shortened, or removed. When the package also carries `dist/src/release-manifest.json.sigstore.json`, its Sigstore signature is verified offline against the trusted root bundled with the package. A missing manifest or signature is reported as "not checked", not as a failure: versions released before manifests existed keep working. It also reports which lifecycle data is active and whether that data carries a signer.
+
+The command never uses the network. It cannot prove that the published tarball came from this repository, because that evidence lives outside the installed tree. The report names the exact commands that do check it:
+
+- `npm audit signatures` verifies the registry signature and the npm provenance attestation for a package in a project's `node_modules`.
+- `npm audit signatures --json` prints the same verification for a script.
+- `gh attestation verify <file> --repo arminazimi/evergreen` verifies a binary's GitHub build attestation.
+
+Exit codes: `0` when every checked file matches (or when the installation carries nothing this version can check), `1` when a file, the manifest, or the signature does not verify, and `2` for bad input.
+
 ### `capabilities`
 
 ```bash
@@ -587,4 +609,27 @@ Every failure belongs to one class, and the class decides the exit code. With `-
 
 A `policy` failure is a verdict on a result that was already printed, so stdout stays that single result document and no error document is added. The message also goes to stderr in every mode, and `--debug` adds the stack trace for `internal` failures.
 
-The classes and their exit codes are stable; a new class would get a new number rather than renumber an existing one. The same table is published in [Capability manifest](CAPABILITIES.md#exit-codes-and-error-codes), and its source is the `EXIT_CODES` constant in `src/commands/types.ts`.
+Each failure also carries one stable reason code, written as `error.reason` in the error document.
+
+| Reason (`error.reason`) | Class | Raised when |
+| --- | --- | --- |
+| `policy-failed` | `policy` | A configured gate failed. No error document is written. |
+| `invalid-argument` | `usage` | A flag, value, or operand is wrong or missing. |
+| `invalid-config` | `usage` | The repository configuration file cannot be read or is invalid. |
+| `invalid-data-version` | `usage` | `--data-version` is not a data version. |
+| `unknown-command` | `usage` | The command name is not one Evergreen has. |
+| `scaffold-failed` | `usage` | `new-rule` or `new-detector` could not create its files: an invalid id, a taken name, an existing file, or no contributor checkout. |
+| `finding-not-found` | `data` | A finding ID matches no finding in the scan. |
+| `finding-not-observed` | `data` | A finding ID was not observed earlier in this MCP session. |
+| `data-unavailable` | `data` | A pinned data version or bundle is not available or does not verify. |
+| `data-update-failed` | `data` | `evergreen data update` could not finish. |
+| `invalid-purl` | `parse` | A Package URL is invalid. |
+| `invalid-agent-file` | `parse` | An `AGENTS.md` section is damaged. |
+| `invalid-sbom` | `parse` | An SBOM is not valid CycloneDX or SPDX. |
+| `invalid-input` | `parse` | Another input could not be parsed. |
+| `scan-memory-exceeded` | `internal` | The scan reached its heap limit. |
+| `internal` | `internal` | Evergreen failed unexpectedly. |
+
+Reason codes are stable: one is never renamed or moved to another class. The source is `ERROR_CODES` in `src/evergreen-error.ts`.
+
+The classes and their exit codes are stable; a new class would get a new number rather than renumber an existing one. The same table is published in [Capability manifest](CAPABILITIES.md#exit-codes-and-error-codes), and its source is the `EXIT_CODES` constant in `src/evergreen-error.ts`.

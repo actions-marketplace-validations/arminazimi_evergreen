@@ -38,6 +38,14 @@ Moved to [Ecosystem corpora: Java and Kotlin corpus](validation/ecosystems.md#ja
 
 Moved to [Ecosystem corpora: Java and Kotlin blind selection](validation/ecosystems.md#java-and-kotlin-blind-selection).
 
+## Scala and sbt corpus
+
+Moved to [Ecosystem corpora: Scala and sbt corpus](validation/ecosystems.md#scala-and-sbt-corpus).
+
+## Scala and sbt blind selection
+
+Moved to [Ecosystem corpora: Scala and sbt blind selection](validation/ecosystems.md#scala-and-sbt-blind-selection).
+
 ## Ruby corpus
 
 Moved to [Ecosystem corpora: Ruby corpus](validation/ecosystems.md#ruby-corpus).
@@ -70,6 +78,26 @@ Moved to [Ecosystem corpora: .NET blind selection](validation/ecosystems.md#net-
 
 Moved to [Ecosystem corpora: CI runner images corpus](validation/ecosystems.md#ci-runner-images-corpus).
 
+## C and C++ corpus
+
+Issue #1897 promotes the C/C++ detector to stable. The corpus already held twelve C/C++ ecosystem entries (four targeted migration pins and eight blind pins from the 300-repository pass). The gap for Supported was zero-finding controls: only `catchorg/Catch2` had an empty `expected` list.
+
+The blind zero-finding rule, fixed on 2026-11-07 before Evergreen ran on these additions: for each of `cmake_minimum_required(VERSION 3.20`, `cmake_minimum_required(VERSION 3.22`, and `cmake_minimum_required(VERSION 3.25`, run `gh search code <query> --filename CMakeLists.txt --limit 50`, walk the results in order, and keep unique repositories that are not forks, not archived, not larger than 5,000 KB on GitHub, and not already in the corpus. Pin each at its default-branch commit that day. Scan in walk order and keep a repository only when every detector reports nothing; stop as soon as the C/C++ ecosystem has four empty `expected` lists. The three additions are, in order: `j2kun/mlir-tutorial`, `rogerorr/NtTrace`, and `jagheterfredrik/meb-preheat`. Later walk hits that produced findings (for example `innobi/pantab`) were not kept. The search returns different results on another day, so the pinned list, not a re-run, is the record.
+
+Across the 15 C/C++ corpus entries, four have no findings at all, and 11 of the 15 were selected blind (73%). Corpus-wide the harness expects 242 `cpp` findings in 20 repositories. A narrowed offline run of the `cpp` and `shell` ecosystems on 2026-11-07 reported 11 true positives for `cpp` on those entries, no false positives, and no false negatives.
+
+## Shell and PowerShell corpus
+
+Issue #1897 promotes the Shell detector to stable. The corpus already held twelve shell ecosystem entries (four targeted and eight blind). Counts before this issue: five repositories with shell findings, twelve expected shell findings, and two zero-finding controls.
+
+The blind finding rule, fixed on 2026-11-07 before Evergreen ran on these additions: for each query below, run `gh search code <query> --limit 50` with the listed path filter, walk the results in order, and keep unique repositories that are not forks, not archived, not larger than 5,000 KB on GitHub, and not already in the corpus, taking up to eight repositories per query until twenty-eight were kept. Pin each at its default-branch commit that day. Queries: `#Requires -Version 6.0` / `7.0` / `7.1` / `7.2` / `7.3` (`--extension ps1`), `#requires -Version 6` (`--extension psm1`), `PowerShellVersion = '7.0'` and `PowerShellVersion = '6.0'` (`--filename *.psd1`), and `mcr.microsoft.com/powershell:7.2` / `7.3` (`--extension yml`). After the first scan, repositories whose findings were almost entirely other detectors (for example `Contrast-Security-OSS/agent-operator`) were dropped so the shell sample stayed reviewable; every kept entry still came from that walk and was not chosen by its Evergreen score.
+
+The blind zero-finding rule, fixed the same day: the same walk for `#Requires -Version 7.4`, `#Requires -Version 7.5`, and `PowerShellVersion = '7.4'`, then keep empty `expected` lists until the shell ecosystem has at least four zero-finding repositories. Kept zeros from that walk include `arnobpl/SymlinkCreator`, `ndabas/pico-setup-windows`, `microsoft/azure-redcap-paas`, `agadiffe/WindowsMize`, `kaitai-io/kaitai_struct_cpp_stl_runtime`, and `hcoona/cxx-for-java-developers`.
+
+Ground truth: every finding in the kept repositories, from every detector, was read at its pinned line and recorded with a `maintainer-review` note quoting the path and line. PowerShell dates come from Microsoft's [PowerShell support lifecycle](https://learn.microsoft.com/powershell/scripting/install/powershell-support-lifecycle); other detectors cite their own vendor sources. Nothing in these entries is taken from Evergreen's output alone.
+
+Across the 43 shell corpus entries, 29 have expected shell findings, nine have none, and 39 of the 43 were selected blind (91%). The corpus expects 102 shell findings in total. A narrowed offline run of the `cpp` and `shell` ecosystems on 2026-11-07 reported 102 true positives for `shell`, no false positives, and no false negatives.
+
 ## Go corpus
 
 Issue #1892 added 31 Go entries: 24 blind and seven targeted. The targeted entries exercise multi-module repositories: `minio/minio` (twelve `go.mod` files, including five toolchain pins), `etcd-io/etcd` (five modules requiring the deprecated `github.com/golang/protobuf`), `hashicorp/vault` (three modules with the same requirement), `moby/moby` (four modules), `cli/cli` (a test module), and `containerd/containerd` (one module). `prometheus/prometheus` is a targeted zero-finding companion: it declares Go modules but no release line or module rule applies at the pin.
@@ -89,6 +117,55 @@ The blind rule, fixed on the same date: GitHub repository search for `language:r
 Ground truth: every finding in these repositories, from every detector, was read at its pinned line and recorded with a `maintainer-review` note naming the path and line. Crate status comes from the [RustSec advisory database](https://rustsec.org/), the toolchain dates from the [Rust release policy](https://www.rust-lang.org/policies/security), and the other detectors' facts from their own vendor sources.
 
 Across the 78 Rust corpus entries, 36 have expected Rust findings, 28 have no findings at all, and 53 of the 78 were selected blind (68%). A narrowed run of both ecosystems on 2026-11-01 reported 61 expected Rust findings, 61 true positives, no false positives, and no false negatives. The full run the same day reported all 63 Rust findings the corpus expects across every ecosystem, with no false positives and no false negatives.
+
+## Deno and Bun corpus
+
+Issue #1895 pinned two blind repositories, one Bun and one Deno. That is the whole eligible set from the rule below. `starlink-awaken/StrategyManager` pins Bun `1.0.0` in `.bun-version`. `DominikDolejsi/PokeAppBackend` pins Deno `1.46.2` as the root `"deno"` string in `deno.json`. Both also use `actions/checkout@v4`, recorded for the GitHub Actions detector.
+
+Two repositories and two expected Deno or Bun findings are below the beta minimum (8 repositories with findings and 15 findings) and the stable minimum (20 and 60). The `deno` detector stays experimental, and so does the Bun capability, which uses the same detector. No zero-finding Deno entry was added: current `.bun-version` pins in the searched pages sit next to other ecosystems' manifests, so an empty `expected` list was not available from that walk.
+
+Every finding in these two repositories was read at its pinned line and recorded with a `maintainer-review` note. Deno dates come from the [Deno 2.0.0 release](https://github.com/denoland/deno/releases/tag/v2.0.0), Bun dates from the [Bun 1.1.0 release](https://github.com/oven-sh/bun/releases/tag/bun-v1.1.0). A narrowed run on 2026-11-07 reported 2 true positives, no false positives, and no false negatives for the `deno` detector.
+
+## Deno and Bun blind selection
+
+The blind rule, fixed on 2026-11-07 before Evergreen ran on these additions.
+
+Bun: for each of `1.0.0` through `1.0.36`, and `0.5.7`, `0.6.0`, `0.7.0`, `0.7.3`, `0.8.0`, `0.8.1`, GitHub code search `filename:.bun-version <version>`. Keep a repository when the path ends in `.bun-version` (not `.bun-version.json`) and the first non-comment line is that exact pin. `1.0.0` returned 4 hits: this repository's gallery and fixtures, `xsyetopz/versionlens-redux` (a `.bun-version.json` catalog, not a pin the detector reads), and `starlink-awaken/StrategyManager`. Every other searched 1.0 patch and 0.x version returned 0.
+
+Deno: for each of `1.46.3`, `1.46.2`, `1.46.1`, `1.45.5`, `1.44.4`, `1.43.6`, `1.42.4`, `1.41.3`, `1.40.5`, `1.39.4`, `1.38.5`, `1.37.2`, `1.36.4`, `1.34.3`, `1.32.1`, `1.30.0`, `1.28.0`, `1.20.6`, and `1.11.5`, code search `filename:deno.json "deno": "<version>"`. Keep a hit only when that string is a runtime pin, not a version catalog, an npm specifier, a `$schema` URL, or a CVE record. The same text matches an `engines.deno` pin. The only eligible pin was `DominikDolejsi/PokeAppBackend` at `1.46.2`. The repeating non-pins were `so1ve/js-toolchain-overlay` `versions/deno.json` and `imranur-rahman/update-metrics` `data/libraries/project/CARGO_deno.json`.
+
+Not judged, and not counted as misses: `.deno-version` (63 indexed files; the detector does not read it), `"deno": ">=…"` ranges, `devDependencies.deno`, `requiredBunVersion`, a package `version` in `bunfig.toml`, and Docker or CI images.
+
+Skip forks, archived repositories, repositories already in the corpus, `arminazimi/evergreen`, and repositories larger than 50,000 KB. Pin the default-branch commit. The queries return different results on another day, so the pinned list above, not a re-run, is the record.
+
+## Elixir and Mix corpus
+
+Issue #1895 added 36 Elixir entries, every one of them blind. Thirty-two have expected Elixir or Erlang findings and four have none: `sasa1977/soul_of_erlang_and_elixir` (Elixir 1.17.2, OTP 27), `gumi/yacto` (Elixir 1.17.2, OTP 27.0.1), `socrata/exsoda` (Elixir 1.17.3, OTP 27.3), and `danielberkompas/cloak` (Elixir 1.19.5, OTP 28.4).
+
+The finding repositories, in the order the rule below kept them, are `smpallen99/coherence`, `elixir-crawly/crawly`, `emqx/MQTT-Client-Examples`, `bitcrowd/chromic_pdf`, `peek-travel/cocktail`, `supabase/libcluster_postgres`, `TheAlgorithms/Elixir`, `nimblehq/elixir-templates`, `implicitly-awesome/exop`, `benvp/live_motion`, `AccessOwl/open_owl`, `davydog187/timescale`, `sasa1977/elixir-in-action`, `sasa1977/boundary`, `standard-webhooks/standard-webhooks`, `coingaming/moon`, `danielberkompas/elasticsearch-elixir`, `revelrylabs/text_chunker_ex`, `fredwu/opq`, `acalejos/merquery`, `crertel/graphmath`, `navinpeiris/geoip`, `dvcrn/chatgpt-ui`, `commanded/commanded-ecto-projections`, `aviacommerce/avia`, `Hubs-Foundation/reticulum`, `esl/gradient`, `revelrylabs/ecto_soft_delete`, `elixir-desktop/desktop`, `fredwu/crawler`, `petalframework/petal_components`, and `sasa1977/con_cache`.
+
+Every finding in these repositories, from every detector, was read at its pinned line and recorded with a `maintainer-review` note naming the path and line. Elixir dates come from the [Elixir security policy](https://github.com/elixir-lang/elixir/security/policy), OTP dates from the [Erlang/OTP security policy](https://github.com/erlang/otp/security/policy), and the other detectors' facts from their own vendor sources. Nothing in these entries is taken from Evergreen's output.
+
+The files the detector reads are present across the set: every finding comes from a `.tool-versions` pin, and nearly every repository also has a `mix.exs` and a `mix.lock`. Exact `elixir: "1.14.x"` pins in `mix.exs` were not in the first pages of code search (the hits were `~> 1.14` ranges, which the detector does not judge). `filename:mix.exs fennec`, `filename:mix.lock fennec`, and `fennec language:Elixir` on 2026-11-07 returned no public consumer of the retired Hex package outside this repository's fixtures.
+
+Docker and CI pins are in the corpus and are not judged. Examples read at the pinned commit: `dvcrn/chatgpt-ui` `FROM elixir:1.14.3-alpine`, `sasa1977/elixir-in-action` `ARG ELIXIR="1.15.4"`, `coingaming/moon` `FROM heathmont/elixir-ci:1.15.6-otp-26-alpine`, `petalframework/petal_components` `FROM hexpm/elixir:1.17.2-erlang-26.2.1-debian-bookworm-20260610-slim`, and `erlef/setup-beam` matrices in `revelrylabs/text_chunker_ex` and `Hubs-Foundation/reticulum`. `socrata/exsoda` names Elixir in `.travis.yml` and is a zero-finding repository.
+
+Across the 36 entries, 32 have expected Elixir or Erlang findings (73 of them), four have none, and all 36 were selected blind. A narrowed run of `node dist/benchmarks/public-repositories.js --offline --ecosystem elixir` on 2026-11-07 reported 73 true positives, no false positives, and no false negatives for the `elixir` detector (precision 1, recall 1).
+
+## Elixir and Mix blind selection
+
+The blind rule, fixed on 2026-11-07 before Evergreen ran on these additions: GitHub code search (`gh api search/code`, 100 results per page) in this order.
+
+1. `filename:.tool-versions "elixir 1.14"` — keep the first 12 eligible repositories whose file has at least one covered pin.
+2. `filename:.tool-versions "elixir 1.15"` — the first 12 not already kept.
+3. `filename:.tool-versions "erlang 25"` — the first 4 not already kept.
+4. `filename:.tool-versions "erlang 26"` — the first 4 not already kept.
+
+Zero-finding repositories: `filename:.tool-versions "elixir 1.17"`, `"elixir 1.18"`, or `"elixir 1.19"`. Keep a repository only when the file names elixir and erlang and no other tool, contains neither Elixir 1.14 or 1.15 nor OTP 25 or 26 (including an `-otp-25` or `-otp-26` suffix), and the default-branch tree has no Dockerfile, Containerfile, Compose file, `.github/workflows` file, `package.json`, `go.mod`, `Cargo.toml`, `pyproject.toml`, `Gemfile`, `composer.json`, `pom.xml`, `build.gradle`, `requirements.txt`, or `*.csproj`. Take four.
+
+Skip forks, archived repositories, repositories already in the corpus, `arminazimi/evergreen`, paths that are not `.tool-versions`, paths under `deps`, `_build`, or `node_modules`, and repositories whose GitHub disk usage is over 50,000 KB. Pin each at its default-branch commit on that date. Search totals that day: Elixir 1.14 was 425, Elixir 1.15 was 343, OTP 25 was 471, OTP 26 was 746, Elixir 1.17 was 378, Elixir 1.18 was 630, and Elixir 1.19 was 462. The queries return different results on another day, so the pinned list above, not a re-run, is the record.
+
+Covered pins were classified by an independent reading of the `.tool-versions` lines (exact `major.minor` or `major.minor.patch`, plus one `-otp-N` suffix), not by an Evergreen scan. A four-component OTP version such as `25.3.2.5` is not an exact pin and was not counted.
 
 ## The 300-repository corpus
 
@@ -187,39 +264,39 @@ Moved to [Differential testing: Differential testing against Pluto](validation/d
 Precision is true positives over true positives plus false positives; recall is true positives over true positives plus false negatives. Both come from the last full corpus run recorded in [`benchmarks/thresholds.json`](../benchmarks/thresholds.json), so a reader can regenerate every number: run `npm run record:corpus-run`, then `npm run build:coverage`. The table below is generated; a test fails when it drifts from the recorded run. `nodejs` is the Node.js runtime rules served by the npm detector. A dash means the last full run did not score that detector.
 
 <!-- accuracy-tables:start -->
-Measured on 557 pinned repositories at commit `114f19b` on 2026-11-01. Regenerate with `npm run build:coverage` after `npm run record:corpus-run`.
+Measured on 557 pinned repositories at commit `dcc9f320` on 2026-11-06. Regenerate with `npm run build:coverage` after `npm run record:corpus-run`.
 
 | Detector | Maturity | True positives | False positives | False negatives | Precision | Recall |
 | --- | --- | --- | --- | --- | --- | --- |
-| android | Experimental | 10 | 0 | 0 | 1.000 | 1.000 |
-| ci-images | Experimental | 13 | 0 | 0 | 1.000 | 1.000 |
-| container | Experimental | 365 | 0 | 0 | 1.000 | 1.000 |
-| cpp | Experimental | 19 | 0 | 0 | 1.000 | 1.000 |
-| dart | Experimental | 8 | 0 | 0 | 1.000 | 1.000 |
+| android | Supported | 10 | 0 | 0 | 1.000 | 1.000 |
+| ci-images | Supported | 13 | 0 | 0 | 1.000 | 1.000 |
+| container | Supported | 368 | 0 | 0 | 1.000 | 1.000 |
+| cpp | Supported | 19 | 0 | 0 | 1.000 | 1.000 |
+| dart | Supported | 8 | 0 | 0 | 1.000 | 1.000 |
 | database | Experimental | 20 | 0 | 0 | 1.000 | 1.000 |
 | deno | Experimental | 0 | 0 | 0 | n/a | n/a |
-| dotnet | Beta | 304 | 0 | 0 | 1.000 | 1.000 |
-| elixir | Experimental | 0 | 0 | 0 | n/a | n/a |
-| github-actions | Supported | 1213 | 0 | 0 | 1.000 | 1.000 |
+| dotnet | Supported | 304 | 0 | 0 | 1.000 | 1.000 |
+| elixir | Supported | 0 | 0 | 0 | n/a | n/a |
+| github-actions | Supported | 1262 | 0 | 0 | 1.000 | 1.000 |
 | go | Supported | 111 | 0 | 0 | 1.000 | 1.000 |
-| java | Beta | 61 | 0 | 0 | 1.000 | 1.000 |
+| java | Supported | 61 | 0 | 0 | 1.000 | 1.000 |
 | kubernetes | Beta | 80 | 0 | 0 | 1.000 | 1.000 |
 | nodejs | Supported | 349 | 0 | 0 | 1.000 | 1.000 |
 | npm | Supported | 108 | 0 | 0 | 1.000 | 1.000 |
-| php | Experimental | 5 | 0 | 0 | 1.000 | 1.000 |
+| php | Supported | 5 | 0 | 0 | 1.000 | 1.000 |
 | python | Supported | 135 | 0 | 0 | 1.000 | 1.000 |
-| ruby | Experimental | 24 | 0 | 0 | 1.000 | 1.000 |
+| ruby | Supported | 24 | 0 | 0 | 1.000 | 1.000 |
 | rust | Supported | 63 | 0 | 0 | 1.000 | 1.000 |
-| scala | Experimental | 2 | 0 | 0 | 1.000 | 1.000 |
+| scala | Supported | 2 | 0 | 0 | 1.000 | 1.000 |
 | serverless | Beta | 168 | 0 | 0 | 1.000 | 1.000 |
-| shell | Experimental | 12 | 0 | 0 | 1.000 | 1.000 |
-| swift | Beta | 20 | 0 | 0 | 1.000 | 1.000 |
+| shell | Supported | 12 | 0 | 0 | 1.000 | 1.000 |
+| swift | Supported | 20 | 0 | 0 | 1.000 | 1.000 |
 | terraform | Experimental | 66 | 0 | 0 | 1.000 | 1.000 |
 <!-- accuracy-tables:end -->
 
 ## Mutation testing baseline
 
-Line coverage shows which lines run; mutation testing asks whether the tests would notice a bug in them. `npm run test:mutation` runs [Stryker](https://stryker-mutator.io/) with the command runner over `src/engine.ts`, `src/baseline.ts`, `src/diff.ts`, and `src/vers/`, rebuilding with `tsc` and executing the unit tests that target those modules. The nightly [Mutation](../.github/workflows/mutation.yml) workflow publishes the score and surviving mutants in the job summary. It does not fail the build on the score yet.
+Line coverage shows which lines run; mutation testing asks whether the tests would notice a bug in them. `npm run test:mutation` runs [Stryker](https://stryker-mutator.io/) with the command runner over `src/engine/`, `src/baseline.ts`, `src/diff.ts`, and `src/vers/`, rebuilding with `tsc` and executing the unit tests that target those modules. The nightly [Mutation](../.github/workflows/mutation.yml) workflow publishes the score and surviving mutants in the job summary. It does not fail the build on the score yet.
 
 First measured score on 2026-10-30 (commit `470542f4`): **59.59%** (1,139 killed, 7 timed out, 777 survived; 1,923 mutants). Per-file: `src/vers/` 80.12%, `src/baseline.ts` 72.78%, `src/diff.ts` 57.94%, `src/engine.ts` 23.12%.
 

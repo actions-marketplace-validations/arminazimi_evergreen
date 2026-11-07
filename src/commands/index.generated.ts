@@ -36,9 +36,12 @@ import { command as sbom } from "./sbom.js";
 import { command as scan } from "./scan.js";
 import { command as setup } from "./setup.js";
 import { command as statusCard } from "./status-card.js";
+import { command as timelapse } from "./timelapse.js";
 import { command as upgradeCheck } from "./upgrade-check.js";
 import { command as usage } from "./usage.js";
+import { command as verify } from "./verify.js";
 import { command as watch } from "./watch.js";
+import { command as wrapped } from "./wrapped.js";
 
 export const commands: readonly CliCommand[] = [
   badge,
@@ -77,7 +80,10 @@ export const commands: readonly CliCommand[] = [
   scan,
   setup,
   statusCard,
+  timelapse,
   upgradeCheck,
   usage,
+  verify,
   watch,
+  wrapped,
 ];

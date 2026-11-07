@@ -1,33 +1,33 @@
 {
   "schemaVersion": "evergreen.corpus-thresholds.v1",
   "budget": {
-    "maxWallSeconds": 120,
-    "maxFetchedBytes": 250000000
+    "maxWallSeconds": 600,
+    "maxFetchedBytes": 500000000
   },
   "detectors": {
     "android": {
-      "level": "experimental",
-      "stable": false,
+      "level": "stable",
+      "stable": true,
       "minPrecision": 0.95
     },
     "ci-images": {
-      "level": "experimental",
-      "stable": false,
+      "level": "stable",
+      "stable": true,
       "minPrecision": 0.95
     },
     "container": {
-      "level": "experimental",
-      "stable": false,
+      "level": "stable",
+      "stable": true,
       "minPrecision": 0.95
     },
     "cpp": {
-      "level": "experimental",
-      "stable": false,
+      "level": "stable",
+      "stable": true,
       "minPrecision": 0.95
     },
     "dart": {
-      "level": "experimental",
-      "stable": false,
+      "level": "stable",
+      "stable": true,
       "minPrecision": 0.95
     },
     "database": {
@@ -41,13 +41,13 @@
       "minPrecision": 0.95
     },
     "dotnet": {
-      "level": "beta",
+      "level": "stable",
       "stable": true,
       "minPrecision": 0.95
     },
     "elixir": {
-      "level": "experimental",
-      "stable": false,
+      "level": "stable",
+      "stable": true,
       "minPrecision": 0.95
     },
     "go": {
@@ -56,7 +56,7 @@
       "minPrecision": 0.95
     },
     "java": {
-      "level": "beta",
+      "level": "stable",
       "stable": true,
       "minPrecision": 0.95
     },
@@ -81,8 +81,8 @@
       "minPrecision": 0.95
     },
     "php": {
-      "level": "experimental",
-      "stable": false,
+      "level": "stable",
+      "stable": true,
       "minPrecision": 0.95
     },
     "python": {
@@ -91,8 +91,8 @@
       "minPrecision": 0.95
     },
     "ruby": {
-      "level": "experimental",
-      "stable": false,
+      "level": "stable",
+      "stable": true,
       "minPrecision": 0.95
     },
     "rust": {
@@ -101,8 +101,8 @@
       "minPrecision": 0.95
     },
     "scala": {
-      "level": "experimental",
-      "stable": false,
+      "level": "stable",
+      "stable": true,
       "minPrecision": 0.95
     },
     "serverless": {
@@ -111,12 +111,12 @@
       "minPrecision": 0.95
     },
     "shell": {
-      "level": "experimental",
-      "stable": false,
+      "level": "stable",
+      "stable": true,
       "minPrecision": 0.95
     },
     "swift": {
-      "level": "beta",
+      "level": "stable",
       "stable": true,
       "minPrecision": 0.95
     },
@@ -127,10 +127,10 @@
     }
   },
   "lastFullRun": {
-    "date": "2026-11-01",
-    "commit": "114f19b",
+    "date": "2026-11-06",
+    "commit": "dcc9f320",
     "repositories": 557,
-    "findings": 3156,
+    "findings": 3208,
     "precision": 1,
     "recall": 1,
     "perDetector": {
@@ -145,7 +145,7 @@
         "falseNegatives": 0
       },
       "container": {
-        "truePositives": 365,
+        "truePositives": 368,
         "falsePositives": 0,
         "falseNegatives": 0
       },
@@ -180,7 +180,7 @@
         "falseNegatives": 0
       },
       "github-actions": {
-        "truePositives": 1213,
+        "truePositives": 1262,
         "falsePositives": 0,
         "falseNegatives": 0
       },

@@ -13,7 +13,7 @@ import { zeroFindingsCheck } from "../src/conformance/checks/zero.js";
 import { runDetectorConformance } from "../src/conformance/index.js";
 import { builtInDetectors } from "../src/detectors/index.js";
 import { RubyDetector, rubyDetector } from "../src/detectors/ruby/index.js";
-import { scanRepository } from "../src/engine.js";
+import { scanRepository } from "../src/engine/index.js";
 import { createMigrationPacket, validateMigrationPacket } from "../src/migration-packet.js";
 import { validateRegistryV2 } from "../src/registry.js";
 import type { RegistryV2Rule } from "../src/registry.js";
@@ -218,14 +218,14 @@ test("a migration packet for a Ruby finding names the file, steps, and verificat
   assert.ok(packet.verification.some((check) => check.command === "bundle exec rake test"));
 });
 
-test("the detector is registered and Ruby is experimental in the capability manifest", () => {
+test("the detector is registered and Ruby is supported and stable in the capability manifest", () => {
   assert.ok(builtInDetectors.some((detector) => detector.id === "ruby"));
   assert.deepEqual(
     getCapabilityManifest().ecosystems.find((ecosystem) => ecosystem.id === "ruby"),
     {
       id: "ruby",
-      status: "experimental",
-      maturity: "experimental",
+      status: "supported",
+      maturity: "stable",
       detectorIds: ["ruby"],
     },
   );

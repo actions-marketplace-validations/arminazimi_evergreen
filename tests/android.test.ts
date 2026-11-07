@@ -14,7 +14,7 @@ import { zeroFindingsCheck } from "../src/conformance/checks/zero.js";
 import { runDetectorConformance } from "../src/conformance/index.js";
 import { AndroidDetector, androidDetector } from "../src/detectors/android/index.js";
 import { builtInDetectors } from "../src/detectors/index.js";
-import { scanRepository } from "../src/engine.js";
+import { scanRepository } from "../src/engine/index.js";
 import { createMigrationPacket, validateMigrationPacket } from "../src/migration-packet.js";
 import { validateRegistryV2 } from "../src/registry.js";
 import type { RegistryV2Rule } from "../src/registry.js";
@@ -310,14 +310,14 @@ test("a migration packet for an Android finding names the file, steps, and verif
   assert.ok(packet.verification.some((check) => check.command === "./gradlew dependencies"));
 });
 
-test("the detector is registered and Android is experimental in the capability manifest", () => {
+test("the detector is registered and Android is supported in the capability manifest", () => {
   assert.ok(builtInDetectors.some((detector) => detector.id === "android"));
   assert.deepEqual(
     getCapabilityManifest().ecosystems.find((ecosystem) => ecosystem.id === "android"),
     {
       id: "android",
-      status: "experimental",
-      maturity: "experimental",
+      status: "supported",
+      maturity: "stable",
       detectorIds: ["android"],
     },
   );

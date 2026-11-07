@@ -18,11 +18,24 @@ if (nodeProblem) {
   const { message, appendix } = renderActionable(nodeProblem);
   process.stderr.write(`${message}\n${appendix}`);
   if (jsonErrors) {
-    const document = { schemaVersion: "evergreen.error.v1", error: { code: "usage", exitCode: 2, message } };
+    const document = {
+      schemaVersion: "evergreen.error.v1",
+      error: { code: "usage", reason: "invalid-argument", exitCode: 2, message },
+    };
     process.stdout.write(`${JSON.stringify(document, null, 2)}\n`);
   }
   process.exitCode = 2;
+} else if (isVersionRequest(args)) {
+  // Answered before the command table loads: `cli-main` pulls in every detector, so `--version` would pay for a scan.
+  const { VERSION } = await import("./version.js");
+  process.stdout.write(`${VERSION}\n`);
 } else {
   const { run } = await import("./cli-main.js");
   process.exitCode = await run(rawArgs);
+}
+
+/** Mirrors the precedence in `cli-main`: help wins, then the version flag. Only the bare flag is a fast-path request. */
+function isVersionRequest(args: readonly string[]): boolean {
+  if (args.includes("--help") || args.includes("-h")) return false;
+  return args.includes("--version") || args.includes("-v");
 }

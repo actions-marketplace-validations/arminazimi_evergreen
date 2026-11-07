@@ -22,9 +22,10 @@ import type { EvergreenConfig } from "../config.js";
 import { configureActiveData, DataPinError, getActiveData } from "../data-source.js";
 import { scanDemo } from "../demo.js";
 import { builtInDetectors } from "../detectors/index.js";
+import { scanWithBuiltIns } from "../scan-builtins.js";
 import type { ScanSelection, ScanResult, Severity } from "../domain.js";
 import { severityValues } from "../domain.js";
-import { applyScanSelection, findRepositories, renderMultiScanText, scanProjects, scanRepository } from "../engine.js";
+import { applyScanSelection, findRepositories, renderMultiScanText, scanProjects } from "../engine/index.js";
 import { invalidConfig, renderActionable, unreadablePath, type ActionableMessage } from "../errors.js";
 import { buildForecast } from "../forecast.js";
 import { hasPersonalConfig } from "../init-personal.js";
@@ -34,24 +35,20 @@ import { readPinnedRuntimes } from "../runtime-pin.js";
 import { isIsoDate } from "../registry.js";
 import { createIssueReport, ReportIssueError } from "../report-issue.js";
 import {
-  renderCodeQuality,
-  renderCompact,
+  formatCommandGates,
+  formatExpectedList,
+  getScanReporter,
+  KNOWN_FORMAT_IDS,
   renderFindingText,
-  renderHtml,
   renderJson,
-  renderJunit,
-  renderMarkdown,
   renderMigrationPacketText,
-  renderRdjson,
-  renderSarif,
-  renderScanMermaid,
-  renderSlack,
-  renderTeams,
   renderText,
-  renderWebhook,
+  scanOnlyFormatExtras,
 } from "../reporters.js";
 import { STATUS_FILE_NAME, writeStatusFile } from "../status-file.js";
 import { browseFindings, canBrowse } from "../tui.js";
+import { selectorValuesSummary, unknownSelectors } from "../scan-selectors.js";
+import { classifyError, DEFAULT_REASONS, type ErrorCode } from "../evergreen-error.js";
 import { EXIT_CODES, type CommandContext, type FailureClass } from "./types.js";
 
 export type { FailureClass };
@@ -88,13 +85,17 @@ export function bindContext(ctx: CommandContext): void {
 }
 
 /** Failure path for errors thrown outside a command handler. Uses the bound context when `main` has started. */
-export function fail(kind: FailureClass, message: string, appendix = ""): number {
-  if (activeFail) return activeFail(kind, message, appendix);
+export function fail(kind: FailureClass, message: string, appendix = "", reason?: ErrorCode): number {
+  if (activeFail) return activeFail(kind, message, appendix, reason);
   process.stderr.write(`${message}\n${appendix}`);
   return EXIT_CODES[kind];
 }
 
-export function createCommandContext(rawArgs: readonly string[], help: string): CommandContext {
+export function createCommandContext(
+  rawArgs: readonly string[],
+  help: string,
+  completionScript: CommandContext["completionScript"] = () => undefined,
+): CommandContext {
   const args = rawArgs.filter((argument) => argument !== "--debug");
   const formatValue = args[args.indexOf("--format") + 1];
   const jsonErrors = args.includes("--json") || (args.includes("--format") && formatValue === "json");
@@ -103,12 +104,13 @@ export function createCommandContext(rawArgs: readonly string[], help: string): 
     debug: rawArgs.includes("--debug"),
     help,
     exitCodes: EXIT_CODES,
-    fail(kind, message, appendix = "") {
+    completionScript,
+    fail(kind, message, appendix = "", reason = DEFAULT_REASONS[kind]) {
       process.stderr.write(`${message}\n${appendix}`);
       if (jsonErrors && kind !== "policy") {
         const document = {
           schemaVersion: "evergreen.error.v1",
-          error: { code: kind, exitCode: EXIT_CODES[kind], message },
+          error: { code: kind, reason, exitCode: EXIT_CODES[kind], message },
         };
         process.stdout.write(`${JSON.stringify(document, null, 2)}\n`);
       }
@@ -117,6 +119,10 @@ export function createCommandContext(rawArgs: readonly string[], help: string): 
     failActionable(kind, actionable) {
       const rendered = renderActionable(actionable);
       return ctx.fail(kind, rendered.message, rendered.appendix);
+    },
+    failError(error, appendix = "") {
+      const { code, kind } = classifyError(error);
+      return this.fail(kind, error instanceof Error ? error.message : String(error), appendix, code);
     },
   };
   return ctx;
@@ -170,7 +176,7 @@ async function preparedConfig(
   try {
     return await loadConfig(pathArgument);
   } catch (error) {
-    if (error instanceof ConfigError) return ctx.fail("usage", error.message);
+    if (error instanceof ConfigError) return ctx.failError(error);
     throw error;
   }
 }
@@ -203,7 +209,7 @@ async function pinnedData(
   try {
     await getActiveData();
   } catch (error) {
-    if (error instanceof DataPinError) return ctx.fail(error.malformed ? "usage" : "data", error.message);
+    if (error instanceof DataPinError) return ctx.failError(error);
     throw error;
   }
   return undefined;
@@ -276,21 +282,7 @@ export async function prepare(
 }
 
 /** Every `--format` value the reporters know; anything else is a usage error for any command. */
-const KNOWN_FORMATS = new Set([
-  "text",
-  "json",
-  "markdown",
-  "junit",
-  "sarif",
-  "rdjson",
-  "codequality",
-  "compact",
-  "html",
-  "slack",
-  "teams",
-  "webhook",
-  "mermaid",
-]);
+const KNOWN_FORMATS = KNOWN_FORMAT_IDS;
 
 /** The message a command with a narrow output set prints for a format outside it. */
 // Maps, not objects: a plain object answers for inherited names such as `constructor`, so a lookup by user input needs a Map.
@@ -305,30 +297,10 @@ const COMMAND_FORMATS: ReadonlyMap<string, { readonly allowed: readonly string[]
   ]);
 
 /** Formats only `scan` renders, with the commands besides `scan` and `receipt` that take them too. */
-const SCAN_ONLY_FORMATS: ReadonlyMap<string, readonly string[]> = new Map([
-  ["markdown", []],
-  ["junit", []],
-  ["sarif", []],
-  ["rdjson", []],
-  ["codequality", []],
-  ["compact", []],
-  ["slack", []],
-  ["teams", []],
-  ["webhook", []],
-  ["html", ["rollup"]],
-]);
+const SCAN_ONLY_FORMATS = scanOnlyFormatExtras();
 
 /** Formats whose list of commands is neither `scan` alone nor the scan set above. */
-const FORMAT_COMMANDS: ReadonlyMap<string, { readonly commands: readonly string[]; readonly rejection: string }> =
-  new Map([
-    [
-      "mermaid",
-      {
-        commands: ["scan", "forecast"],
-        rejection: "--format mermaid is only available for the scan and forecast commands.",
-      },
-    ],
-  ]);
+const FORMAT_COMMANDS = formatCommandGates();
 
 /** Flags only `scan` accepts, and the message each prints for another command. */
 const SCAN_ONLY_FLAGS: readonly { readonly taken: (state: Prepared) => boolean; readonly rejection: string }[] = [
@@ -356,7 +328,7 @@ function hasSelectors(state: Prepared): boolean {
 const USAGE_GATES: readonly ((state: Prepared) => string | undefined)[] = [
   (state) => {
     if (state.formatIndex === -1 || (state.format !== undefined && KNOWN_FORMATS.has(state.format))) return undefined;
-    return `Unknown format: ${state.format ?? ""} (expected text, json, markdown, junit, sarif, rdjson, codequality, compact, html, slack, teams, webhook, or mermaid).`;
+    return `Unknown format: ${state.format ?? ""} (expected ${formatExpectedList()}).`;
   },
   (state) => {
     const rule = COMMAND_FORMATS.get(state.command);
@@ -381,12 +353,6 @@ const USAGE_GATES: readonly ((state: Prepared) => string | undefined)[] = [
 function scanSelection(only: string[], exclude: string[]): ScanSelection | undefined {
   if (only.length === 0 && exclude.length === 0) return undefined;
   return { ...(only.length > 0 ? { only } : {}), ...(exclude.length > 0 ? { exclude } : {}) };
-}
-
-/** Selectors that are duplicated, empty, or not an ecosystem or rule-id prefix, in the order they were given. */
-async function unknownSelectors(selectors: string[]): Promise<string[]> {
-  const known = await selectorValues();
-  return [...new Set(selectors)].filter((value) => !known.has(value) || value === "" || value.startsWith("-"));
 }
 
 /** Format and scan-only flag checks that used to run before any of the later commands. */
@@ -567,7 +533,7 @@ async function scanWithFilters(
   const asOfValue = state.optionValue("--as-of") ?? state.optionValue("--today");
   let result = state.demo
     ? await scanDemo(builtInDetectors)
-    : await scanRepository(state.pathArgument, builtInDetectors, { noCache: state.noCache });
+    : await scanWithBuiltIns(state.pathArgument, { noCache: state.noCache });
   if (asOfValue !== undefined) result = await applyAsOf(result, asOfValue);
   if (minSupportDays !== undefined)
     result = applyMinSupport(result, minSupportDays, asOfValue ?? new Date().toISOString().slice(0, 10));
@@ -681,7 +647,7 @@ async function printContextPacket(state: Gated, result: ScanResult, ctx: Command
 /** `report-issue`: the issue text, printed or written where the user can review it. */
 async function printIssueReport(state: Gated, result: ScanResult, ctx: CommandContext): Promise<number | undefined> {
   const finding = result.findings.find((candidate) => candidate.id === state.findingId);
-  if (!finding) return ctx.fail("data", `Finding not found: ${state.findingId}`);
+  if (!finding) return ctx.fail("data", `Finding not found: ${state.findingId}`, "", "finding-not-found");
   try {
     const report = await createIssueReport(state.pathArgument, finding);
     const output = state.optionValue("--output");
@@ -695,7 +661,7 @@ async function printIssueReport(state: Gated, result: ScanResult, ctx: CommandCo
       `Wrote the report to ${destination}. Review it before you open an issue; Evergreen never opens one.\n`,
     );
   } catch (error) {
-    if (error instanceof ReportIssueError) return ctx.fail("data", error.message);
+    if (error instanceof ReportIssueError) return ctx.failError(error);
     throw error;
   }
   return undefined;
@@ -704,7 +670,7 @@ async function printIssueReport(state: Gated, result: ScanResult, ctx: CommandCo
 /** `explain`: the one finding named on the command line, as text or as the JSON document. */
 function printExplainedFinding(state: Gated, result: ScanResult, ctx: CommandContext): number | undefined {
   const finding = result.findings.find((candidate) => candidate.id === state.findingId);
-  if (!finding) return ctx.fail("data", `Finding not found: ${state.findingId}`);
+  if (!finding) return ctx.fail("data", `Finding not found: ${state.findingId}`, "", "finding-not-found");
   process.stdout.write(`${state.json ? JSON.stringify(finding, null, 2) : renderFindingText(finding)}\n`);
   return undefined;
 }
@@ -719,33 +685,27 @@ async function printByOwner(state: Gated, result: ScanResult, ctx: CommandContex
   return undefined;
 }
 
-/** The scan renders these from the findings alone. */
-const SCAN_RENDERERS: ReadonlyMap<string, (result: ScanResult) => string> = new Map([
-  ["sarif", renderSarif],
-  ["rdjson", renderRdjson],
-  ["codequality", renderCodeQuality],
-  ["compact", renderCompact],
-  ["markdown", renderMarkdown],
-  ["junit", renderJunit],
-  ["slack", renderSlack],
-  ["teams", renderTeams],
-  ["webhook", renderWebhook],
-]);
-
 /** The scan report in the format asked for; text and JSON are the fallback. */
 async function renderScanReport(state: Gated, result: ScanResult, asOfValue: string | undefined): Promise<string> {
   const { format, json, command } = state;
-  const render = format === undefined ? undefined : SCAN_RENDERERS.get(format);
-  if (render) return render(result);
   const asOf = asOfValue ?? new Date().toISOString().slice(0, 10);
-  if (format === "html")
-    return renderHtml(result, {
-      // Only the shareable HTML report carries a forecast; building it would otherwise slow every other format down.
-      forecast: command === "scan" ? buildForecast(result, await bundledRules(), asOf) : undefined,
-    });
-  if (format === "mermaid") return renderScanMermaid(result, asOf);
+  const firstRun = command === "scan" && !(await hasPersonalConfig());
+  if (format !== undefined) {
+    const reporter = getScanReporter(format);
+    if (reporter) {
+      if (format === "html") {
+        return reporter.render(result, {
+          // Only the shareable HTML report carries a forecast; building it would otherwise slow every other format down.
+          forecast: command === "scan" ? buildForecast(result, await bundledRules(), asOf) : undefined,
+        });
+      }
+      if (format === "mermaid") return reporter.render(result, { asOf });
+      if (format === "text") return reporter.render(result, { firstRun });
+      return reporter.render(result);
+    }
+  }
   if (json) return renderJson(result);
-  return renderText(result, { firstRun: command === "scan" && !(await hasPersonalConfig()) });
+  return renderText(result, { firstRun });
 }
 
 /** `--fail-on`: the policy gate on the scan's own severity floor. */
@@ -775,26 +735,4 @@ export async function repositoryRootProblem(path: string): Promise<ActionableMes
   } catch (error) {
     return unreadablePath(path, (error as NodeJS.ErrnoException).code === "ENOENT" ? "missing" : "unreadable");
   }
-}
-
-/** Valid `--only`/`--exclude` values: ecosystem ids, rule ids, and their dotted prefixes. */
-async function selectorValues(): Promise<Set<string>> {
-  const values = new Set<string>(builtInDetectors.map((detector) => detector.id));
-  for (const rule of await bundledRules()) {
-    const parts = rule.id.split(".");
-    for (let index = 1; index <= parts.length; index += 1) values.add(parts.slice(0, index).join("."));
-  }
-  return values;
-}
-
-/** Lists the ecosystems and rule-id families a selector may name, for the unknown-selector error. */
-async function selectorValuesSummary(): Promise<string> {
-  const ecosystems = builtInDetectors.map((detector) => detector.id).sort();
-  const prefixes = [...new Set((await bundledRules()).map((rule) => rule.id.split(".").slice(0, 2).join(".")))].sort(
-    (left, right) => left.localeCompare(right),
-  );
-  return `Valid ecosystems: ${ecosystems.join(", ")}. Valid rule prefixes: ${[...ecosystems, ...prefixes]
-    .filter((value, index, all) => all.indexOf(value) === index)
-    .sort((left, right) => left.localeCompare(right))
-    .join(", ")}.`;
 }

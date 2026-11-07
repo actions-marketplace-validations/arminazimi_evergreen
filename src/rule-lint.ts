@@ -127,6 +127,10 @@ function hintFor(message: string): string {
       "Link the authoritative notice over https; http and relative URLs are not evidence.",
     ],
     [
+      /^sources\[\d+\]\.accessedAt is required/,
+      "Add the day you read this source as accessedAt (YYYY-MM-DD); every finding shows it.",
+    ],
+    [
       /^provenance\.reviewedAt must not be earlier/,
       "Set reviewedAt to the date you last checked the sources; it cannot precede observedAt.",
     ],
@@ -153,35 +157,39 @@ function hintFor(message: string): string {
   return "See the field reference in docs/RULES.md.";
 }
 
+/** The index just past the string that opens at `start`, or -1 when it never closes. */
+function stringEnd(text: string, start: number): number {
+  for (let index = start + 1; index < text.length; index += 1) {
+    const char = text.charAt(index);
+    if (char === "\\") index += 1;
+    else if (char === '"') return index + 1;
+  }
+  return -1;
+}
+
+/** True when `closer` matches the innermost open bracket. */
+function closesOpen(open: { char: string } | undefined, closer: string): boolean {
+  return open !== undefined && (open.char === "{" ? "}" : "]") === closer;
+}
+
 /**
  * The offset of the first unbalanced bracket or unterminated string. Node's JSON error no longer carries a position,
  * and this finds most syntax mistakes so the message can still name a line.
  */
 function structuralProblemOffset(text: string): number {
   const stack: Array<{ char: string; offset: number }> = [];
-  let inString = false;
-  let escaped = false;
-  let stringStart = 0;
   for (let index = 0; index < text.length; index += 1) {
     const char = text.charAt(index);
-    if (inString) {
-      if (escaped) escaped = false;
-      else if (char === "\\") escaped = true;
-      else if (char === '"') inString = false;
-      continue;
-    }
     if (char === '"') {
-      inString = true;
-      stringStart = index;
-      continue;
-    }
-    if (char === "{" || char === "[") stack.push({ char, offset: index });
-    else if (char === "}" || char === "]") {
-      const open = stack.pop();
-      if (open === undefined || (open.char === "{" ? "}" : "]") !== char) return index;
+      const end = stringEnd(text, index);
+      if (end < 0) return index;
+      index = end - 1;
+    } else if (char === "{" || char === "[") {
+      stack.push({ char, offset: index });
+    } else if ((char === "}" || char === "]") && !closesOpen(stack.pop(), char)) {
+      return index;
     }
   }
-  if (inString) return stringStart;
   return stack.at(-1)?.offset ?? 0;
 }
 

@@ -19,6 +19,9 @@ interface RpcResponse {
 
 const temporaryRoots: string[] = [];
 
+/** The exact tool list the server advertises: names, descriptions, input schemas, output schemas, and annotations. */
+const TOOL_SCHEMAS = resolve("tests/fixtures/mcp-tool-schemas.json");
+
 after(async () => {
   await Promise.all(temporaryRoots.map((root) => rm(root, { recursive: true, force: true })));
 });
@@ -493,6 +496,18 @@ test("the prompt works from a fresh session and then lets verify_migration run",
   }
 });
 
+test("the advertised tool schemas are unchanged", async () => {
+  const client = await connectTestClient();
+  try {
+    const tools = (await client.request("tools/list")).tools;
+    const actual = `${JSON.stringify(tools, null, 2)}\n`;
+    if (process.env.UPDATE_GOLDEN === "1") await writeFile(TOOL_SCHEMAS, actual);
+    assert.equal(await readFile(TOOL_SCHEMAS, "utf8"), actual);
+  } finally {
+    await client.close();
+  }
+});
+
 test("every tool advertises an outputSchema, and its structured content validates against it", async () => {
   const { Ajv2020 } = await import("ajv/dist/2020.js");
   const { MCP_OUTPUT_SCHEMA_FILES } = await import("../src/mcp.js");
@@ -588,7 +603,7 @@ test("scan_repository takes an optional baseline and reports what it suppressed,
     assert.equal("suppressions" in plainContent, false, "no baseline, no suppression state");
 
     const { createBaseline } = await import("../src/baseline.js");
-    const { scanRepository } = await import("../src/engine.js");
+    const { scanRepository } = await import("../src/engine/index.js");
     const { builtInDetectors } = await import("../src/detectors/index.js");
     const { writeFile } = await import("node:fs/promises");
     const { join } = await import("node:path");

@@ -12,11 +12,31 @@ npm test                                  # build, then every test file
 npm test -- dist/tests/cli.test.js        # one file; the argument goes to tools/run-tests.mjs
 npm run test:coverage                     # coverage floors: 93% lines, 87% branches, 93% functions
 npm run test:fuzz                         # the parser fuzz suite
-npm run test:mutation                     # Stryker on the core engine and version ranges
+npm run test:mutation                     # Stryker on the core engine, version ranges, and reporters
 npm run check                             # build, Action bundle, tests, plugin checks, evals
 ```
 
 `npm run check` is the gate. It runs the tests in `tools/check-pipeline.ts` (`testProcessArgs` at `tools/check-pipeline.ts:59`) alongside the Action bundle, plugin drift, and plugin evals. A new `tests/*.test.ts` file needs no registration: the runner globs `dist/tests/**/*.test.js` (`tools/run-tests.mjs:241`). Helper modules such as `tests/fuzz/parsers.ts` are compiled but not run as tests.
+
+## Affected tests on pull requests
+
+`ci.yml` writes the files a pull request changes to a list and points `EVERGREEN_AFFECTED_FILES` at it. On that lane, `tools/run-tests.mjs` runs only the test files that reach a changed module through imports (`tools/run-tests-selection.ts`). Every other lane — the merge queue, `main`, a schedule, and a local `npm test` — has no list and runs the whole suite.
+
+- A changed test file runs itself.
+- A changed module under `src/` or `tests/` runs every test that imports it, directly or through a test helper.
+- A change the map cannot place runs everything: configuration (`package.json`, `tsconfig.json`, workflows), shared data (`registry/`, `schemas/`, `data/`), fixtures, `tools/` and `benchmarks/` sources, and a module no test imports.
+- The `coverage` job always measures the whole suite, so the narrowing never moves a coverage floor.
+- The map is built from the checkout at run time; it is not a committed file that can go stale.
+
+Reproduce a narrowed run locally:
+
+```bash
+npm run build --silent
+printf '%s\n' src/detectors/npm/index.ts > /tmp/changed.txt
+EVERGREEN_AFFECTED_FILES=/tmp/changed.txt node tools/run-tests.mjs
+```
+
+The run prints `Affected tests: ...` and writes the same line to the job summary. When a shard is set, the summary notes that the subset is not balanced against the committed timings.
 
 ## Pick a kind
 
@@ -24,7 +44,7 @@ npm run check                             # build, Action bundle, tests, plugin 
 | --- | --- | --- |
 | Unit | `tests/*.test.ts` | A pure function, formatter, parser, or one module's contract. |
 | Detector and registry | `tests/<ecosystem>.test.ts`, `tests/registry-*.test.ts` | An ecosystem detector reads a manifest, or a registry rule/schema changes. |
-| Conformance | `src/conformance/`, `tests/conformance.test.ts` | A detector's shared guarantees: determinism, locations, evidence, zero findings, malformed input. |
+| Conformance | `src/conformance/`, `tests/conformance.test.ts`, `tests/conformance-builtins.test.ts` | A detector's shared guarantees: determinism, locations, evidence, valid fields, bounded inputs, zero findings, malformed input. |
 | Fixture-based | `tests/fixtures/`, `tests/*.test.ts` | A rule or detector has positive/negative boundaries that belong in a reviewable repository on disk. |
 | CLI end-to-end | `tests/cli*.test.ts`, `tests/*-e2e.test.ts` | The behavior crosses the process boundary: arguments, exit codes, stdout, JSON contracts. |
 | MCP | `tests/mcp*.test.ts` | A tool, resource, prompt, or annotation changes; use the in-memory transport. |
@@ -80,7 +100,9 @@ Use detector tests when the question is "does this ecosystem produce the right f
 
 ## Conformance tests
 
-Conformance is the shared harness every detector must pass: deterministic ordered output, locations that exist, authoritative evidence, no findings on a zero-finding fixture, and no throw on malformed input. It lives in `src/conformance/` and is exercised in `tests/conformance.test.ts`.
+Conformance is the shared harness every detector must pass: deterministic ordered output, locations that exist, authoritative evidence, findings with valid fields, bounded inputs, no findings on a zero-finding fixture, and no throw on malformed input. It lives in `src/conformance/` and is exercised in `tests/conformance.test.ts`.
+
+`tests/conformance-builtins.test.ts` is the one suite every registered detector runs. It reads `builtInDetectors`, so registering a detector adds it automatically, and it generates an empty repository, a repository whose every declared input is malformed, and one at the limits of the input, depth, and size checks. When the detector has `tests/fixtures/<id>`, a copy of those fixtures is also scanned and its findings checked for valid fields, evidence, existing locations, and stable order. Write an explicit expected-findings test in the detector's own file for what it reports; the shared suite checks how every detector reports.
 
 ```ts
 // tests/conformance.test.ts:37
@@ -279,7 +301,7 @@ CI retries a failed test file once. A file that passes on retry is reported as f
 
 ### Mutation testing
 
-`npm run test:mutation` runs Stryker over `src/engine.ts`, `src/baseline.ts`, `src/diff.ts`, and `src/vers/**` (`stryker.config.json:11`). The nightly `mutation` workflow publishes the score and survivors; `break` is `null`, so it is a signal, not a merge gate. Use it when you touch ordering, baseline matching, diffs, or version ranges, and when a unit test feels like it asserts too little. A surviving mutant usually means a missing assertion, not a missing test file.
+`npm run test:mutation` runs Stryker over `src/engine/`, `src/baseline.ts`, `src/diff.ts`, and `src/vers/**` (`stryker.config.json:11`). The nightly `mutation` workflow publishes the score and survivors and fails a complete run below the overall 60% break (`stryker.config.json`). Because the workflow shards the scope, a shard runs with `stryker.shard.config.mjs` (no break) and the merged report in the `report` job applies the break and the per-file ratchet. Use it when you touch ordering, baseline matching, diffs, or version ranges, and when a unit test feels like it asserts too little. A surviving mutant usually means a missing assertion, not a missing test file.
 
 ## Anti-patterns
 

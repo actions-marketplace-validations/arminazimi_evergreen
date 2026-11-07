@@ -48,26 +48,9 @@ test("thresholds name every shipped detector and enforce precision of at least 0
     "terraform",
   ]);
   for (const [name, threshold] of Object.entries(thresholds.detectors)) {
-    // The Android, ci-images, container, C and C++, PHP, Ruby, Scala, shell, and Terraform detectors are experimental: they are scored and reported, but not enforced yet.
-    assert.equal(
-      threshold.stable,
-      ![
-        "android",
-        "ci-images",
-        "container",
-        "cpp",
-        "dart",
-        "database",
-        "deno",
-        "elixir",
-        "php",
-        "ruby",
-        "scala",
-        "shell",
-        "terraform",
-      ].includes(name),
-      name,
-    );
+    // Database, Deno, and Terraform stay experimental: scored and reported, not enforced yet.
+    // Scala/Java (#1896), C/C++/Shell (#1897), Elixir (#1895), and Dart/Android (#1894) are stable.
+    assert.equal(threshold.stable, !["database", "deno", "terraform"].includes(name), name);
     assert.ok(threshold.minPrecision >= 0.95);
   }
 });
@@ -117,7 +100,7 @@ const ECOSYSTEMS: Record<string, { corpus: string[]; row: string }> = {
   container: { corpus: ["container"], row: "Container base images" },
   cpp: { corpus: ["cpp"], row: "C and C++" },
   dart: { corpus: ["dart"], row: "Dart and Flutter" },
-  deno: { corpus: [], row: "Deno and Bun" },
+  deno: { corpus: ["deno"], row: "Deno and Bun" },
   dotnet: { corpus: ["dotnet"], row: ".NET" },
   elixir: { corpus: ["elixir"], row: "Elixir and Mix" },
   "github-actions": { corpus: ["node-actions"], row: "GitHub Actions" },

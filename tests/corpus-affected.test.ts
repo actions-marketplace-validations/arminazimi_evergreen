@@ -23,7 +23,7 @@ test("a change under src/detectors/php runs only the PHP ecosystem", () => {
 });
 
 test("detectors that serve a different corpus name map to it", () => {
-  assert.deepEqual(names(["src/detectors/npm.ts"]), ["node"]);
+  assert.deepEqual(names(["src/detectors/npm/index.ts"]), ["node"]);
   assert.deepEqual(names(["registry/nodejs.json"]), ["node"]);
   assert.deepEqual(names(["src/detectors/github-actions.ts"]), ["node-actions"]);
 });
@@ -43,6 +43,7 @@ test("a shared-file change runs the ecosystems that depend on it", () => {
     "swift",
   ]);
   assert.deepEqual(names(["src/engine.ts"]), [...CORPUS_ECOSYSTEMS]);
+  assert.deepEqual(names(["src/engine/detect.ts"]), [...CORPUS_ECOSYSTEMS]);
   assert.deepEqual(names(["src/detectors/index.ts"]), [...CORPUS_ECOSYSTEMS]);
 });
 
@@ -97,7 +98,7 @@ test("every corpus ecosystem and every built-in detector is covered by the map",
   assert.deepEqual([...used].sort(), [...CORPUS_ECOSYSTEMS]);
 
   // A detector with no public corpus yet registers with an empty list on purpose; every other built-in must name one.
-  const withoutCorpus = new Set<string>(["cle", "deno", "elixir", "scala"]);
+  const withoutCorpus = new Set<string>(["cle"]);
   for (const detector of builtInDetectors) {
     const ecosystems = DETECTOR_ECOSYSTEMS[detector.id];
     assert.ok(ecosystems, `built-in detector ${detector.id} has no entry in DETECTOR_ECOSYSTEMS`);
